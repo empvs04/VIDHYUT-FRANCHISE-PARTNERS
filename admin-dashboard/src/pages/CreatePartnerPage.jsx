@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -17,7 +17,7 @@ import {
   XCircle,
   Copy,
   Check,
-  Sparkles,
+  RotateCcw,
 } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 import api from '../services/api';
@@ -64,6 +64,7 @@ const CreatePartnerPage = () => {
   const [uploadedDocName, setUploadedDocName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const fileInputRef = useRef(null);
   const { showToast } = useNotification();
   const navigate = useNavigate();
 
@@ -126,19 +127,25 @@ const CreatePartnerPage = () => {
     handleVerifyGovIdLive(formData.govIdType, val);
   };
 
+  const resetFileUpload = () => {
+    setUploadedDocScan(null);
+    setUploadedDocName('');
+    setUploadedDocPreview(null);
+    setFormData((prev) => ({ ...prev, govIdDocumentUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleIdTypeChange = (val) => {
     setFormData((prev) => ({ ...prev, govIdType: val }));
     if (formData.govIdNumber) {
       handleVerifyGovIdLive(val, formData.govIdNumber);
     }
-    if (uploadedDocScan) {
-      setUploadedDocScan(null);
-      setUploadedDocName('');
-      setUploadedDocPreview(null);
-    }
+    resetFileUpload();
   };
 
-  // REAL Client-Side Optical Character Recognition (OCR) & AI Content Analysis
+  // REAL Client-Side OCR & Deep Authenticity Inspection
   const handleFileUploadAndScan = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -200,7 +207,7 @@ const CreatePartnerPage = () => {
           message: scanData.message,
         });
 
-        // If ID number was detected by OCR and user hasn't typed one yet, auto-fill it!
+        // Auto-fill ID number if detected by OCR and box is empty
         if (scanData.extractedIdNumbers?.length > 0 && !formData.govIdNumber) {
           const detectedNum = scanData.extractedIdNumbers[0];
           setFormData((prev) => ({ ...prev, govIdNumber: detectedNum }));
@@ -214,14 +221,18 @@ const CreatePartnerPage = () => {
 
         showToast(`Document scan passed: Authentic ${scanData.detectedType} verified!`, 'success');
       } else {
+        // Document REJECTED
         setUploadedDocScan({
           isScanning: false,
           isAuthentic: false,
-          confidence: scanData.confidence || 0,
+          confidence: 0,
           extractedSnippet: scanData.extractedSnippet,
-          message: scanData.message || 'Authenticity check failed. Non-ID image detected.',
+          message: scanData.message || 'Authenticity check failed. Non-Government image detected.',
         });
-        showToast(`Document Rejected: No genuine ${formData.govIdType} detected in image.`, 'error');
+
+        // Invalidate document URL so form cannot be submitted with fake image
+        setFormData((prev) => ({ ...prev, govIdDocumentUrl: '' }));
+        showToast(`Upload Rejected: Invalid / Non-Government Document. Please choose your authentic ${formData.govIdType} card.`, 'error');
       }
     } catch (err) {
       setUploadedDocScan({
@@ -229,6 +240,7 @@ const CreatePartnerPage = () => {
         isAuthentic: false,
         message: 'Could not process image OCR. Please ensure the image is clear and not corrupt.',
       });
+      setFormData((prev) => ({ ...prev, govIdDocumentUrl: '' }));
       showToast('OCR scan failed on this image.', 'error');
     }
   };
@@ -527,7 +539,7 @@ const CreatePartnerPage = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '4px 10px',
+                  padding: '5px 12px',
                   borderRadius: '12px',
                   fontSize: '12px',
                   fontWeight: '700',
@@ -535,7 +547,7 @@ const CreatePartnerPage = () => {
                   color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C',
                 }}
               >
-                {uploadedDocScan.isAuthentic ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                {uploadedDocScan.isAuthentic ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
                 <span>{uploadedDocScan.isAuthentic ? 'Authentic Document Passed' : 'Fake / Invalid File Rejected'}</span>
               </div>
             )}
@@ -584,7 +596,7 @@ const CreatePartnerPage = () => {
             </div>
           </div>
 
-          {/* Number Checksum Feedback */}
+          {/* Number Checksum / Format Feedback */}
           {docScanStatus && (
             <div
               style={{
@@ -616,7 +628,7 @@ const CreatePartnerPage = () => {
                 border: uploadedDocScan
                   ? uploadedDocScan.isAuthentic
                     ? '2px solid #86EFAC'
-                    : '2px solid #FCA5A5'
+                    : '2px solid #F87171'
                   : '2px dashed var(--border-color)',
                 borderRadius: 'var(--radius-md)',
                 padding: '24px',
@@ -641,7 +653,7 @@ const CreatePartnerPage = () => {
                 </div>
               ) : (
                 <>
-                  <UploadCloud size={32} color={uploadedDocScan?.isAuthentic ? '#16A34A' : '#0284C7'} style={{ margin: '0 auto 8px' }} />
+                  <UploadCloud size={32} color={uploadedDocScan ? (uploadedDocScan.isAuthentic ? '#16A34A' : '#DC2626') : '#0284C7'} style={{ margin: '0 auto 8px' }} />
                   <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
                     {uploadedDocName ? `Selected File: ${uploadedDocName}` : `Choose ${formData.govIdType} File to Scan`}
                   </div>
@@ -649,13 +661,26 @@ const CreatePartnerPage = () => {
                     The system reads the text inside the image. Posters, memes, and non-ID images will be strictly rejected.
                   </p>
 
-                  <div style={{ marginTop: '12px' }}>
+                  <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'center', gap: '10px', alignItems: 'center' }}>
                     <input
+                      ref={fileInputRef}
                       type="file"
                       accept="image/*,.pdf"
                       onChange={handleFileUploadAndScan}
                       style={{ fontSize: '12.5px' }}
                     />
+
+                    {uploadedDocName && (
+                      <button
+                        type="button"
+                        onClick={resetFileUpload}
+                        className="btn btn-outline btn-sm"
+                        style={{ fontSize: '12px' }}
+                      >
+                        <RotateCcw size={13} />
+                        <span>Re-upload</span>
+                      </button>
+                    )}
                   </div>
                 </>
               )}
@@ -665,28 +690,39 @@ const CreatePartnerPage = () => {
                 <div
                   style={{
                     marginTop: '16px',
-                    padding: '12px 14px',
+                    padding: '14px',
                     borderRadius: '8px',
                     backgroundColor: uploadedDocScan.isAuthentic ? '#DCFCE7' : '#FEE2E2',
-                    border: `1px solid ${uploadedDocScan.isAuthentic ? '#86EFAC' : '#FCA5A5'}`,
+                    border: `1.5px solid ${uploadedDocScan.isAuthentic ? '#86EFAC' : '#FCA5A5'}`,
                     textAlign: 'left',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: '10px',
+                    gap: '12px',
                   }}
                 >
                   {uploadedDocScan.isAuthentic ? (
-                    <CheckCircle2 size={20} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <CheckCircle2 size={22} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
                   ) : (
-                    <XCircle size={20} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <XCircle size={22} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
                   )}
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: uploadedDocScan.isAuthentic ? '#166534' : '#991B1B' }}>
-                      {uploadedDocScan.isAuthentic ? `Government ID Verified (${uploadedDocScan.confidence}% Authenticity Confidence)` : 'Document Verification Rejected'}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '800', color: uploadedDocScan.isAuthentic ? '#166534' : '#991B1B' }}>
+                      {uploadedDocScan.isAuthentic
+                        ? `Government ID Verified (${uploadedDocScan.confidence}% Authenticity Confidence)`
+                        : 'Upload Rejected: Invalid Document / Non-Government File'}
                     </div>
-                    <div style={{ fontSize: '12px', color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C', marginTop: '3px', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '12px', color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C', marginTop: '4px', lineHeight: 1.4 }}>
                       {uploadedDocScan.message}
                     </div>
+
+                    {!uploadedDocScan.isAuthentic && (
+                      <div style={{ marginTop: '8px', padding: '8px 10px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #FECACA' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#991B1B' }}>Action Required:</span>
+                        <span style={{ fontSize: '11.5px', color: '#B91C1C', marginLeft: '4px' }}>
+                          Please click "Choose File" above to select and upload your genuine {formData.govIdType} card.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -701,7 +737,7 @@ const CreatePartnerPage = () => {
                       maxHeight: '150px',
                       maxWidth: '240px',
                       borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
+                      border: uploadedDocScan?.isAuthentic ? '2px solid #86EFAC' : '2px solid #FCA5A5',
                       boxShadow: 'var(--shadow-sm)',
                     }}
                   />
