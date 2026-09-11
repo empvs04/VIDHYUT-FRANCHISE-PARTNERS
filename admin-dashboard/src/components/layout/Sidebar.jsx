@@ -111,9 +111,29 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Territory Coverage</span>
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/cards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <CreditCard size={18} />
+                  <span>Card Inventory</span>
+                </NavLink>
+              </li>
             </>
           ) : (
             <>
+              <li>
+                <NavLink
+                  to="/cards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <CreditCard size={18} />
+                  <span>My Card Inventory</span>
+                </NavLink>
+              </li>
               <li>
                 <NavLink
                   to="/partners"
@@ -154,19 +174,14 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           <div className="nav-section-title">Future Modules</div>
           <li className="nav-item disabled">
-            <CreditCard size={18} />
-            <span>Card Inventory</span>
-            <span className="nav-badge-soon">Soon</span>
-          </li>
-          <li className="nav-item disabled">
             <Wrench size={18} />
-            <span>Installations</span>
-            <span className="nav-badge-soon">Soon</span>
+            <span>Customer Installations</span>
+            <span className="nav-badge-soon">Phase 4</span>
           </li>
           <li className="nav-item disabled">
             <BarChart3 size={18} />
-            <span>Financial Reports</span>
-            <span className="nav-badge-soon">Soon</span>
+            <span>Financial Settlements</span>
+            <span className="nav-badge-soon">Phase 5</span>
           </li>
 
           <div className="nav-section-title">Account</div>

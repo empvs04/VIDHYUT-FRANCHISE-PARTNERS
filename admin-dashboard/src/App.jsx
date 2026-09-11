@@ -9,6 +9,9 @@ import PartnersPage from './pages/PartnersPage';
 import CreatePartnerPage from './pages/CreatePartnerPage';
 import PartnerDetailPage from './pages/PartnerDetailPage';
 import TerritoriesPage from './pages/TerritoriesPage';
+import CardInventoryPage from './pages/CardInventoryPage';
+import AddCardsPage from './pages/AddCardsPage';
+import CardDetailPage from './pages/CardDetailPage';
 import SettingsPage from './pages/SettingsPage';
 
 // Protected Route Guard
@@ -75,6 +78,9 @@ function App() {
               <Route path="partners/new" element={<CreatePartnerPage />} />
               <Route path="partners/:id" element={<PartnerDetailPage />} />
               <Route path="territories" element={<TerritoriesPage />} />
+              <Route path="cards" element={<CardInventoryPage />} />
+              <Route path="cards/new" element={<AddCardsPage />} />
+              <Route path="cards/:id" element={<CardDetailPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
 

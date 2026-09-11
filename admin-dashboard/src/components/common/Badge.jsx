@@ -116,3 +116,81 @@ export const FranchiseTypeBadge = ({ type }) => {
     </span>
   );
 };
+
+export const CardStatusBadge = ({ status }) => {
+  let bg = '#F1F5F9';
+  let color = '#475569';
+  let border = '#CBD5E1';
+  let dotColor = '#64748B';
+  let label = status || 'UNKNOWN';
+
+  switch (status) {
+    case 'AVAILABLE':
+      bg = '#F0FDF4';
+      color = '#15803D';
+      border = '#BBF7D0';
+      dotColor = '#16A34A';
+      label = 'AVAILABLE';
+      break;
+    case 'ASSIGNED':
+      bg = '#EFF6FF';
+      color = '#1D4ED8';
+      border = '#BFDBFE';
+      dotColor = '#2563EB';
+      label = 'ASSIGNED';
+      break;
+    case 'TRANSFERRED':
+      bg = '#FAF5FF';
+      color = '#7E22CE';
+      border = '#E9D5FF';
+      dotColor = '#9333EA';
+      label = 'TRANSFERRED';
+      break;
+    case 'INSTALLED':
+      bg = '#ECFDF5';
+      color = '#047857';
+      border = '#A7F3D0';
+      dotColor = '#059669';
+      label = 'INSTALLED';
+      break;
+    case 'BLOCKED':
+      bg = '#FEF2F2';
+      color = '#B91C1C';
+      border = '#FECACA';
+      dotColor = '#DC2626';
+      label = 'BLOCKED';
+      break;
+    default:
+      break;
+  }
+
+  return (
+    <span
+      style={{
+        backgroundColor: bg,
+        color,
+        border: `1px solid ${border}`,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '3px 9px',
+        borderRadius: '12px',
+        fontSize: '11px',
+        fontWeight: '800',
+        letterSpacing: '0.4px',
+      }}
+    >
+      <span
+        style={{
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          backgroundColor: dotColor,
+          display: 'inline-block',
+        }}
+      />
+      {label}
+    </span>
+  );
+};
+
