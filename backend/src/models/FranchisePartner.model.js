@@ -1,0 +1,116 @@
+import mongoose from 'mongoose';
+import { FRANCHISE_TYPES, ACCOUNT_STATUS } from '../config/constants.js';
+
+const franchisePartnerSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      unique: true,
+      index: true,
+    },
+    franchiseId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
+      index: true,
+    },
+    franchiseType: {
+      type: String,
+      enum: Object.values(FRANCHISE_TYPES),
+      required: [true, 'Franchise type is required'],
+      index: true,
+    },
+    fullName: {
+      type: String,
+      required: [true, 'Full name is required'],
+      trim: true,
+    },
+    mobileNumber: {
+      type: String,
+      required: [true, 'Mobile number is required'],
+      unique: true,
+      trim: true,
+      index: true,
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+    profilePhotoUrl: {
+      type: String,
+      default: '',
+    },
+    // Territory and Location Fields
+    state: {
+      type: String,
+      required: [true, 'Authorized state is required'],
+      trim: true,
+      index: true,
+    },
+    district: {
+      type: String,
+      required: [true, 'Authorized district is required'],
+      trim: true,
+      index: true,
+    },
+    authorizedDistricts: {
+      type: [String],
+      default: [],
+    },
+    city: {
+      type: String,
+      required: [true, 'City is required'],
+      trim: true,
+    },
+    addressLine1: {
+      type: String,
+      required: [true, 'Address Line 1 is required'],
+      trim: true,
+    },
+    addressLine2: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    pinCode: {
+      type: String,
+      required: [true, 'PIN code is required'],
+      trim: true,
+      match: [/^\d{6}$/, 'Please enter a valid 6-digit PIN code'],
+    },
+    joiningDate: {
+      type: Date,
+      default: Date.now,
+    },
+    accountStatus: {
+      type: String,
+      enum: Object.values(ACCOUNT_STATUS),
+      default: ACCOUNT_STATUS.ACTIVE,
+      index: true,
+    },
+    notes: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Compound index for quick territory lookups
+franchisePartnerSchema.index({ state: 1, district: 1 });
+franchisePartnerSchema.index({ franchiseType: 1, accountStatus: 1 });
+
+const FranchisePartner = mongoose.model('FranchisePartner', franchisePartnerSchema);
+export default FranchisePartner;
