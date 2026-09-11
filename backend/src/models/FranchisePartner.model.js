@@ -83,6 +83,44 @@ const franchisePartnerSchema = new mongoose.Schema(
       trim: true,
       match: [/^\d{6}$/, 'Please enter a valid 6-digit PIN code'],
     },
+    // Government ID & Proof Verification
+    govIdType: {
+      type: String,
+      enum: ['AADHAAR', 'PAN', 'VOTER_ID', 'DRIVING_LICENSE', 'NONE'],
+      default: 'NONE',
+    },
+    govIdNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    govIdDocumentUrl: {
+      type: String,
+      default: '',
+    },
+    isGovIdVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationDetails: {
+      verifiedAt: Date,
+      message: String,
+      maskedId: String,
+      entityType: String,
+    },
+    // Additional Required Onboarding Documents
+    otherDocuments: [
+      {
+        name: { type: String, required: true },
+        docType: {
+          type: String,
+          enum: ['GST_CERTIFICATE', 'ADDRESS_PROOF', 'FRANCHISE_AGREEMENT', 'BANK_PASSBOOK', 'OTHER'],
+          default: 'OTHER',
+        },
+        fileUrl: { type: String, required: true },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
     joiningDate: {
       type: Date,
       default: Date.now,

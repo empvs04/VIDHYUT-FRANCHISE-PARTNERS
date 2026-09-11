@@ -9,34 +9,31 @@ export const validateAdminLogin = (req, res, next) => {
 };
 
 export const validatePartnerOTPRequest = (req, res, next) => {
-  const { mobileNumber } = req.body;
-  if (!mobileNumber) {
-    return next(new ApiError(400, 'Mobile number is required.'));
+  const { mobileNumber, identifier } = req.body;
+  const input = (identifier || mobileNumber || '').toString().trim();
+
+  if (!input) {
+    return next(new ApiError(400, 'Please enter your Mobile Number, Email, or Franchise ID.'));
   }
-  const cleanNumber = mobileNumber.toString().trim();
-  if (!/^[6-9]\d{9}$/.test(cleanNumber)) {
-    return next(new ApiError(400, 'Please provide a valid 10-digit Indian mobile number.'));
-  }
-  req.body.mobileNumber = cleanNumber;
+
+  req.body.identifier = input;
   next();
 };
 
 export const validatePartnerOTPVerify = (req, res, next) => {
-  const { mobileNumber, otp } = req.body;
-  if (!mobileNumber || !otp) {
-    return next(new ApiError(400, 'Mobile number and OTP are required.'));
-  }
-  const cleanNumber = mobileNumber.toString().trim();
-  const cleanOTP = otp.toString().trim();
+  const { mobileNumber, identifier, otp } = req.body;
+  const input = (identifier || mobileNumber || '').toString().trim();
+  const cleanOTP = (otp || '').toString().trim();
 
-  if (!/^[6-9]\d{9}$/.test(cleanNumber)) {
-    return next(new ApiError(400, 'Invalid mobile number format.'));
+  if (!input || !cleanOTP) {
+    return next(new ApiError(400, 'Identifier and OTP are required.'));
   }
+
   if (!/^\d{6}$/.test(cleanOTP)) {
     return next(new ApiError(400, 'OTP must be exactly 6 digits.'));
   }
 
-  req.body.mobileNumber = cleanNumber;
+  req.body.identifier = input;
   req.body.otp = cleanOTP;
   next();
 };

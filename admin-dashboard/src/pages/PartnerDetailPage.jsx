@@ -11,7 +11,10 @@ import {
   Power,
   Edit2,
   FileText,
-  Clock,
+  ShieldCheck,
+  FileCheck,
+  CheckCircle2,
+  Download,
 } from 'lucide-react';
 import api from '../services/api';
 import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
@@ -76,7 +79,7 @@ const PartnerDetailPage = () => {
   }
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '1020px', margin: '0 auto' }}>
       {/* Navigation */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <Link to="/partners" className="btn btn-outline btn-sm">
@@ -100,8 +103,8 @@ const PartnerDetailPage = () => {
           <div style={{ display: 'flex', gap: '20px' }}>
             <div
               style={{
-                width: '64px',
-                height: '64px',
+                width: '68px',
+                height: '68px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--color-primary-light)',
                 color: 'var(--color-primary)',
@@ -109,7 +112,7 @@ const PartnerDetailPage = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: '800',
-                fontSize: '22px',
+                fontSize: '24px',
               }}
             >
               {partner.fullName.charAt(0).toUpperCase()}
@@ -122,12 +125,31 @@ const PartnerDetailPage = () => {
                 </h1>
                 <StatusBadge status={partner.accountStatus} />
               </div>
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-primary)' }}>
-                  ID: {partner.franchiseId}
+                <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
+                  Franchise ID: {partner.franchiseId}
                 </span>
                 <span style={{ color: 'var(--border-color)' }}>•</span>
                 <FranchiseTypeBadge type={partner.franchiseType} />
+                {partner.isGovIdVerified && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      color: '#15803d',
+                      backgroundColor: '#dcfce7',
+                      padding: '2px 8px',
+                      borderRadius: '12px',
+                    }}
+                  >
+                    <CheckCircle2 size={13} />
+                    Verified ID ({partner.govIdType})
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -202,35 +224,35 @@ const PartnerDetailPage = () => {
               color: '#0369a1',
             }}
           >
-            🔒 Backend territory rules prevent card allocations & future installations outside these boundaries.
+            🔒 Backend territory rules prevent card allocations & future installations outside {partner.district}.
           </div>
         </div>
 
-        {/* Contact & Address Card */}
+        {/* Contact & Login Identifiers Card */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
             <Building size={18} color="#0284c7" />
-            <h2 style={{ fontSize: '15px', fontWeight: '700' }}>Contact & Address</h2>
+            <h2 style={{ fontSize: '15px', fontWeight: '700' }}>Login & Contact Channels</h2>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
             <Phone size={16} color="var(--text-muted)" />
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Mobile Number (Login)</div>
-              <div style={{ fontSize: '14px', fontWeight: '600' }}>{partner.mobileNumber}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Mobile Number (Primary Login)</div>
+              <div style={{ fontSize: '14px', fontWeight: '600' }}>+91 {partner.mobileNumber}</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
             <Mail size={16} color="var(--text-muted)" />
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Email</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Email (Secondary Login)</div>
               <div style={{ fontSize: '14px', fontWeight: '600' }}>{partner.email || 'Not provided'}</div>
             </div>
           </div>
 
           <div style={{ marginBottom: '12px' }}>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Registered Address</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Registered Office Address</div>
             <div style={{ fontSize: '13.5px', fontWeight: '500', marginTop: '2px' }}>
               {partner.addressLine1}
               {partner.addressLine2 ? `, ${partner.addressLine2}` : ''}
@@ -238,6 +260,94 @@ const PartnerDetailPage = () => {
               {partner.city}, {partner.state} - {partner.pinCode}
             </div>
           </div>
+        </div>
+
+        {/* Government ID & Document Proof Card */}
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+            <ShieldCheck size={18} color="#0284c7" />
+            <h2 style={{ fontSize: '15px', fontWeight: '700' }}>Government Proof & Compliance</h2>
+          </div>
+
+          <div style={{ marginBottom: '14px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ID Document Type</div>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
+              {partner.govIdType !== 'NONE' ? partner.govIdType : 'Pending Submission'}
+            </div>
+          </div>
+
+          {partner.govIdNumber && (
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Document Number (Masked)</div>
+              <div style={{ fontSize: '14px', fontWeight: '700', fontFamily: 'monospace' }}>
+                {partner.verificationDetails?.maskedId || partner.govIdNumber}
+              </div>
+            </div>
+          )}
+
+          {partner.isGovIdVerified ? (
+            <div
+              style={{
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#166534',
+                fontSize: '12.5px',
+              }}
+            >
+              <CheckCircle2 size={16} color="#16a34a" />
+              <span>{partner.verificationDetails?.message || 'Document structure & checksum validated'}</span>
+            </div>
+          ) : (
+            <div
+              style={{
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fef3c7',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px 12px',
+                fontSize: '12.5px',
+                color: '#92400e',
+              }}
+            >
+              Document proof pending verification
+            </div>
+          )}
+
+          {/* Attached Documents */}
+          {partner.otherDocuments?.length > 0 && (
+            <div style={{ marginTop: '16px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                Uploaded Attachments ({partner.otherDocuments.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {partner.otherDocuments.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 10px',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '12px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <FileCheck size={14} color="#0284c7" />
+                      <span style={{ fontWeight: '600' }}>{doc.name}</span>
+                    </div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Verified</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

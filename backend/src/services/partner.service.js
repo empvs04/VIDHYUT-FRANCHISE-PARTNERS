@@ -2,6 +2,7 @@ import User from '../models/User.model.js';
 import FranchisePartner from '../models/FranchisePartner.model.js';
 import { ApiError } from '../utils/apiError.js';
 import { generateFranchiseId } from '../utils/idGenerator.js';
+import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
 import { USER_ROLES, ACCOUNT_STATUS } from '../config/constants.js';
 
 export const createFranchisePartner = async (partnerData, adminUserId) => {
@@ -17,6 +18,10 @@ export const createFranchisePartner = async (partnerData, adminUserId) => {
     addressLine1,
     addressLine2,
     pinCode,
+    govIdType,
+    govIdNumber,
+    govIdDocumentUrl,
+    otherDocuments,
     notes,
     joiningDate,
   } = partnerData;
@@ -32,6 +37,24 @@ export const createFranchisePartner = async (partnerData, adminUserId) => {
     if (existingEmail) {
       throw new ApiError(409, 'A user with this email address already exists.');
     }
+  }
+
+  // Validate Government ID if provided
+  let isGovIdVerified = false;
+  let verificationDetails = null;
+
+  if (govIdType && govIdType !== 'NONE' && govIdNumber) {
+    const verifyResult = verifyGovernmentDocument(govIdType, govIdNumber, govIdDocumentUrl);
+    if (!verifyResult.isValid) {
+      throw new ApiError(400, `Government ID Verification Failed: ${verifyResult.message}`);
+    }
+    isGovIdVerified = true;
+    verificationDetails = {
+      verifiedAt: new Date(),
+      message: verifyResult.message,
+      maskedId: verifyResult.masked,
+      entityType: verifyResult.entityType || 'Verified Partner',
+    };
   }
 
   // Generate Unique Franchise ID
@@ -77,6 +100,12 @@ export const createFranchisePartner = async (partnerData, adminUserId) => {
       addressLine1,
       addressLine2: addressLine2 || '',
       pinCode,
+      govIdType: govIdType || 'NONE',
+      govIdNumber: govIdNumber || '',
+      govIdDocumentUrl: govIdDocumentUrl || '',
+      isGovIdVerified,
+      verificationDetails,
+      otherDocuments: otherDocuments || [],
       notes: notes || '',
       joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
       accountStatus: ACCOUNT_STATUS.ACTIVE,

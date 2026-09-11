@@ -3,7 +3,47 @@ import User from '../models/User.model.js';
 import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { createFranchisePartner, updateFranchisePartnerStatus } from '../services/partner.service.js';
+import { generateFranchiseId } from '../utils/idGenerator.js';
+import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
 import { DEFAULT_PAGINATION, ACCOUNT_STATUS } from '../config/constants.js';
+
+// Preview Generated Franchise ID in Real-Time
+export const previewFranchiseId = async (req, res, next) => {
+  try {
+    const { franchiseType, state, district } = req.query;
+    const generatedId = generateFranchiseId(franchiseType, state, district);
+
+    res.status(200).json(
+      new ApiResponse(200, { generatedFranchiseId: generatedId }, 'Franchise ID preview generated')
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Live Government ID Format & Document Scanner Verification
+export const verifyGovDocumentLive = async (req, res, next) => {
+  try {
+    const { idType, idNumber, documentData } = req.body;
+    if (!idType || !idNumber) {
+      throw new ApiError(400, 'idType and idNumber are required for verification.');
+    }
+
+    const verificationResult = verifyGovernmentDocument(idType, idNumber, documentData);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        verificationResult,
+        verificationResult.isValid
+          ? 'Government document format & checksum verified successfully'
+          : verificationResult.message
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+};
 
 // Create New Franchise Partner (Admin Only)
 export const createPartner = async (req, res, next) => {
@@ -43,6 +83,7 @@ export const getAllPartners = async (req, res, next) => {
         { email: searchRegex },
         { franchiseId: searchRegex },
         { city: searchRegex },
+        { govIdNumber: searchRegex },
       ];
     }
 
@@ -135,6 +176,8 @@ export const updatePartner = async (req, res, next) => {
       pinCode,
       notes,
       authorizedDistricts,
+      govIdType,
+      govIdNumber,
     } = req.body;
 
     const partner = await FranchisePartner.findById(id);
@@ -149,13 +192,15 @@ export const updatePartner = async (req, res, next) => {
     if (addressLine2 !== undefined) partner.addressLine2 = addressLine2.trim();
     if (pinCode) partner.pinCode = pinCode.trim();
     if (notes !== undefined) partner.notes = notes.trim();
+    if (govIdType) partner.govIdType = govIdType;
+    if (govIdNumber) partner.govIdNumber = govIdNumber;
     if (authorizedDistricts && Array.isArray(authorizedDistricts)) {
       partner.authorizedDistricts = authorizedDistricts;
     }
 
     await partner.save();
 
-    // Also update User full name / email if changed
+    // Update user record
     const userUpdates = {};
     if (fullName) userUpdates.fullName = fullName.trim();
     if (email !== undefined) userUpdates.email = email ? email.toLowerCase().trim() : undefined;

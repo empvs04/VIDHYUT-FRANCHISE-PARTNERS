@@ -5,6 +5,8 @@ import {
   getPartnerById,
   updatePartner,
   togglePartnerStatus,
+  previewFranchiseId,
+  verifyGovDocumentLive,
 } from '../../controllers/partner.controller.js';
 import {
   validateCreatePartner,
@@ -20,6 +22,8 @@ const router = express.Router();
 router.use(protect);
 
 // Admin-only Partner Management Routes
+router.get('/preview-id', authorize(USER_ROLES.SUPER_ADMIN), previewFranchiseId);
+router.post('/verify-gov-id', authorize(USER_ROLES.SUPER_ADMIN), verifyGovDocumentLive);
 router.get('/', authorize(USER_ROLES.SUPER_ADMIN), getAllPartners);
 router.post('/', authorize(USER_ROLES.SUPER_ADMIN), validateCreatePartner, createPartner);
 router.get('/:id', getPartnerById); // Admin or Partner viewing profile

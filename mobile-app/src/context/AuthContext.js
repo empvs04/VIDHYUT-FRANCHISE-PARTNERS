@@ -35,18 +35,19 @@ export const AuthProvider = ({ children }) => {
     bootstrap();
   }, []);
 
-  const requestOTP = async (mobileNumber) => {
-    const res = await client.post('/auth/partner/request-otp', { mobileNumber });
+  // Request OTP using Mobile Number, Email, or Franchise ID
+  const requestOTP = async (identifier) => {
+    const res = await client.post('/auth/partner/request-otp', { identifier });
     return res.data;
   };
 
-  const resendOTP = async (mobileNumber) => {
-    const res = await client.post('/auth/partner/resend-otp', { mobileNumber });
+  const resendOTP = async (identifier) => {
+    const res = await client.post('/auth/partner/resend-otp', { identifier });
     return res.data;
   };
 
-  const verifyOTP = async (mobileNumber, otp) => {
-    const res = await client.post('/auth/partner/verify-otp', { mobileNumber, otp });
+  const verifyOTP = async (identifier, otp) => {
+    const res = await client.post('/auth/partner/verify-otp', { identifier, otp });
     const { token: authToken, partner: partnerData } = res.data.data;
 
     await storage.setItem('partner_auth_token', authToken);

@@ -9,13 +9,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = ({ onNavigateToOTP }) => {
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -23,32 +22,29 @@ const LoginScreen = ({ onNavigateToOTP }) => {
 
   const handleRequestOTP = async () => {
     setErrorMessage('');
-    const cleanNumber = mobileNumber.trim();
+    const cleanInput = identifier.trim();
 
-    if (!cleanNumber) {
-      setErrorMessage('Please enter your 10-digit mobile number.');
-      return;
-    }
-
-    if (!/^[6-9]\d{9}$/.test(cleanNumber)) {
-      setErrorMessage('Please enter a valid 10-digit Indian mobile number.');
+    if (!cleanInput) {
+      setErrorMessage('Please enter your Mobile Number, Email, or Franchise ID.');
       return;
     }
 
     try {
       setLoading(true);
-      const res = await requestOTP(cleanNumber);
+      const res = await requestOTP(cleanInput);
       const devCode = res?.data?.devCode;
+      const maskedMobile = res?.data?.maskedMobile;
 
       onNavigateToOTP({
-        mobileNumber: cleanNumber,
+        identifier: cleanInput,
+        maskedMobile,
         devCode,
         cooldownSeconds: res?.data?.cooldownSeconds || 60,
       });
     } catch (err) {
       const serverMsg =
         err.response?.data?.message ||
-        'This mobile number is not registered or authorized as a Vidhyut Saathi Partner.';
+        'This Mobile Number, Email, or Franchise ID is not registered or authorized as an active Vidhyut Saathi Partner.';
       setErrorMessage(serverMsg);
     } finally {
       setLoading(false);
@@ -67,35 +63,29 @@ const LoginScreen = ({ onNavigateToOTP }) => {
             <Text style={styles.brandIcon}>⚡</Text>
           </View>
           <Text style={styles.brandTitle}>Vidhyut Saathi</Text>
-          <Text style={styles.brandSubtitle}>Franchise Partner Network</Text>
+          <Text style={styles.brandSubtitle}>Franchise Partner Portal</Text>
         </View>
 
         {/* Card Form */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Partner Login</Text>
+          <Text style={styles.cardTitle}>Partner Sign In</Text>
           <Text style={styles.cardDescription}>
-            Enter your registered 10-digit mobile number to receive a verification OTP.
+            Enter your registered Mobile Number, Email Address, or Franchise ID to receive a verification OTP.
           </Text>
 
-          {/* Mobile Input */}
-          <Text style={styles.inputLabel}>Mobile Number</Text>
-          <View style={styles.phoneInputRow}>
-            <View style={styles.prefixBox}>
-              <Text style={styles.prefixText}>🇮🇳 +91</Text>
-            </View>
-            <TextInput
-              style={styles.phoneInput}
-              placeholder="9876543210"
-              placeholderTextColor={COLORS.textMuted}
-              keyboardType="number-pad"
-              maxLength={10}
-              value={mobileNumber}
-              onChangeText={(val) => {
-                setMobileNumber(val);
-                if (errorMessage) setErrorMessage('');
-              }}
-            />
-          </View>
+          {/* Identifier Input */}
+          <Text style={styles.inputLabel}>Mobile No. / Email / Franchise ID</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 9820123456 or VS-DT-MH-MUM-..."
+            placeholderTextColor={COLORS.textMuted}
+            autoCapitalize="none"
+            value={identifier}
+            onChangeText={(val) => {
+              setIdentifier(val);
+              if (errorMessage) setErrorMessage('');
+            }}
+          />
 
           {/* Error message alert */}
           {errorMessage ? (
@@ -119,7 +109,7 @@ const LoginScreen = ({ onNavigateToOTP }) => {
 
           <View style={styles.securityNotice}>
             <Text style={styles.securityNoticeText}>
-              🔒 Restricted to authorized Franchise Partners. Accounts are created and activated by Super Admin.
+              🔒 Secure login. An OTP will be dispatched to your registered phone number.
             </Text>
           </View>
         </View>
@@ -195,39 +185,17 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginBottom: 8,
   },
-  phoneInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  prefixBox: {
-    backgroundColor: '#F1F5F9',
+  input: {
+    height: 48,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    justifyContent: 'center',
-  },
-  prefixText: {
+    borderRadius: 8,
+    paddingHorizontal: 14,
     fontSize: 14,
     fontWeight: '600',
     color: COLORS.textPrimary,
-  },
-  phoneInput: {
-    flex: 1,
-    height: 48,
-    borderWidth: 1,
-    borderLeftWidth: 0,
-    borderColor: COLORS.border,
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
     backgroundColor: '#FFFFFF',
+    marginBottom: 16,
   },
   errorBox: {
     backgroundColor: COLORS.dangerLight,

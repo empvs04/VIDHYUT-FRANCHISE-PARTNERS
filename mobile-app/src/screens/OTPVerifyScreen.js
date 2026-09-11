@@ -14,7 +14,7 @@ import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
 
 const OTPVerifyScreen = ({ routeParams, onBackToLogin }) => {
-  const { mobileNumber, devCode, cooldownSeconds = 60 } = routeParams;
+  const { identifier, maskedMobile, devCode, cooldownSeconds = 60 } = routeParams;
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -42,8 +42,7 @@ const OTPVerifyScreen = ({ routeParams, onBackToLogin }) => {
 
     try {
       setLoading(true);
-      await verifyOTP(mobileNumber, cleanOTP);
-      // Handled automatically by AuthContext (sets token and partner)
+      await verifyOTP(identifier, cleanOTP);
     } catch (err) {
       const msg = err.response?.data?.message || 'Invalid or expired OTP. Please try again.';
       setErrorMessage(msg);
@@ -57,7 +56,7 @@ const OTPVerifyScreen = ({ routeParams, onBackToLogin }) => {
     setErrorMessage('');
     try {
       setLoading(true);
-      await resendOTP(mobileNumber);
+      await resendOTP(identifier);
       setTimer(60);
     } catch (err) {
       setErrorMessage(err.response?.data?.message || 'Failed to resend OTP.');
@@ -73,13 +72,13 @@ const OTPVerifyScreen = ({ routeParams, onBackToLogin }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Verify Mobile OTP</Text>
+          <Text style={styles.cardTitle}>Verify Security OTP</Text>
           <Text style={styles.cardDescription}>
-            We have sent a 6-digit verification code to:
+            We have dispatched a 6-digit verification code to:
           </Text>
 
           <View style={styles.phoneBadge}>
-            <Text style={styles.phoneBadgeText}>+91 {mobileNumber}</Text>
+            <Text style={styles.phoneBadgeText}>{maskedMobile || identifier}</Text>
             <TouchableOpacity onPress={onBackToLogin}>
               <Text style={styles.changePhoneText}>Change</Text>
             </TouchableOpacity>
