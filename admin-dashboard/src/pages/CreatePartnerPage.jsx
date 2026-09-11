@@ -248,13 +248,18 @@ const CreatePartnerPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.fullName.trim() || !formData.mobileNumber.trim() || !formData.district.trim() || !formData.pinCode.trim()) {
-      showToast('Please fill in all mandatory fields.', 'error');
+    if (!formData.fullName.trim() || !formData.mobileNumber.trim() || !formData.email.trim() || !formData.district.trim() || !formData.pinCode.trim()) {
+      showToast('Please fill in all mandatory fields (Name, Mobile, Email, District, PIN code).', 'error');
       return;
     }
 
     if (!/^[6-9]\d{9}$/.test(formData.mobileNumber.trim())) {
       showToast('Please enter a valid 10-digit Indian mobile number.', 'error');
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
+      showToast('Please enter a valid email address.', 'error');
       return;
     }
 
@@ -439,7 +444,7 @@ const CreatePartnerPage = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                Email Address (Optional Login ID)
+                Email Address (Login ID) <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="email"
@@ -447,6 +452,7 @@ const CreatePartnerPage = () => {
                 placeholder="e.g. partner@vidhyutsaathi.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
               />
             </div>
           </div>

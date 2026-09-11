@@ -32,11 +32,13 @@ export const createFranchisePartner = async (partnerData, adminUserId) => {
     throw new ApiError(409, 'A user with this mobile number already exists.');
   }
 
-  if (email) {
-    const existingEmail = await User.findOne({ email: email.toLowerCase() });
-    if (existingEmail) {
-      throw new ApiError(409, 'A user with this email address already exists.');
-    }
+  if (!email || !email.trim()) {
+    throw new ApiError(400, 'Email address is required.');
+  }
+
+  const existingEmail = await User.findOne({ email: email.toLowerCase().trim() });
+  if (existingEmail) {
+    throw new ApiError(409, 'A user with this email address already exists.');
   }
 
   // Validate Government ID if provided
@@ -77,9 +79,9 @@ export const createFranchisePartner = async (partnerData, adminUserId) => {
 
   // Create User account
   const newUser = await User.create({
-    fullName,
-    mobileNumber,
-    email: email ? email.toLowerCase() : undefined,
+    fullName: fullName.trim(),
+    mobileNumber: mobileNumber.trim(),
+    email: email.toLowerCase().trim(),
     role: USER_ROLES.FRANCHISE_PARTNER,
     status: ACCOUNT_STATUS.ACTIVE,
   });
@@ -90,9 +92,9 @@ export const createFranchisePartner = async (partnerData, adminUserId) => {
       userId: newUser._id,
       franchiseId,
       franchiseType,
-      fullName,
-      mobileNumber,
-      email: email ? email.toLowerCase() : undefined,
+      fullName: fullName.trim(),
+      mobileNumber: mobileNumber.trim(),
+      email: email.toLowerCase().trim(),
       state,
       district,
       authorizedDistricts: authorizedDistricts || [],

@@ -38,8 +38,11 @@ const franchisePartnerSchema = new mongoose.Schema(
     },
     email: {
       type: String,
+      required: [true, 'Email address is required'],
+      unique: true,
       trim: true,
       lowercase: true,
+      index: true,
     },
     profilePhotoUrl: {
       type: String,
