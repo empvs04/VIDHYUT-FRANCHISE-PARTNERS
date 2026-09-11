@@ -3,24 +3,34 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
+  UserPlus,
   MapPin,
   Settings,
   CreditCard,
   Building2,
   Wrench,
-  Bell,
+  UserCircle,
   BarChart3,
   LogOut,
   Zap,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { logout } = useAuth();
+  const { user, partner, isSuperAdmin, logout } = useAuth();
 
   const handleNavClick = () => {
     if (onClose) onClose();
+  };
+
+  const getRoleBadge = () => {
+    if (isSuperAdmin) return 'Super Admin';
+    if (partner?.franchiseType === 'STATE_FRANCHISE') return 'State Partner';
+    if (partner?.franchiseType === 'DISTRICT_FRANCHISE') return 'District Partner';
+    if (partner?.franchiseType === 'SUB_FRANCHISE') return 'Sub-Franchise';
+    return 'Partner';
   };
 
   return (
@@ -39,7 +49,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             </div>
             <div>
               <div className="brand-title">Vidhyut Saathi</div>
-              <div className="brand-subtitle">Franchise Portal</div>
+              <div className="brand-subtitle">{getRoleBadge()}</div>
             </div>
           </div>
 
@@ -55,7 +65,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         <ul className="nav-menu">
-          <div className="nav-section-title">Core Management</div>
+          <div className="nav-section-title">Navigation</div>
           <li>
             <NavLink
               to="/"
@@ -64,39 +74,88 @@ const Sidebar = ({ isOpen, onClose }) => {
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <LayoutDashboard size={18} />
-              <span>Dashboard</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/partners"
-              onClick={handleNavClick}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            >
-              <Users size={18} />
-              <span>Franchise Partners</span>
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/territories"
-              onClick={handleNavClick}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            >
-              <MapPin size={18} />
-              <span>Territories</span>
+              <span>{isSuperAdmin ? 'Admin Dashboard' : 'Partner Dashboard'}</span>
             </NavLink>
           </li>
 
-          <div className="nav-section-title">Future Modules (Phase 2+)</div>
+          {isSuperAdmin ? (
+            <>
+              <li>
+                <NavLink
+                  to="/partners"
+                  end
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Users size={18} />
+                  <span>Franchise Partners</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/partners/new"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <UserPlus size={18} />
+                  <span>Add Partner</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/territories"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <MapPin size={18} />
+                  <span>Territory Coverage</span>
+                </NavLink>
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <NavLink
+                  to="/partners"
+                  end
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Building2 size={18} />
+                  <span>Sub-Franchise Network</span>
+                </NavLink>
+              </li>
+              {partner?.franchiseType !== 'SUB_FRANCHISE' && (
+                <li>
+                  <NavLink
+                    to="/partners/new"
+                    onClick={handleNavClick}
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  >
+                    <UserPlus size={18} />
+                    <span>Add Sub-Franchise</span>
+                  </NavLink>
+                </li>
+              )}
+              {partner?._id && (
+                <li>
+                  <NavLink
+                    to={`/partners/${partner._id}`}
+                    onClick={handleNavClick}
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  >
+                    <UserCircle size={18} />
+                    <span>My Profile</span>
+                  </NavLink>
+                </li>
+              )}
+            </>
+          )}
+
+          <div className="nav-section-title">Future Modules</div>
           <li className="nav-item disabled">
             <CreditCard size={18} />
             <span>Card Inventory</span>
-            <span className="nav-badge-soon">Soon</span>
-          </li>
-          <li className="nav-item disabled">
-            <Building2 size={18} />
-            <span>Sub-Franchises</span>
             <span className="nav-badge-soon">Soon</span>
           </li>
           <li className="nav-item disabled">
@@ -105,17 +164,12 @@ const Sidebar = ({ isOpen, onClose }) => {
             <span className="nav-badge-soon">Soon</span>
           </li>
           <li className="nav-item disabled">
-            <Bell size={18} />
-            <span>Notifications</span>
-            <span className="nav-badge-soon">Soon</span>
-          </li>
-          <li className="nav-item disabled">
             <BarChart3 size={18} />
-            <span>Reports</span>
+            <span>Financial Reports</span>
             <span className="nav-badge-soon">Soon</span>
           </li>
 
-          <div className="nav-section-title">System</div>
+          <div className="nav-section-title">Account</div>
           <li>
             <NavLink
               to="/settings"

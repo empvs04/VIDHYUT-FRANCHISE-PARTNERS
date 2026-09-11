@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Building, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, Building, ShieldCheck, Building2, Eye, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
 import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
 
@@ -33,20 +34,92 @@ const TerritoriesPage = () => {
     return acc;
   }, {});
 
+  const totalStates = Object.keys(stateGroups).length;
+  const totalDistricts = new Set(partners.map((p) => `${p.state}-${p.district}`)).size;
+  const activeDistrictPartners = partners.filter(
+    (p) => p.franchiseType === 'DISTRICT_FRANCHISE' && p.accountStatus === 'ACTIVE'
+  ).length;
+
   return (
     <div>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>
-          Authorized Territory Map & Hierarchy
+          Authorized Territory Coverage
         </h1>
         <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-          Overview of state and district coverage allocations for Vidhyut Saathi partners
+          Real-time state and district allocation overview across India
         </p>
+      </div>
+
+      {/* Overview Metrics Cards */}
+      <div className="stat-grid" style={{ marginBottom: '24px' }}>
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: '#E0F2FE',
+              color: '#0284C7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Building size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>STATES COVERED</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>{totalStates}</div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: '#DCFCE7',
+              color: '#16A34A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <MapPin size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>DISTRICTS ALLOCATED</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>{totalDistricts}</div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              backgroundColor: '#FAF5FF',
+              color: '#9333EA',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ShieldCheck size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>ACTIVE DISTRICT HEADS</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>{activeDistrictPartners}</div>
+          </div>
+        </div>
       </div>
 
       {loading ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Loading territory mappings...
+          Loading territory mappings from Atlas...
         </div>
       ) : Object.keys(stateGroups).length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '40px' }}>
@@ -102,18 +175,35 @@ const TerritoriesPage = () => {
                       borderRadius: 'var(--radius-sm)',
                       border: '1px solid var(--border-color)',
                       backgroundColor: '#f8fafc',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                      <div style={{ fontWeight: '600', fontSize: '14px' }}>{p.fullName}</div>
-                      <StatusBadge status={p.accountStatus} />
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <div style={{ fontWeight: '700', fontSize: '14px' }}>{p.fullName}</div>
+                        <StatusBadge status={p.accountStatus} />
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '12px', color: 'var(--color-primary)', fontWeight: '800' }}>
+                          {p.franchiseId}
+                        </span>
+                        <FranchiseTypeBadge type={p.franchiseType} />
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                        <MapPin size={13} />
+                        <span>District: <strong>{p.district}</strong> ({p.city})</span>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--color-primary)', fontWeight: '700', marginBottom: '6px' }}>
-                      {p.franchiseId}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                      <MapPin size={14} />
-                      <span>District: <strong>{p.district}</strong></span>
+
+                    <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', marginTop: '6px', textAlign: 'right' }}>
+                      <Link to={`/partners/${p._id}`} className="btn btn-outline btn-sm" style={{ fontSize: '11.5px', padding: '4px 8px' }}>
+                        <Eye size={12} />
+                        <span>View Profile</span>
+                      </Link>
                     </div>
                   </div>
                 ))}

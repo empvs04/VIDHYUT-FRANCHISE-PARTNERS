@@ -538,4 +538,20 @@ body {
     right: 16px;
     bottom: 16px;
   }
+
+  .desktop-table-only {
+    display: none !important;
+  }
+
+  .mobile-cards-only {
+    display: flex !important;
+  }
+}
+
+.desktop-table-only {
+  display: block;
+}
+
+.mobile-cards-only {
+  display: none;
 }

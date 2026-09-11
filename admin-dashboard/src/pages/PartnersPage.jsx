@@ -12,13 +12,21 @@ import {
   RefreshCw,
   Copy,
   Check,
+  Building2,
+  Phone,
+  Mail,
+  MapPin,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import api from '../services/api';
 import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 
 const PartnersPage = () => {
+  const { isSuperAdmin } = useAuth();
   const [partners, setPartners] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(false);
@@ -29,6 +37,12 @@ const PartnersPage = () => {
   const [franchiseType, setFranchiseType] = useState('');
   const [accountStatus, setAccountStatus] = useState('');
   const [stateFilter, setStateFilter] = useState('');
+  const [districtFilter, setDistrictFilter] = useState('');
+
+  // Status Change Modal State
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [targetPartner, setTargetPartner] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('ACTIVE');
 
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -54,6 +68,7 @@ const PartnersPage = () => {
         franchiseType,
         accountStatus,
         state: stateFilter.trim(),
+        district: districtFilter.trim(),
       };
 
       const res = await api.get('/partners', { params });
@@ -62,11 +77,11 @@ const PartnersPage = () => {
         setPagination(res.data.data.pagination);
       }
     } catch {
-      showToast('Failed to fetch franchise partners.', 'error');
+      showToast('Failed to fetch franchise partners from Atlas.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [search, franchiseType, accountStatus, stateFilter, showToast]);
+  }, [search, franchiseType, accountStatus, stateFilter, districtFilter, showToast]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -79,23 +94,27 @@ const PartnersPage = () => {
   const handleCopyId = (id) => {
     navigator.clipboard.writeText(id);
     setCopiedId(id);
-    showToast(`Franchise ID "${id}" copied to clipboard!`, 'success');
+    showToast(`Franchise ID "${id}" copied!`, 'success');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Handle Status Toggle (Activate / Deactivate)
-  const handleToggleStatus = async (partner) => {
-    const newStatus = partner.accountStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    const confirmMessage = `Are you sure you want to change status of ${partner.fullName} (${partner.franchiseId}) to ${newStatus}?`;
+  // Open Status Change Modal
+  const openStatusModal = (partner) => {
+    setTargetPartner(partner);
+    setSelectedStatus(partner.accountStatus);
+    setStatusModalOpen(true);
+  };
 
-    if (!window.confirm(confirmMessage)) return;
-
+  // Submit Status Change
+  const handleSaveStatus = async () => {
+    if (!targetPartner) return;
     try {
-      await api.patch(`/partners/${partner._id}/status`, { status: newStatus });
-      showToast(`Partner status changed to ${newStatus}`, 'success');
+      await api.patch(`/partners/${targetPartner._id}/status`, { status: selectedStatus });
+      showToast(`Partner status updated to ${selectedStatus}`, 'success');
+      setStatusModalOpen(false);
       fetchPartners(pagination.page);
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to update status', 'error');
+      showToast(err.response?.data?.message || 'Failed to update partner status', 'error');
     }
   };
 
@@ -143,10 +162,10 @@ const PartnersPage = () => {
       >
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>
-            Franchise Partners Directory
+            Franchise Partner Directory
           </h1>
           <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            Manage State & District Franchise Partners across all authorized territories
+            State, District & Sub-Franchise Partners across authorized territories
           </p>
         </div>
 
@@ -164,7 +183,7 @@ const PartnersPage = () => {
             <input
               type="text"
               className="input"
-              placeholder="Search by Name, Mobile, Email, Franchise ID..."
+              placeholder="Search Partner ID, Name, Mobile, Email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -179,10 +198,11 @@ const PartnersPage = () => {
               <option value="">All Franchise Types</option>
               <option value="STATE_FRANCHISE">State Franchise</option>
               <option value="DISTRICT_FRANCHISE">District Franchise</option>
+              <option value="SUB_FRANCHISE">Sub-Franchise</option>
             </select>
           </div>
 
-          <div style={{ minWidth: '140px' }}>
+          <div style={{ minWidth: '150px' }}>
             <select
               className="select"
               value={accountStatus}
@@ -191,31 +211,40 @@ const PartnersPage = () => {
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="EXPIRED">Expired</option>
+              <option value="PENDING_APPROVAL">Pending Approval</option>
             </select>
           </div>
 
-          <div style={{ minWidth: '150px' }}>
+          <div style={{ minWidth: '140px' }}>
             <input
               type="text"
               className="input"
-              placeholder="Filter by State..."
+              placeholder="State..."
               value={stateFilter}
               onChange={(e) => setStateFilter(e.target.value)}
             />
           </div>
 
-          <button
-            onClick={() => fetchPartners(1)}
-            className="btn btn-outline"
-            title="Refresh List"
-          >
+          <div style={{ minWidth: '140px' }}>
+            <input
+              type="text"
+              className="input"
+              placeholder="District..."
+              value={districtFilter}
+              onChange={(e) => setDistrictFilter(e.target.value)}
+            />
+          </div>
+
+          <button onClick={() => fetchPartners(1)} className="btn btn-outline" title="Refresh List">
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
       </div>
 
-      {/* Partners Table */}
-      <div className="table-container">
+      {/* Desktop Table View */}
+      <div className="table-container desktop-table-only">
         <table className="data-table">
           <thead>
             <tr>
@@ -223,8 +252,8 @@ const PartnersPage = () => {
               <th>Partner Name</th>
               <th>Type</th>
               <th>Territory</th>
-              <th>Mobile</th>
-              <th>City</th>
+              <th>Parent Partner</th>
+              <th>Mobile & Email</th>
               <th>Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
@@ -262,7 +291,6 @@ const PartnersPage = () => {
                   </td>
                   <td>
                     <div style={{ fontWeight: '600' }}>{p.fullName}</div>
-                    {p.email && <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{p.email}</div>}
                   </td>
                   <td>
                     <FranchiseTypeBadge type={p.franchiseType} />
@@ -271,37 +299,43 @@ const PartnersPage = () => {
                     <div style={{ fontWeight: '500' }}>{p.district}</div>
                     <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{p.state}</div>
                   </td>
-                  <td>{p.mobileNumber}</td>
-                  <td>{p.city}</td>
+                  <td>
+                    {p.parentPartnerId ? (
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        {p.parentPartnerId.fullName} ({p.parentPartnerId.franchiseId})
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Direct (Super Admin)</span>
+                    )}
+                  </td>
+                  <td>
+                    <div>{p.mobileNumber}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{p.email}</div>
+                  </td>
                   <td>
                     <StatusBadge status={p.accountStatus} />
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '6px' }}>
-                      <Link
-                        to={`/partners/${p._id}`}
-                        className="btn btn-outline btn-sm"
-                        title="View Full Profile"
-                      >
+                      <Link to={`/partners/${p._id}`} className="btn btn-outline btn-sm" title="View Profile">
                         <Eye size={14} />
                       </Link>
 
-                      <button
-                        onClick={() => openEditModal(p)}
-                        className="btn btn-outline btn-sm"
-                        title="Edit Details"
-                      >
-                        <Edit2 size={14} />
-                      </button>
+                      {isSuperAdmin && (
+                        <>
+                          <button onClick={() => openEditModal(p)} className="btn btn-outline btn-sm" title="Edit Details">
+                            <Edit2 size={14} />
+                          </button>
 
-                      <button
-                        onClick={() => handleToggleStatus(p)}
-                        className={`btn btn-sm ${p.accountStatus === 'ACTIVE' ? 'btn-danger-outline' : 'btn-outline'}`}
-                        title={p.accountStatus === 'ACTIVE' ? 'Deactivate Partner' : 'Activate Partner'}
-                        style={p.accountStatus === 'INACTIVE' ? { color: '#16a34a' } : {}}
-                      >
-                        <Power size={14} />
-                      </button>
+                          <button
+                            onClick={() => openStatusModal(p)}
+                            className="btn btn-outline btn-sm"
+                            title="Manage Status"
+                          >
+                            <Power size={14} color={p.accountStatus === 'ACTIVE' ? '#16A34A' : '#DC2626'} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -309,6 +343,81 @@ const PartnersPage = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Responsive Cards View */}
+      <div className="mobile-cards-only" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {partners.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
+            {loading ? 'Searching partners database...' : 'No matching franchise partners found.'}
+          </div>
+        ) : (
+          partners.map((p) => (
+            <div key={p._id} className="card" style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)' }}>{p.fullName}</div>
+                  <div
+                    onClick={() => handleCopyId(p.franchiseId)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12.5px',
+                      fontWeight: '700',
+                      color: 'var(--color-primary)',
+                      marginTop: '2px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>{p.franchiseId}</span>
+                    {copiedId === p.franchiseId ? <Check size={12} color="#16a34a" /> : <Copy size={12} style={{ opacity: 0.6 }} />}
+                  </div>
+                </div>
+                <StatusBadge status={p.accountStatus} />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <FranchiseTypeBadge type={p.franchiseType} />
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  {p.district}, {p.state}
+                </span>
+              </div>
+
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Phone size={13} color="#64748B" />
+                  <span>{p.mobileNumber}</span>
+                </div>
+                {p.email && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Mail size={13} color="#64748B" />
+                    <span>{p.email}</span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                <Link to={`/partners/${p._id}`} className="btn btn-outline btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+                  <Eye size={14} />
+                  <span>Profile</span>
+                </Link>
+                {isSuperAdmin && (
+                  <>
+                    <button onClick={() => openEditModal(p)} className="btn btn-outline btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+                      <Edit2 size={14} />
+                      <span>Edit</span>
+                    </button>
+                    <button onClick={() => openStatusModal(p)} className="btn btn-outline btn-sm" style={{ flex: 1, justifyContent: 'center' }}>
+                      <Power size={14} color={p.accountStatus === 'ACTIVE' ? '#16A34A' : '#DC2626'} />
+                      <span>Status</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Pagination Footer */}
@@ -323,6 +432,8 @@ const PartnersPage = () => {
             backgroundColor: 'white',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border-color)',
+            flexWrap: 'wrap',
+            gap: '10px',
           }}
         >
           <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -349,6 +460,46 @@ const PartnersPage = () => {
           </div>
         </div>
       )}
+
+      {/* Status Management Modal */}
+      <Modal
+        isOpen={statusModalOpen}
+        onClose={() => setStatusModalOpen(false)}
+        title={`Partner Status: ${targetPartner?.franchiseId || ''}`}
+        maxWidth="440px"
+      >
+        <div>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+            Update account operational status for <strong>{targetPartner?.fullName}</strong> ({targetPartner?.district}, {targetPartner?.state}).
+          </p>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>
+              Select Operational Status
+            </label>
+            <select
+              className="select"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="ACTIVE">ACTIVE (Authorized for operations)</option>
+              <option value="INACTIVE">INACTIVE (Temporarily disabled)</option>
+              <option value="SUSPENDED">SUSPENDED (Restricted by Admin)</option>
+              <option value="EXPIRED">EXPIRED (Agreement period ended)</option>
+              <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <button type="button" className="btn btn-outline" onClick={() => setStatusModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary" onClick={handleSaveStatus}>
+              Apply Status Change
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Edit Partner Modal */}
       <Modal
@@ -380,6 +531,7 @@ const PartnersPage = () => {
                 className="input"
                 value={editForm.email}
                 onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                required
               />
             </div>
           </div>
@@ -439,11 +591,7 @@ const PartnersPage = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => setEditModalOpen(false)}
-            >
+            <button type="button" className="btn btn-outline" onClick={() => setEditModalOpen(false)}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">

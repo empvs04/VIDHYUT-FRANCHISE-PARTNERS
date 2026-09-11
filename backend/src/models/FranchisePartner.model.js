@@ -124,6 +124,21 @@ const franchisePartnerSchema = new mongoose.Schema(
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
+    // Hierarchy and Relationship
+    parentPartnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FranchisePartner',
+      default: null,
+      index: true,
+    },
+    // Lifecycle & Authorization Dates
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
+    expiryDate: {
+      type: Date,
+    },
     joiningDate: {
       type: Date,
       default: Date.now,
@@ -149,8 +164,9 @@ const franchisePartnerSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for quick territory lookups
-franchisePartnerSchema.index({ state: 1, district: 1 });
+// Indexes for fast territory lookups, hierarchy queries, and duplicate district checks
+franchisePartnerSchema.index({ state: 1, district: 1, franchiseType: 1, accountStatus: 1 });
+franchisePartnerSchema.index({ parentPartnerId: 1, accountStatus: 1 });
 franchisePartnerSchema.index({ franchiseType: 1, accountStatus: 1 });
 
 const FranchisePartner = mongoose.model('FranchisePartner', franchisePartnerSchema);

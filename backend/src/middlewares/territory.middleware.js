@@ -1,60 +1,76 @@
-import FranchisePartner from '../models/FranchisePartner.model.js';
 import { ApiError } from '../utils/apiError.js';
-import { USER_ROLES, FRANCHISE_TYPES } from '../config/constants.js';
+import { USER_ROLES } from '../config/constants.js';
 
-export const enforceTerritory = async (req, res, next) => {
-  try {
-    // Super Admins bypass territory restrictions
-    if (req.user.role === USER_ROLES.SUPER_ADMIN) {
-      return next();
+/**
+ * Middleware to enforce territory boundaries on creation/updating of partners.
+ * Validates request payload against authenticated user's authorized territory.
+ */
+export const enforceTerritoryScope = (req, res, next) => {
+  const user = req.user;
+  const partner = req.partner;
+
+  // Super Admin has full unrestricted access across India
+  if (user.role === USER_ROLES.SUPER_ADMIN) {
+    return next();
+  }
+
+  // Non-admins must have an active partner profile attached
+  if (!partner) {
+    return next(new ApiError(403, 'Partner profile not found for this user.'));
+  }
+
+  const requestedState = req.body.state || req.query.state;
+  const requestedDistrict = req.body.district || req.query.district;
+
+  // State Franchise validation
+  if (user.role === USER_ROLES.STATE_FRANCHISE) {
+    if (requestedState && requestedState.toLowerCase() !== partner.state.toLowerCase()) {
+      return next(
+        new ApiError(
+          403,
+          `Territory violation: You are only authorized to operate within ${partner.state}. Cannot access or create records in ${requestedState}.`
+        )
+      );
     }
+  }
 
-    // For Franchise Partner operations
-    const partner = await FranchisePartner.findOne({ userId: req.user._id });
-    if (!partner) {
-      throw new ApiError(404, 'Franchise Partner profile not found.');
-    }
-
-    req.partner = partner;
-
-    // If request contains target state or district, check boundary access
-    const targetState = req.body?.state || req.query?.state;
-    const targetDistrict = req.body?.district || req.query?.district;
-
-    if (targetState && targetState.toLowerCase() !== partner.state.toLowerCase()) {
-      throw new ApiError(
-        403,
-        `Territory Violation: Your authorized state is ${partner.state}. You cannot operate in ${targetState}.`
+  // District Franchise validation
+  if (user.role === USER_ROLES.DISTRICT_FRANCHISE) {
+    if (requestedState && requestedState.toLowerCase() !== partner.state.toLowerCase()) {
+      return next(
+        new ApiError(
+          403,
+          `Territory violation: You are only authorized to operate within ${partner.state}.`
+        )
       );
     }
 
-    if (partner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE) {
-      if (targetDistrict && targetDistrict.toLowerCase() !== partner.district.toLowerCase()) {
-        throw new ApiError(
+    if (requestedDistrict && requestedDistrict.toLowerCase() !== partner.district.toLowerCase()) {
+      return next(
+        new ApiError(
           403,
-          `Territory Violation: Your authorized district is ${partner.district}. You cannot operate in ${targetDistrict}.`
-        );
-      }
-    } else if (partner.franchiseType === FRANCHISE_TYPES.STATE_FRANCHISE) {
-      if (
-        targetDistrict &&
-        partner.authorizedDistricts &&
-        partner.authorizedDistricts.length > 0
-      ) {
-        const isDistrictAllowed = partner.authorizedDistricts.some(
-          (d) => d.toLowerCase() === targetDistrict.toLowerCase()
-        );
-        if (!isDistrictAllowed) {
-          throw new ApiError(
-            403,
-            `Territory Violation: District ${targetDistrict} is not in your authorized districts list.`
-          );
-        }
-      }
+          `Territory violation: You are only authorized to operate within ${partner.district} district. Cannot operate in ${requestedDistrict}.`
+        )
+      );
     }
 
-    next();
-  } catch (err) {
-    next(err);
+    // District Franchise can ONLY create Sub-Franchise partners
+    if (req.body.franchiseType && req.body.franchiseType !== 'SUB_FRANCHISE') {
+      return next(
+        new ApiError(
+          403,
+          'District Franchise Partners are only permitted to create Sub-Franchise partners within their district.'
+        )
+      );
+    }
   }
+
+  // Sub-Franchise partners are not allowed to create other partners
+  if (user.role === USER_ROLES.SUB_FRANCHISE) {
+    return next(
+      new ApiError(403, 'Sub-Franchise partners do not have permission to register new partners.')
+    );
+  }
+
+  next();
 };

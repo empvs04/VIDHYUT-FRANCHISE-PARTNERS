@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children }) => {
           fontSize: '14px',
         }}
       >
-        Authenticating Super Admin...
+        Verifying Vidhyut Saathi Session...
       </div>
     );
   }

@@ -9,7 +9,9 @@ const api = axios.create({
 
 // Attach Authorization Token to outgoing requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('vidhyut_admin_token');
+  const token =
+    localStorage.getItem('vidhyut_auth_token') ||
+    localStorage.getItem('vidhyut_admin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -21,8 +23,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      localStorage.removeItem('vidhyut_auth_token');
       localStorage.removeItem('vidhyut_admin_token');
+      localStorage.removeItem('vidhyut_auth_user');
       localStorage.removeItem('vidhyut_admin_user');
+      localStorage.removeItem('vidhyut_auth_partner');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

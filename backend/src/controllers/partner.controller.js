@@ -2,11 +2,15 @@ import FranchisePartner from '../models/FranchisePartner.model.js';
 import User from '../models/User.model.js';
 import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
-import { createFranchisePartner, updateFranchisePartnerStatus } from '../services/partner.service.js';
+import {
+  createFranchisePartner,
+  updateFranchisePartnerStatus,
+  getPartnerHierarchy as fetchHierarchy,
+} from '../services/partner.service.js';
 import { generateFranchiseId } from '../utils/idGenerator.js';
 import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
 import { scanAndVerifyDocument } from '../utils/documentScanner.js';
-import { DEFAULT_PAGINATION, ACCOUNT_STATUS } from '../config/constants.js';
+import { DEFAULT_PAGINATION, ACCOUNT_STATUS, USER_ROLES, FRANCHISE_TYPES } from '../config/constants.js';
 
 // Preview Generated Franchise ID in Real-Time
 export const previewFranchiseId = async (req, res, next) => {
@@ -71,10 +75,60 @@ export const scanUploadedDocument = async (req, res, next) => {
   }
 };
 
-// Create New Franchise Partner (Admin Only)
+// Fetch Eligible Parent Partners (for parent partner dropdown in forms)
+export const getEligibleParents = async (req, res, next) => {
+  try {
+    const { franchiseType, state, district } = req.query;
+    const query = { accountStatus: ACCOUNT_STATUS.ACTIVE };
+
+    if (franchiseType === FRANCHISE_TYPES.SUB_FRANCHISE) {
+      // Sub-Franchise parent can be District Franchise (in same state & district) or State Franchise
+      query.franchiseType = { $in: [FRANCHISE_TYPES.DISTRICT_FRANCHISE, FRANCHISE_TYPES.STATE_FRANCHISE] };
+      if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
+      if (district) {
+        query.$or = [
+          { district: new RegExp(`^${district.trim()}$`, 'i'), franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE },
+          { franchiseType: FRANCHISE_TYPES.STATE_FRANCHISE },
+        ];
+      }
+    } else if (franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE) {
+      // District Franchise parent can only be a State Franchise in that state
+      query.franchiseType = FRANCHISE_TYPES.STATE_FRANCHISE;
+      if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
+    } else {
+      return res.status(200).json(new ApiResponse(200, [], 'State Franchise has no parent.'));
+    }
+
+    const eligibleParents = await FranchisePartner.find(query)
+      .select('fullName franchiseId franchiseType state district mobileNumber email')
+      .sort({ fullName: 1 })
+      .limit(50);
+
+    res.status(200).json(
+      new ApiResponse(200, eligibleParents, 'Eligible parent partners retrieved.')
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Create New Franchise Partner (Super Admin or Authorized Parent Partner)
 export const createPartner = async (req, res, next) => {
   try {
-    const partner = await createFranchisePartner(req.body, req.user._id);
+    // If created by a District Partner, automatically set territory and parent
+    if (req.user.role === USER_ROLES.DISTRICT_FRANCHISE) {
+      req.body.franchiseType = FRANCHISE_TYPES.SUB_FRANCHISE;
+      req.body.state = req.partner.state;
+      req.body.district = req.partner.district;
+      req.body.parentPartnerId = req.partner._id;
+    } else if (req.user.role === USER_ROLES.STATE_FRANCHISE) {
+      req.body.state = req.partner.state;
+      if (!req.body.parentPartnerId) {
+        req.body.parentPartnerId = req.partner._id;
+      }
+    }
+
+    const partner = await createFranchisePartner(req.body, req.user);
 
     res.status(201).json(
       new ApiResponse(201, partner, 'Franchise Partner registered successfully.')
@@ -84,7 +138,7 @@ export const createPartner = async (req, res, next) => {
   }
 };
 
-// Get All Franchise Partners with Search, Filter & Pagination
+// Get All Franchise Partners with Search, Filter & Pagination (RBAC Aware)
 export const getAllPartners = async (req, res, next) => {
   try {
     const {
@@ -95,15 +149,27 @@ export const getAllPartners = async (req, res, next) => {
       district = '',
       franchiseType = '',
       accountStatus = '',
+      parentPartnerId = '',
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = req.query;
 
     const query = {};
 
+    // RBAC Scope Filtering
+    if (req.user.role === USER_ROLES.STATE_FRANCHISE && req.partner) {
+      query.state = new RegExp(`^${req.partner.state.trim()}$`, 'i');
+    } else if (req.user.role === USER_ROLES.DISTRICT_FRANCHISE && req.partner) {
+      query.$or = [
+        { _id: req.partner._id },
+        { parentPartnerId: req.partner._id },
+        { district: new RegExp(`^${req.partner.district.trim()}$`, 'i'), state: new RegExp(`^${req.partner.state.trim()}$`, 'i') },
+      ];
+    }
+
     if (search) {
       const searchRegex = new RegExp(search.trim(), 'i');
-      query.$or = [
+      const searchConditions = [
         { fullName: searchRegex },
         { mobileNumber: searchRegex },
         { email: searchRegex },
@@ -111,13 +177,20 @@ export const getAllPartners = async (req, res, next) => {
         { city: searchRegex },
         { govIdNumber: searchRegex },
       ];
+
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: searchConditions }];
+        delete query.$or;
+      } else {
+        query.$or = searchConditions;
+      }
     }
 
-    if (state) {
+    if (state && req.user.role === USER_ROLES.SUPER_ADMIN) {
       query.state = new RegExp(`^${state.trim()}$`, 'i');
     }
 
-    if (district) {
+    if (district && (req.user.role === USER_ROLES.SUPER_ADMIN || req.user.role === USER_ROLES.STATE_FRANCHISE)) {
       query.district = new RegExp(`^${district.trim()}$`, 'i');
     }
 
@@ -127,6 +200,10 @@ export const getAllPartners = async (req, res, next) => {
 
     if (accountStatus) {
       query.accountStatus = accountStatus;
+    }
+
+    if (parentPartnerId) {
+      query.parentPartnerId = parentPartnerId;
     }
 
     const pageNumber = Math.max(1, parseInt(page, 10));
@@ -142,6 +219,7 @@ export const getAllPartners = async (req, res, next) => {
         .skip(skip)
         .limit(limitNumber)
         .populate('userId', 'role status lastLoginAt')
+        .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber')
         .populate('createdBy', 'fullName email'),
       FranchisePartner.countDocuments(query),
     ]);
@@ -168,21 +246,61 @@ export const getAllPartners = async (req, res, next) => {
   }
 };
 
-// Get Franchise Partner by ID
+// Get Franchise Partner by ID (with Parent and Children info)
 export const getPartnerById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
     const partner = await FranchisePartner.findById(id)
       .populate('userId', 'role status lastLoginAt')
-      .populate('createdBy', 'fullName email');
+      .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber email state district accountStatus')
+      .populate('createdBy', 'fullName email role');
 
     if (!partner) {
       throw new ApiError(404, 'Franchise Partner not found.');
     }
 
+    // RBAC: If Partner, verify permission to view
+    if (req.user.role === USER_ROLES.DISTRICT_FRANCHISE && req.partner) {
+      const isSelf = partner._id.equals(req.partner._id);
+      const isChild = partner.parentPartnerId && partner.parentPartnerId._id.equals(req.partner._id);
+      const isSameDistrict = partner.district.toLowerCase() === req.partner.district.toLowerCase();
+      if (!isSelf && !isChild && !isSameDistrict) {
+        throw new ApiError(403, 'You are not authorized to view partner details outside your territory.');
+      }
+    }
+
+    // Fetch direct child partners
+    const childPartners = await FranchisePartner.find({ parentPartnerId: partner._id })
+      .select('fullName franchiseId franchiseType mobileNumber email state district city accountStatus joiningDate')
+      .sort({ createdAt: -1 });
+
     res.status(200).json(
-      new ApiResponse(200, partner, 'Partner details retrieved successfully.')
+      new ApiResponse(
+        200,
+        {
+          ...partner.toObject(),
+          parentPartner: partner.parentPartnerId,
+          childPartners,
+          totalChildren: childPartners.length,
+          activeChildren: childPartners.filter((c) => c.accountStatus === ACCOUNT_STATUS.ACTIVE).length,
+        },
+        'Partner details retrieved successfully.'
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Get Partner Hierarchy Tree
+export const getPartnerHierarchy = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const hierarchy = await fetchHierarchy(id);
+
+    res.status(200).json(
+      new ApiResponse(200, hierarchy, 'Partner hierarchy retrieved successfully.')
     );
   } catch (err) {
     next(err);
@@ -202,8 +320,9 @@ export const updatePartner = async (req, res, next) => {
       pinCode,
       notes,
       authorizedDistricts,
-      govIdType,
-      govIdNumber,
+      startDate,
+      expiryDate,
+      parentPartnerId,
     } = req.body;
 
     const partner = await FranchisePartner.findById(id);
@@ -211,15 +330,29 @@ export const updatePartner = async (req, res, next) => {
       throw new ApiError(404, 'Franchise Partner not found.');
     }
 
+    // Territory protection: Non-admins cannot alter state/district
+    if (req.user.role !== USER_ROLES.SUPER_ADMIN) {
+      if (req.body.state && req.body.state !== partner.state) {
+        throw new ApiError(403, 'Partners are not permitted to modify authorized state.');
+      }
+      if (req.body.district && req.body.district !== partner.district) {
+        throw new ApiError(403, 'Partners are not permitted to modify authorized district.');
+      }
+    } else {
+      if (req.body.state) partner.state = req.body.state.trim();
+      if (req.body.district) partner.district = req.body.district.trim();
+    }
+
     if (fullName) partner.fullName = fullName.trim();
-    if (email !== undefined) partner.email = email ? email.toLowerCase().trim() : '';
+    if (email) partner.email = email.toLowerCase().trim();
     if (city) partner.city = city.trim();
     if (addressLine1) partner.addressLine1 = addressLine1.trim();
     if (addressLine2 !== undefined) partner.addressLine2 = addressLine2.trim();
     if (pinCode) partner.pinCode = pinCode.trim();
     if (notes !== undefined) partner.notes = notes.trim();
-    if (govIdType) partner.govIdType = govIdType;
-    if (govIdNumber) partner.govIdNumber = govIdNumber;
+    if (startDate) partner.startDate = new Date(startDate);
+    if (expiryDate !== undefined) partner.expiryDate = expiryDate ? new Date(expiryDate) : null;
+    if (parentPartnerId !== undefined) partner.parentPartnerId = parentPartnerId || null;
     if (authorizedDistricts && Array.isArray(authorizedDistricts)) {
       partner.authorizedDistricts = authorizedDistricts;
     }
@@ -228,7 +361,7 @@ export const updatePartner = async (req, res, next) => {
 
     const userUpdates = {};
     if (fullName) userUpdates.fullName = fullName.trim();
-    if (email !== undefined) userUpdates.email = email ? email.toLowerCase().trim() : undefined;
+    if (email) userUpdates.email = email.toLowerCase().trim();
 
     if (Object.keys(userUpdates).length > 0) {
       await User.findByIdAndUpdate(partner.userId, userUpdates);
@@ -242,7 +375,7 @@ export const updatePartner = async (req, res, next) => {
   }
 };
 
-// Toggle Partner Status (Activate / Deactivate)
+// Change Partner Status (ACTIVE / INACTIVE / SUSPENDED / EXPIRED)
 export const togglePartnerStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
