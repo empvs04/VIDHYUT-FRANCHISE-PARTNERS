@@ -7,6 +7,7 @@ import {
   togglePartnerStatus,
   previewFranchiseId,
   verifyGovDocumentLive,
+  scanUploadedDocument,
 } from '../../controllers/partner.controller.js';
 import {
   validateCreatePartner,
@@ -24,6 +25,7 @@ router.use(protect);
 // Admin-only Partner Management Routes
 router.get('/preview-id', authorize(USER_ROLES.SUPER_ADMIN), previewFranchiseId);
 router.post('/verify-gov-id', authorize(USER_ROLES.SUPER_ADMIN), verifyGovDocumentLive);
+router.post('/scan-document', authorize(USER_ROLES.SUPER_ADMIN), scanUploadedDocument);
 router.get('/', authorize(USER_ROLES.SUPER_ADMIN), getAllPartners);
 router.post('/', authorize(USER_ROLES.SUPER_ADMIN), validateCreatePartner, createPartner);
 router.get('/:id', getPartnerById); // Admin or Partner viewing profile

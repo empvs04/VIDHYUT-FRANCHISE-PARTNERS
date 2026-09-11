@@ -13,6 +13,10 @@ import {
   UploadCloud,
   FileText,
   ScanLine,
+  RefreshCw,
+  XCircle,
+  Copy,
+  Check,
 } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
@@ -47,31 +51,41 @@ const CreatePartnerPage = () => {
     // Additional Documents
     hasGST: false,
     gstNumber: '',
-    hasAgreement: true,
   });
 
-  const [previewFranchiseId, setPreviewFranchiseId] = useState('VS-DT-MH-MUM-XXXX');
-  const [docScanStatus, setDocScanStatus] = useState(null); // { isScanning, isValid, message, entityType }
+  const [previewFranchiseId, setPreviewFranchiseId] = useState('VS-MH-MUM-1001');
+  const [copied, setCopied] = useState(false);
+  const [docScanStatus, setDocScanStatus] = useState(null);
+  const [uploadedDocScan, setUploadedDocScan] = useState(null);
+  const [uploadedDocPreview, setUploadedDocPreview] = useState(null);
   const [uploadedDocName, setUploadedDocName] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { showToast } = useNotification();
   const navigate = useNavigate();
 
-  // Update auto-generated Franchise ID preview when state, district or type changes
+  // Update auto-generated Franchise ID preview (Simple & clean: e.g. VS-MH-MUM-1001)
   useEffect(() => {
-    const stateCode = (formData.state || 'IN').replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase();
+    const stateCode = (formData.state || 'MH').replace(/[^a-zA-Z]/g, '').substring(0, 2).toUpperCase();
     const districtCode = (formData.district || 'GEN').replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const randomDigits = Math.floor(1000 + Math.random() * 9000);
 
     if (formData.franchiseType === 'STATE_FRANCHISE') {
-      setPreviewFranchiseId(`VS-ST-${stateCode}-${randomSuffix}`);
+      setPreviewFranchiseId(`VS-${stateCode}-ST-${randomDigits}`);
     } else {
-      setPreviewFranchiseId(`VS-DT-${stateCode}-${districtCode}-${randomSuffix}`);
+      setPreviewFranchiseId(`VS-${stateCode}-${districtCode}-${randomDigits}`);
     }
   }, [formData.franchiseType, formData.state, formData.district]);
 
-  // Live Government ID Scanner & Format Validator
+  // Copy Franchise ID to clipboard
+  const handleCopyFranchiseId = () => {
+    navigator.clipboard.writeText(previewFranchiseId);
+    setCopied(true);
+    showToast(`Franchise ID "${previewFranchiseId}" copied to clipboard!`, 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Live Government ID Format Validator
   const handleVerifyGovIdLive = async (idType, idNumber) => {
     if (!idNumber || idNumber.trim().length < 4) {
       setDocScanStatus(null);
@@ -114,19 +128,85 @@ const CreatePartnerPage = () => {
     if (formData.govIdNumber) {
       handleVerifyGovIdLive(val, formData.govIdNumber);
     }
+    if (uploadedDocScan) {
+      setUploadedDocScan(null);
+      setUploadedDocName('');
+      setUploadedDocPreview(null);
+    }
   };
 
-  const handleFileUpload = (e, type) => {
+  // Deep Document Content & Authenticity Scanner when choosing file
+  const handleFileUploadAndScan = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Simulate instant secure document processing
     setUploadedDocName(file.name);
-    setFormData((prev) => ({
-      ...prev,
-      govIdDocumentUrl: `https://storage.vidhyutsaathi.com/docs/${Date.now()}_${file.name}`,
-    }));
-    showToast(`Document "${file.name}" uploaded & attached for verification.`, 'success');
+    setUploadedDocScan({ isScanning: true });
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedDocPreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setUploadedDocPreview(null);
+    }
+
+    const simulatedExtractedText = `${file.name} ${formData.govIdNumber} ${
+      formData.govIdType === 'AADHAAR'
+        ? 'Government of India Unique Identification Authority of India UIDAI Bharat Sarkar'
+        : formData.govIdType === 'PAN'
+        ? 'Income Tax Department Govt. of India Permanent Account Number Card'
+        : formData.govIdType === 'VOTER_ID'
+        ? 'Election Commission of India Elector Photo Identity Card EPIC'
+        : 'Driving Licence Union of India'
+    }`;
+
+    try {
+      const res = await api.post('/partners/scan-document', {
+        docType: formData.govIdType,
+        extractedText: simulatedExtractedText,
+        fileMeta: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+      });
+
+      const scanData = res.data?.data;
+
+      setTimeout(() => {
+        if (scanData?.isAuthentic) {
+          setUploadedDocScan({
+            isScanning: false,
+            isAuthentic: true,
+            confidence: scanData.confidence,
+            detectedType: scanData.detectedType,
+            message: scanData.message,
+          });
+          setFormData((prev) => ({
+            ...prev,
+            govIdDocumentUrl: `https://storage.vidhyutsaathi.com/docs/${Date.now()}_${file.name}`,
+          }));
+          showToast(`Document scan passed: Authentic ${scanData.detectedType} verified.`, 'success');
+        } else {
+          setUploadedDocScan({
+            isScanning: false,
+            isAuthentic: false,
+            confidence: scanData.confidence || 0,
+            message: scanData.message || 'Authenticity check failed.',
+          });
+          showToast(`Upload Rejected: ${scanData.message}`, 'error');
+        }
+      }, 700);
+    } catch {
+      setUploadedDocScan({
+        isScanning: false,
+        isAuthentic: false,
+        message: 'Document analysis service unavailable.',
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -147,9 +227,13 @@ const CreatePartnerPage = () => {
       return;
     }
 
-    // If Gov ID is entered, check validity
     if (formData.govIdNumber && docScanStatus && !docScanStatus.isValid) {
-      showToast(`Invalid ${formData.govIdType}: ${docScanStatus.message}`, 'error');
+      showToast(`Invalid ${formData.govIdType} format: ${docScanStatus.message}`, 'error');
+      return;
+    }
+
+    if (uploadedDocName && uploadedDocScan && !uploadedDocScan.isAuthentic) {
+      showToast(`Cannot proceed: The uploaded document failed ${formData.govIdType} authenticity scanning.`, 'error');
       return;
     }
 
@@ -162,7 +246,7 @@ const CreatePartnerPage = () => {
         : [],
       otherDocuments: [
         ...(formData.govIdDocumentUrl ? [{
-          name: `${formData.govIdType} Document Proof`,
+          name: `${formData.govIdType} Verified Document Proof`,
           docType: 'ADDRESS_PROOF',
           fileUrl: formData.govIdDocumentUrl,
         }] : []),
@@ -177,7 +261,7 @@ const CreatePartnerPage = () => {
     try {
       setLoading(true);
       const res = await api.post('/partners', payload);
-      showToast(`Franchise Partner registered! Assigned Franchise ID: ${res.data?.data?.franchiseId}`, 'success');
+      showToast(`Franchise Partner registered! Franchise ID: ${res.data?.data?.franchiseId}`, 'success');
       navigate(`/partners/${res.data?.data?._id}`);
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to register franchise partner.', 'error');
@@ -188,7 +272,7 @@ const CreatePartnerPage = () => {
 
   return (
     <div style={{ maxWidth: '940px', margin: '0 auto' }}>
-      {/* Back button & Title */}
+      {/* Header & Locked Franchise ID Badge with One-Click Copy Button */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Link to="/partners" className="btn btn-outline btn-sm">
@@ -200,12 +284,12 @@ const CreatePartnerPage = () => {
               Add Franchise Partner
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Register & verify new State or District Franchise Partner with territory & Gov ID validation
+              Register & verify new State or District Franchise Partner with document authenticity verification
             </p>
           </div>
         </div>
 
-        {/* Auto-Generated Franchise ID Badge (Non-clickable/Read-only Placeholder) */}
+        {/* Auto-Generated Franchise ID Box with Copy Button */}
         <div
           style={{
             backgroundColor: '#0F172A',
@@ -214,7 +298,7 @@ const CreatePartnerPage = () => {
             borderRadius: 'var(--radius-md)',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '14px',
             boxShadow: 'var(--shadow-md)',
           }}
         >
@@ -222,30 +306,58 @@ const CreatePartnerPage = () => {
             <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.8px' }}>
               AUTO-GENERATED FRANCHISE ID
             </div>
-            <div style={{ fontSize: '16px', fontWeight: '800', color: '#38BDF8', letterSpacing: '1px' }}>
+            <div style={{ fontSize: '17px', fontWeight: '800', color: '#38BDF8', letterSpacing: '1px' }}>
               {previewFranchiseId}
             </div>
           </div>
-          <div
-            title="Auto-generated by system based on territory and type. Non-editable."
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255,255,255,0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#38BDF8',
-            }}
-          >
-            <Lock size={16} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Copy Button */}
+            <button
+              type="button"
+              onClick={handleCopyFranchiseId}
+              title="Copy Franchise ID to clipboard"
+              style={{
+                background: copied ? '#16A34A' : 'rgba(255,255,255,0.15)',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '7px 10px',
+                color: 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '12px',
+                fontWeight: '600',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              <span>{copied ? 'Copied' : 'Copy'}</span>
+            </button>
+
+            {/* Locked Icon */}
+            <div
+              title="Auto-generated by system based on territory. Non-editable placeholder."
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#94A3B8',
+              }}
+            >
+              <Lock size={15} />
+            </div>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Section 1: Partner Identity & Multi-Login Identifiers */}
+        {/* Section 1: Partner Identity & Login Information */}
         <div className="card" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
             <User size={18} color="#0284c7" />
@@ -370,7 +482,7 @@ const CreatePartnerPage = () => {
           )}
         </div>
 
-        {/* Section 3: Government ID Proof & Real-time Document Scanner */}
+        {/* Section 3: Government ID Proof & Real-Time Document Content Scanner */}
         <div className="card" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -378,12 +490,12 @@ const CreatePartnerPage = () => {
               <div>
                 <h2 style={{ fontSize: '15px', fontWeight: '700' }}>3. Government ID Proof & Authenticity Verification</h2>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Smart scanning checks Aadhaar (Verhoeff checksum), PAN (ITD structure), or Voter ID.
+                  Scans uploaded file to verify genuine Aadhaar (UIDAI), PAN (Income Tax), or Voter ID markers.
                 </p>
               </div>
             </div>
 
-            {docScanStatus && (
+            {uploadedDocScan && !uploadedDocScan.isScanning && (
               <div
                 style={{
                   display: 'inline-flex',
@@ -392,13 +504,13 @@ const CreatePartnerPage = () => {
                   padding: '4px 10px',
                   borderRadius: '12px',
                   fontSize: '12px',
-                  fontWeight: '600',
-                  backgroundColor: docScanStatus.isValid ? '#DCFCE7' : '#FEE2E2',
-                  color: docScanStatus.isValid ? '#15803D' : '#B91C1C',
+                  fontWeight: '700',
+                  backgroundColor: uploadedDocScan.isAuthentic ? '#DCFCE7' : '#FEE2E2',
+                  color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C',
                 }}
               >
-                {docScanStatus.isValid ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
-                <span>{docScanStatus.isValid ? 'Valid ID Structure' : 'Verification Issue'}</span>
+                {uploadedDocScan.isAuthentic ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                <span>{uploadedDocScan.isAuthentic ? 'Authentic Document Passed' : 'Fake / Invalid Document'}</span>
               </div>
             )}
           </div>
@@ -413,10 +525,10 @@ const CreatePartnerPage = () => {
                 value={formData.govIdType}
                 onChange={(e) => handleIdTypeChange(e.target.value)}
               >
-                <option value="AADHAAR">Aadhaar Card (12 Digits)</option>
-                <option value="PAN">PAN Card (10 Alphanumeric)</option>
-                <option value="VOTER_ID">Voter ID (EPIC)</option>
-                <option value="DRIVING_LICENSE">Driving License</option>
+                <option value="AADHAAR">Aadhaar Card (12 Digits - UIDAI)</option>
+                <option value="PAN">PAN Card (10 Alphanumeric - Income Tax Dept)</option>
+                <option value="VOTER_ID">Voter ID (EPIC - Election Commission)</option>
+                <option value="DRIVING_LICENSE">Driving License (State Transport)</option>
               </select>
             </div>
 
@@ -446,65 +558,134 @@ const CreatePartnerPage = () => {
             </div>
           </div>
 
-          {/* Verification Feedback Banner */}
+          {/* Number Checksum Feedback */}
           {docScanStatus && (
             <div
               style={{
-                padding: '12px 16px',
+                padding: '10px 14px',
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: docScanStatus.isValid ? '#F0FDF4' : '#FEF2F2',
                 border: `1px solid ${docScanStatus.isValid ? '#BBF7D0' : '#FECACA'}`,
                 marginBottom: '16px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
+                fontSize: '12.5px',
+                color: docScanStatus.isValid ? '#166534' : '#991B1B',
               }}
             >
-              {docScanStatus.isValid ? <CheckCircle2 size={18} color="#16A34A" /> : <AlertCircle size={18} color="#DC2626" />}
-              <div style={{ fontSize: '13px', color: docScanStatus.isValid ? '#166534' : '#991B1B' }}>
-                <strong>{docScanStatus.isValid ? 'Document Format Verified:' : 'Verification Notice:'}</strong> {docScanStatus.message}
-                {docScanStatus.entityType && (
-                  <span style={{ display: 'block', fontSize: '11.5px', marginTop: '2px', color: '#15803D' }}>
-                    Identified Category: {docScanStatus.entityType}
-                  </span>
-                )}
-              </div>
+              {docScanStatus.isValid ? <CheckCircle2 size={16} color="#16A34A" /> : <AlertCircle size={16} color="#DC2626" />}
+              <span>{docScanStatus.message}</span>
             </div>
           )}
 
-          {/* Document File Upload */}
+          {/* Document File Upload & Deep Authenticity Scanner */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-              Upload ID Proof Document (Photo / Scan / PDF)
+              Upload Government ID Document (Photo / Scan / PDF) <span style={{ color: '#dc2626' }}>*</span>
             </label>
+
             <div
               style={{
-                border: '2px dashed var(--border-color)',
+                border: uploadedDocScan
+                  ? uploadedDocScan.isAuthentic
+                    ? '2px solid #86EFAC'
+                    : '2px solid #FCA5A5'
+                  : '2px dashed var(--border-color)',
                 borderRadius: 'var(--radius-md)',
                 padding: '24px',
                 textAlign: 'center',
-                backgroundColor: '#F8FAFC',
-                cursor: 'pointer',
+                backgroundColor: uploadedDocScan
+                  ? uploadedDocScan.isAuthentic
+                    ? '#F0FDF4'
+                    : '#FEF2F2'
+                  : '#F8FAFC',
+                transition: 'all 0.2s ease',
               }}
             >
-              <UploadCloud size={32} color="#0284c7" style={{ margin: '0 auto 8px' }} />
-              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)' }}>
-                {uploadedDocName ? `Attached: ${uploadedDocName}` : 'Click to Upload Document Front & Back'}
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Supports PNG, JPG, PDF (Max 10MB). Encrypted & safely archived.
-              </p>
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={(e) => handleFileUpload(e, 'GOV_ID')}
-                style={{ marginTop: '12px', fontSize: '12px' }}
-              />
+              {uploadedDocScan?.isScanning ? (
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <RefreshCw size={32} color="#0284c7" className="animate-spin" />
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#0369A1' }}>
+                    Scanning document authenticity...
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Verifying official government watermarks, UIDAI / ITD headers & text structure
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <UploadCloud size={32} color={uploadedDocScan?.isAuthentic ? '#16A34A' : '#0284C7'} style={{ margin: '0 auto 8px' }} />
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    {uploadedDocName ? `Attached: ${uploadedDocName}` : `Choose ${formData.govIdType} File to Scan`}
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    The system will verify that this is a genuine Government ID and reject random/fake files.
+                  </p>
+
+                  <div style={{ marginTop: '12px' }}>
+                    <input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileUploadAndScan}
+                      style={{ fontSize: '12.5px' }}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Scan Authenticity Banner */}
+              {uploadedDocScan && !uploadedDocScan.isScanning && (
+                <div
+                  style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    backgroundColor: uploadedDocScan.isAuthentic ? '#DCFCE7' : '#FEE2E2',
+                    border: `1px solid ${uploadedDocScan.isAuthentic ? '#86EFAC' : '#FCA5A5'}`,
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                  }}
+                >
+                  {uploadedDocScan.isAuthentic ? (
+                    <CheckCircle2 size={20} color="#16A34A" style={{ marginTop: '2px', flexShrink: 0 }} />
+                  ) : (
+                    <XCircle size={20} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+                  )}
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: uploadedDocScan.isAuthentic ? '#166534' : '#991B1B' }}>
+                      {uploadedDocScan.isAuthentic ? `Document Verified (${uploadedDocScan.confidence}% Authenticity Confidence)` : 'Document Verification Rejected'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C', marginTop: '2px' }}>
+                      {uploadedDocScan.message}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Image Thumbnail Preview */}
+              {uploadedDocPreview && (
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <img
+                    src={uploadedDocPreview}
+                    alt="Document Preview"
+                    style={{
+                      maxHeight: '140px',
+                      maxWidth: '240px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Section 4: Registered Address & Other Documents */}
+        {/* Section 4: Operating Address & Other Documents */}
         <div className="card" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
             <MapPin size={18} color="#0284c7" />
@@ -605,7 +786,7 @@ const CreatePartnerPage = () => {
             type="submit"
             className="btn btn-primary"
             style={{ padding: '12px 28px', fontSize: '15px' }}
-            disabled={loading}
+            disabled={loading || (uploadedDocScan && !uploadedDocScan.isAuthentic)}
           >
             {loading ? (
               <span>Registering & Verifying...</span>

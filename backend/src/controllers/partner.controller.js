@@ -5,6 +5,7 @@ import { ApiResponse } from '../utils/apiResponse.js';
 import { createFranchisePartner, updateFranchisePartnerStatus } from '../services/partner.service.js';
 import { generateFranchiseId } from '../utils/idGenerator.js';
 import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
+import { scanAndVerifyDocument } from '../utils/documentScanner.js';
 import { DEFAULT_PAGINATION, ACCOUNT_STATUS } from '../config/constants.js';
 
 // Preview Generated Franchise ID in Real-Time
@@ -21,7 +22,7 @@ export const previewFranchiseId = async (req, res, next) => {
   }
 };
 
-// Live Government ID Format & Document Scanner Verification
+// Live Government ID Format Verification
 export const verifyGovDocumentLive = async (req, res, next) => {
   try {
     const { idType, idNumber, documentData } = req.body;
@@ -38,6 +39,31 @@ export const verifyGovDocumentLive = async (req, res, next) => {
         verificationResult.isValid
           ? 'Government document format & checksum verified successfully'
           : verificationResult.message
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Deep Document Content & Authenticity Scanner (Inspects uploaded image/PDF)
+export const scanUploadedDocument = async (req, res, next) => {
+  try {
+    const { docType, extractedText, fileMeta } = req.body;
+
+    if (!docType) {
+      throw new ApiError(400, 'docType is required.');
+    }
+
+    const scanResult = scanAndVerifyDocument(docType, extractedText, fileMeta);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        scanResult,
+        scanResult.isAuthentic
+          ? 'Document scan passed: Authentic Government ID verified.'
+          : scanResult.message
       )
     );
   } catch (err) {
@@ -200,7 +226,6 @@ export const updatePartner = async (req, res, next) => {
 
     await partner.save();
 
-    // Update user record
     const userUpdates = {};
     if (fullName) userUpdates.fullName = fullName.trim();
     if (email !== undefined) userUpdates.email = email ? email.toLowerCase().trim() : undefined;

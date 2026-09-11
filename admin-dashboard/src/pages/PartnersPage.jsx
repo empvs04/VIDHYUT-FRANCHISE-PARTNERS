@@ -10,6 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  Copy,
+  Check,
 } from 'lucide-react';
 import api from '../services/api';
 import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
@@ -20,6 +22,7 @@ const PartnersPage = () => {
   const [partners, setPartners] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   // Filter states
   const [search, setSearch] = useState('');
@@ -71,6 +74,14 @@ const PartnersPage = () => {
     }, 250);
     return () => clearTimeout(timer);
   }, [fetchPartners]);
+
+  // Copy Franchise ID helper
+  const handleCopyId = (id) => {
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    showToast(`Franchise ID "${id}" copied to clipboard!`, 'success');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   // Handle Status Toggle (Activate / Deactivate)
   const handleToggleStatus = async (partner) => {
@@ -228,8 +239,26 @@ const PartnersPage = () => {
             ) : (
               partners.map((p) => (
                 <tr key={p._id}>
-                  <td style={{ fontWeight: '700', color: 'var(--color-primary)' }}>
-                    {p.franchiseId}
+                  <td>
+                    <div
+                      onClick={() => handleCopyId(p.franchiseId)}
+                      title="Click to copy Franchise ID"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        fontWeight: '700',
+                        color: 'var(--color-primary)',
+                      }}
+                    >
+                      <span>{p.franchiseId}</span>
+                      {copiedId === p.franchiseId ? (
+                        <Check size={13} color="#16a34a" />
+                      ) : (
+                        <Copy size={13} style={{ opacity: 0.6 }} />
+                      )}
+                    </div>
                   </td>
                   <td>
                     <div style={{ fontWeight: '600' }}>{p.fullName}</div>

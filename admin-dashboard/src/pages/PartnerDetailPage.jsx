@@ -15,6 +15,8 @@ import {
   FileCheck,
   CheckCircle2,
   Download,
+  Copy,
+  Check,
 } from 'lucide-react';
 import api from '../services/api';
 import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
@@ -24,6 +26,7 @@ const PartnerDetailPage = () => {
   const { id } = useParams();
   const [partner, setPartner] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   const { showToast } = useNotification();
 
@@ -44,6 +47,14 @@ const PartnerDetailPage = () => {
   useEffect(() => {
     fetchPartnerDetail();
   }, [id]);
+
+  const handleCopyFranchiseId = () => {
+    if (!partner?.franchiseId) return;
+    navigator.clipboard.writeText(partner.franchiseId);
+    setCopied(true);
+    showToast(`Franchise ID "${partner.franchiseId}" copied to clipboard!`, 'success');
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleToggleStatus = async () => {
     if (!partner) return;
@@ -119,19 +130,38 @@ const PartnerDetailPage = () => {
             </div>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
                 <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>
                   {partner.fullName}
                 </h1>
                 <StatusBadge status={partner.accountStatus} />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--color-primary)', letterSpacing: '0.5px' }}>
-                  Franchise ID: {partner.franchiseId}
-                </span>
-                <span style={{ color: 'var(--border-color)' }}>•</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                {/* Franchise ID with Click-to-Copy Button */}
+                <div
+                  onClick={handleCopyFranchiseId}
+                  title="Click to copy Franchise ID"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#0F172A',
+                    color: '#38BDF8',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontSize: '13.5px',
+                    fontWeight: '800',
+                    letterSpacing: '0.5px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>{partner.franchiseId}</span>
+                  {copied ? <Check size={14} color="#86EFAC" /> : <Copy size={14} />}
+                </div>
+
                 <FranchiseTypeBadge type={partner.franchiseType} />
+
                 {partner.isGovIdVerified && (
                   <span
                     style={{
