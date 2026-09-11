@@ -65,19 +65,56 @@ const CreatePartnerPage = () => {
   const [previewFranchiseId, setPreviewFranchiseId] = useState('VS-MH-MUM-1001');
   const [copied, setCopied] = useState(false);
   const [eligibleParents, setEligibleParents] = useState([]);
+  const [statesList, setStatesList] = useState(INDIAN_STATES);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [districtConflictWarning, setDistrictConflictWarning] = useState(null);
 
-  // Document scan states
-  const [docScanStatus, setDocScanStatus] = useState(null);
-  const [uploadedDocScan, setUploadedDocScan] = useState(null);
-  const [scanProgress, setScanProgress] = useState(0);
-  const [uploadedDocPreview, setUploadedDocPreview] = useState(null);
-  const [uploadedDocName, setUploadedDocName] = useState('');
-  const [loading, setLoading] = useState(false);
+  // Fetch all Indian States from backend API on mount
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const res = await api.get('/territories/states');
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          setStatesList(res.data.data);
+        }
+      } catch {
+        // Fallback to INDIAN_STATES
+      }
+    };
+    fetchStates();
+  }, []);
 
-  const fileInputRef = useRef(null);
-  const { showToast } = useNotification();
-  const navigate = useNavigate();
+  // Fetch districts for selected state from backend API
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      if (!formData.state) return;
+      try {
+        setLoadingDistricts(true);
+        const res = await api.get('/territories/districts', {
+          params: { state: formData.state },
+        });
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          setDistrictsList(res.data.data);
+          // If current district is empty or not in newly loaded list, auto-select first district
+          if (!formData.district || !res.data.data.includes(formData.district)) {
+            if (!authPartner?.district) {
+              setFormData((prev) => ({
+                ...prev,
+                district: res.data.data[0] || '',
+              }));
+            }
+          }
+        }
+      } catch {
+        // Continue
+      } finally {
+        setLoadingDistricts(false);
+      }
+    };
+
+    fetchDistricts();
+  }, [formData.state, authPartner]);
 
   // Fetch eligible parent partners based on selected type and territory
   useEffect(() => {
@@ -598,7 +635,7 @@ const CreatePartnerPage = () => {
                 disabled={!isSuperAdmin && authPartner}
                 required
               >
-                {INDIAN_STATES.map((st) => (
+                {statesList.map((st) => (
                   <option key={st} value={st}>
                     {st}
                   </option>
@@ -610,15 +647,28 @@ const CreatePartnerPage = () => {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Authorized District <span style={{ color: '#dc2626' }}>*</span>
               </label>
-              <input
-                type="text"
-                className="input"
-                placeholder="e.g. Mumbai, Pune, Nagpur"
+              <select
+                className="select"
                 value={formData.district}
                 onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                 disabled={!isSuperAdmin && authPartner?.district}
                 required
-              />
+              >
+                {loadingDistricts ? (
+                  <option value="">Loading districts...</option>
+                ) : districtsList.length === 0 ? (
+                  <option value="">No districts found for {formData.state}</option>
+                ) : (
+                  <>
+                    <option value="">-- Select District --</option>
+                    {districtsList.map((dist) => (
+                      <option key={dist} value={dist}>
+                        {dist}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
             </div>
 
             <div>

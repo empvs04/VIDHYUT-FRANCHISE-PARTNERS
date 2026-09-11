@@ -38,6 +38,41 @@ const PartnersPage = () => {
   const [accountStatus, setAccountStatus] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
+  const [statesList, setStatesList] = useState([]);
+  const [districtsList, setDistrictsList] = useState([]);
+
+  // Fetch states from API
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const res = await api.get('/territories/states');
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          setStatesList(res.data.data);
+        }
+      } catch {}
+    };
+    fetchStates();
+  }, []);
+
+  // Fetch districts when state filter changes
+  useEffect(() => {
+    const fetchDistricts = async () => {
+      if (!stateFilter) {
+        setDistrictsList([]);
+        setDistrictFilter('');
+        return;
+      }
+      try {
+        const res = await api.get('/territories/districts', { params: { state: stateFilter } });
+        if (res.data?.data && Array.isArray(res.data.data)) {
+          setDistrictsList(res.data.data);
+        }
+      } catch {
+        setDistrictsList([]);
+      }
+    };
+    fetchDistricts();
+  }, [stateFilter]);
 
   // Status Change Modal State
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -217,24 +252,38 @@ const PartnersPage = () => {
             </select>
           </div>
 
-          <div style={{ minWidth: '140px' }}>
-            <input
-              type="text"
-              className="input"
-              placeholder="State..."
+          <div style={{ minWidth: '150px' }}>
+            <select
+              className="select"
               value={stateFilter}
-              onChange={(e) => setStateFilter(e.target.value)}
-            />
+              onChange={(e) => {
+                setStateFilter(e.target.value);
+                setDistrictFilter('');
+              }}
+            >
+              <option value="">All States</option>
+              {statesList.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div style={{ minWidth: '140px' }}>
-            <input
-              type="text"
-              className="input"
-              placeholder="District..."
+          <div style={{ minWidth: '150px' }}>
+            <select
+              className="select"
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
-            />
+              disabled={!stateFilter}
+            >
+              <option value="">{stateFilter ? 'All Districts' : 'Select State First'}</option>
+              {districtsList.map((dist) => (
+                <option key={dist} value={dist}>
+                  {dist}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button onClick={() => fetchPartners(1)} className="btn btn-outline" title="Refresh List">
