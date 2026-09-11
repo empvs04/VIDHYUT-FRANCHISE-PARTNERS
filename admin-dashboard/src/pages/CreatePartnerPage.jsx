@@ -36,7 +36,11 @@ const INDIAN_STATES = [
 ];
 
 const CreatePartnerPage = () => {
+  const navigate = useNavigate();
+  const { showToast } = useNotification();
   const { user, partner: authPartner, isSuperAdmin } = useAuth();
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: '',
     mobileNumber: '',
@@ -69,6 +73,14 @@ const CreatePartnerPage = () => {
   const [districtsList, setDistrictsList] = useState([]);
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [districtConflictWarning, setDistrictConflictWarning] = useState(null);
+
+  // Document verification & OCR states
+  const [docScanStatus, setDocScanStatus] = useState(null);
+  const [uploadedDocScan, setUploadedDocScan] = useState(null);
+  const [uploadedDocName, setUploadedDocName] = useState('');
+  const [uploadedDocPreview, setUploadedDocPreview] = useState(null);
+  const [scanProgress, setScanProgress] = useState(0);
+  const fileInputRef = useRef(null);
 
   // Fetch all Indian States from backend API on mount
   useEffect(() => {
