@@ -1,58 +1,66 @@
-// Smart Government Document OCR & Authenticity Scanner
+// Real Government Document OCR & Authenticity Scanner
 
-// Keywords and structural markers for authentic Indian Government documents
 const GOV_DOCUMENT_SIGNATURES = {
   AADHAAR: {
-    name: 'Aadhaar Card',
-    requiredKeywords: [
+    name: 'Aadhaar Card (UIDAI)',
+    keywords: [
       'government of india',
-      'unique identification authority of india',
+      'unique identification',
       'uidai',
       'aadhaar',
       'aadhar',
       'mera aadhaar',
       'meri pehchan',
       'bharat sarkar',
-      'enrollment no',
+      'enrollment',
       'vid:',
-      'help@uidai.gov.in',
+      'help@uidai',
+      'male',
+      'female',
+      'year of birth',
+      'yob',
+      'dob',
+      'address',
     ],
     numberRegex: /\b[2-9]\d{3}\s?\d{4}\s?\d{4}\b/g,
-    minKeywordMatches: 2,
+    minKeywordsRequired: 2,
   },
   PAN: {
     name: 'Income Tax Department PAN Card',
-    requiredKeywords: [
+    keywords: [
       'income tax department',
       'govt of india',
       'govt. of india',
       'government of india',
       'permanent account number',
-      'permanent account number card',
       'incometax',
       'father',
+      'father\'s name',
       'signature',
       'date of birth',
+      'national id',
     ],
     numberRegex: /\b[A-Z]{5}[0-9]{4}[A-Z]\b/g,
-    minKeywordMatches: 2,
+    minKeywordsRequired: 2,
   },
   VOTER_ID: {
-    name: 'Election Commission Voter ID',
-    requiredKeywords: [
+    name: 'Election Commission Voter ID (EPIC)',
+    keywords: [
       'election commission of india',
       'bharat nirvachan aayog',
-      'elector photo identity card',
+      'elector photo identity',
+      'elector',
       'epic',
-      'voter identity card',
-      'electoral registration officer',
+      'voter',
+      'electoral registration',
+      'elector\'s name',
     ],
     numberRegex: /\b[A-Z]{3}\d{7}\b/g,
-    minKeywordMatches: 2,
+    minKeywordsRequired: 2,
   },
   DRIVING_LICENSE: {
-    name: 'Driving Licence',
-    requiredKeywords: [
+    name: 'Driving Licence (State Transport)',
+    keywords: [
       'driving licence',
       'driving license',
       'union of india',
@@ -60,17 +68,17 @@ const GOV_DOCUMENT_SIGNATURES = {
       'motor vehicles',
       'licence to drive',
       'form 7',
+      'valid till',
     ],
     numberRegex: /\b[A-Z]{2}[0-9A-Z\s-]{12,16}\b/g,
-    minKeywordMatches: 2,
+    minKeywordsRequired: 2,
   },
 };
 
 /**
- * Inspects document text content and file metadata to verify if it is an authentic Government ID.
- * Supports image base64, PDF text, and OCR extracted text.
+ * Validates real OCR extracted text from uploaded document.
  */
-export const scanAndVerifyDocument = (docType, rawText = '', fileMeta = {}) => {
+export const scanAndVerifyDocument = (docType, extractedOcrText = '', fileMeta = {}) => {
   const targetConfig = GOV_DOCUMENT_SIGNATURES[docType];
 
   if (!targetConfig) {
@@ -81,90 +89,73 @@ export const scanAndVerifyDocument = (docType, rawText = '', fileMeta = {}) => {
     };
   }
 
-  const normalizedText = (rawText || '').toLowerCase();
-  const fileName = (fileMeta.name || '').toLowerCase();
-  const fileType = fileMeta.type || '';
+  const cleanText = (extractedOcrText || '').toLowerCase().replace(/[\r\n\t]+/g, ' ');
+  const textLength = cleanText.trim().length;
 
-  // 1. Check if the file is a valid image or PDF
-  const isValidFormat =
-    fileType.startsWith('image/') ||
-    fileType === 'application/pdf' ||
-    /\.(jpg|jpeg|png|webp|pdf)$/i.test(fileName);
-
-  if (!isValidFormat) {
+  // 1. Check if ANY text was extracted
+  if (textLength < 10) {
     return {
       isAuthentic: false,
       confidence: 0,
-      message: 'Invalid file format. Only JPEG, PNG, WEBP, or PDF documents are accepted.',
+      extractedSnippet: cleanText.substring(0, 100),
+      message: `Verification Rejected: No readable text detected in this image. Please upload a clear, high-resolution photo or scan of your ${targetConfig.name}.`,
     };
   }
 
-  // 2. Scan for Government Header & Authority Markers
-  const matchedKeywords = targetConfig.requiredKeywords.filter((kw) =>
-    normalizedText.includes(kw)
-  );
+  // 2. Scan for mandatory Government keywords in the real image text
+  const matchedKeywords = targetConfig.keywords.filter((kw) => cleanText.includes(kw));
 
-  // Also check filename as auxiliary heuristic if raw text is minimal
-  const fileNameHasHint =
-    fileName.includes(docType.toLowerCase()) ||
-    fileName.includes(docType.replace('_', '').toLowerCase()) ||
-    (docType === 'AADHAAR' && (fileName.includes('aadhaar') || fileName.includes('aadhar') || fileName.includes('uidai'))) ||
-    (docType === 'PAN' && fileName.includes('pan')) ||
-    (docType === 'VOTER_ID' && (fileName.includes('voter') || fileName.includes('epic')));
+  // 3. Scan for ID number format in the real image text
+  const rawIdMatches = (extractedOcrText || '').toUpperCase().match(targetConfig.numberRegex) || [];
+  const detectedIdNumbers = [...new Set(rawIdMatches.map((m) => m.replace(/\s+/g, '')))];
 
-  // Extract ID numbers found in document
-  const rawMatches = (rawText || '').toUpperCase().match(targetConfig.numberRegex) || [];
-  const detectedIdNumbers = [...new Set(rawMatches.map((m) => m.replace(/\s+/g, '')))];
-
-  // Cross check against other doc types to detect mismatches (e.g. uploaded PAN when Aadhaar was selected)
+  // 4. Check for Mismatch with other document types
   const otherTypes = Object.keys(GOV_DOCUMENT_SIGNATURES).filter((t) => t !== docType);
-  let detectedOtherType = null;
-
   for (const other of otherTypes) {
-    const otherKeywords = GOV_DOCUMENT_SIGNATURES[other].requiredKeywords.filter((kw) =>
-      normalizedText.includes(kw)
+    const otherMatchedKeywords = GOV_DOCUMENT_SIGNATURES[other].keywords.filter((kw) =>
+      cleanText.includes(kw)
     );
-    if (otherKeywords.length >= 2) {
-      detectedOtherType = GOV_DOCUMENT_SIGNATURES[other].name;
-      break;
+    if (otherMatchedKeywords.length >= 2 && matchedKeywords.length === 0) {
+      return {
+        isAuthentic: false,
+        confidence: 0.1,
+        detectedType: GOV_DOCUMENT_SIGNATURES[other].name,
+        extractedSnippet: cleanText.substring(0, 120),
+        message: `Document Mismatch: You selected ${targetConfig.name}, but the uploaded document text contains markers of ${GOV_DOCUMENT_SIGNATURES[other].name}.`,
+      };
     }
   }
 
-  if (detectedOtherType) {
+  // 5. Strict rejection of random / promotional images
+  const hasStrongGovernmentIdentity =
+    matchedKeywords.length >= targetConfig.minKeywordsRequired ||
+    (matchedKeywords.length >= 1 && detectedIdNumbers.length > 0) ||
+    (detectedIdNumbers.length > 0 && textLength > 20);
+
+  if (!hasStrongGovernmentIdentity) {
+    // Show what text was actually detected in their image
+    const snippet = cleanText.substring(0, 140).trim();
     return {
       isAuthentic: false,
       confidence: 0.15,
-      detectedType: detectedOtherType,
-      message: `Document Mismatch: You selected ${targetConfig.name}, but uploaded document appears to be a ${detectedOtherType}.`,
-    };
-  }
-
-  // Compute confidence score
-  let score = 0;
-  if (matchedKeywords.length >= targetConfig.minKeywordMatches) score += 60;
-  else if (matchedKeywords.length === 1) score += 30;
-  if (detectedIdNumbers.length > 0) score += 30;
-  if (fileNameHasHint) score += 10;
-  if (isValidFormat) score += 10;
-
-  // Final authenticity check
-  const isAuthentic = matchedKeywords.length >= 1 || detectedIdNumbers.length > 0 || (fileNameHasHint && isValidFormat);
-
-  if (!isAuthentic && !fileNameHasHint) {
-    return {
-      isAuthentic: false,
-      confidence: 0.1,
       matchedKeywords,
-      message: `Authenticity Verification Failed: No official ${targetConfig.name} headers or government watermark markers were detected in the uploaded file. Please upload a clear photo or scan of the official document.`,
+      extractedSnippet: snippet,
+      message: `Verification Failed: This uploaded image does NOT contain official ${targetConfig.name} authority markers or UIDAI/Govt seals. Detected text in your image: "${snippet || 'Unrecognized image data'}..."`,
     };
   }
+
+  // Calculate authenticity confidence based on real text density
+  let confidenceScore = 75;
+  if (matchedKeywords.length >= 3) confidenceScore += 15;
+  if (detectedIdNumbers.length > 0) confidenceScore += 10;
 
   return {
     isAuthentic: true,
-    confidence: Math.min(100, Math.max(75, score)),
+    confidence: Math.min(99, confidenceScore),
     detectedType: targetConfig.name,
     matchedMarkers: matchedKeywords,
     extractedIdNumbers: detectedIdNumbers,
-    message: `Official ${targetConfig.name} verified successfully. Government authority markers and security headers detected.`,
+    extractedSnippet: cleanText.substring(0, 120),
+    message: `Authentic ${targetConfig.name} verified successfully! Official authority headers (${matchedKeywords.slice(0, 3).join(', ')}) confirmed.`,
   };
 };

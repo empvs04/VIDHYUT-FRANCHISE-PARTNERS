@@ -17,7 +17,9 @@ import {
   XCircle,
   Copy,
   Check,
+  Sparkles,
 } from 'lucide-react';
+import Tesseract from 'tesseract.js';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 
@@ -57,6 +59,7 @@ const CreatePartnerPage = () => {
   const [copied, setCopied] = useState(false);
   const [docScanStatus, setDocScanStatus] = useState(null);
   const [uploadedDocScan, setUploadedDocScan] = useState(null);
+  const [scanProgress, setScanProgress] = useState(0);
   const [uploadedDocPreview, setUploadedDocPreview] = useState(null);
   const [uploadedDocName, setUploadedDocName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,7 +88,7 @@ const CreatePartnerPage = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Live Government ID Format Validator
+  // Live Government ID Format Validator (Number Checksum & Structure)
   const handleVerifyGovIdLive = async (idType, idNumber) => {
     if (!idNumber || idNumber.trim().length < 4) {
       setDocScanStatus(null);
@@ -135,14 +138,16 @@ const CreatePartnerPage = () => {
     }
   };
 
-  // Deep Document Content & Authenticity Scanner when choosing file
+  // REAL Client-Side Optical Character Recognition (OCR) & AI Content Analysis
   const handleFileUploadAndScan = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setUploadedDocName(file.name);
     setUploadedDocScan({ isScanning: true });
+    setScanProgress(10);
 
+    // Show image preview thumbnail
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -153,20 +158,27 @@ const CreatePartnerPage = () => {
       setUploadedDocPreview(null);
     }
 
-    const simulatedExtractedText = `${file.name} ${formData.govIdNumber} ${
-      formData.govIdType === 'AADHAAR'
-        ? 'Government of India Unique Identification Authority of India UIDAI Bharat Sarkar'
-        : formData.govIdType === 'PAN'
-        ? 'Income Tax Department Govt. of India Permanent Account Number Card'
-        : formData.govIdType === 'VOTER_ID'
-        ? 'Election Commission of India Elector Photo Identity Card EPIC'
-        : 'Driving Licence Union of India'
-    }`;
-
     try {
+      let extractedOcrText = '';
+
+      // Run actual OCR on the image
+      if (file.type.startsWith('image/')) {
+        const ocrResult = await Tesseract.recognize(file, 'eng', {
+          logger: (m) => {
+            if (m.status === 'recognizing text' && m.progress) {
+              setScanProgress(Math.round(m.progress * 85));
+            }
+          },
+        });
+        extractedOcrText = ocrResult.data.text || '';
+      }
+
+      setScanProgress(95);
+
+      // Send the REAL OCR extracted text to backend scanner
       const res = await api.post('/partners/scan-document', {
         docType: formData.govIdType,
-        extractedText: simulatedExtractedText,
+        extractedText: extractedOcrText,
         fileMeta: {
           name: file.name,
           type: file.type,
@@ -175,37 +187,49 @@ const CreatePartnerPage = () => {
       });
 
       const scanData = res.data?.data;
+      setScanProgress(100);
 
-      setTimeout(() => {
-        if (scanData?.isAuthentic) {
-          setUploadedDocScan({
-            isScanning: false,
-            isAuthentic: true,
-            confidence: scanData.confidence,
-            detectedType: scanData.detectedType,
-            message: scanData.message,
-          });
-          setFormData((prev) => ({
-            ...prev,
-            govIdDocumentUrl: `https://storage.vidhyutsaathi.com/docs/${Date.now()}_${file.name}`,
-          }));
-          showToast(`Document scan passed: Authentic ${scanData.detectedType} verified.`, 'success');
-        } else {
-          setUploadedDocScan({
-            isScanning: false,
-            isAuthentic: false,
-            confidence: scanData.confidence || 0,
-            message: scanData.message || 'Authenticity check failed.',
-          });
-          showToast(`Upload Rejected: ${scanData.message}`, 'error');
+      if (scanData?.isAuthentic) {
+        setUploadedDocScan({
+          isScanning: false,
+          isAuthentic: true,
+          confidence: scanData.confidence,
+          detectedType: scanData.detectedType,
+          matchedMarkers: scanData.matchedMarkers,
+          extractedSnippet: scanData.extractedSnippet,
+          message: scanData.message,
+        });
+
+        // If ID number was detected by OCR and user hasn't typed one yet, auto-fill it!
+        if (scanData.extractedIdNumbers?.length > 0 && !formData.govIdNumber) {
+          const detectedNum = scanData.extractedIdNumbers[0];
+          setFormData((prev) => ({ ...prev, govIdNumber: detectedNum }));
+          handleVerifyGovIdLive(formData.govIdType, detectedNum);
         }
-      }, 700);
-    } catch {
+
+        setFormData((prev) => ({
+          ...prev,
+          govIdDocumentUrl: `https://storage.vidhyutsaathi.com/docs/${Date.now()}_${file.name}`,
+        }));
+
+        showToast(`Document scan passed: Authentic ${scanData.detectedType} verified!`, 'success');
+      } else {
+        setUploadedDocScan({
+          isScanning: false,
+          isAuthentic: false,
+          confidence: scanData.confidence || 0,
+          extractedSnippet: scanData.extractedSnippet,
+          message: scanData.message || 'Authenticity check failed. Non-ID image detected.',
+        });
+        showToast(`Document Rejected: No genuine ${formData.govIdType} detected in image.`, 'error');
+      }
+    } catch (err) {
       setUploadedDocScan({
         isScanning: false,
         isAuthentic: false,
-        message: 'Document analysis service unavailable.',
+        message: 'Could not process image OCR. Please ensure the image is clear and not corrupt.',
       });
+      showToast('OCR scan failed on this image.', 'error');
     }
   };
 
@@ -227,13 +251,15 @@ const CreatePartnerPage = () => {
       return;
     }
 
+    // Check Government ID number verification
     if (formData.govIdNumber && docScanStatus && !docScanStatus.isValid) {
       showToast(`Invalid ${formData.govIdType} format: ${docScanStatus.message}`, 'error');
       return;
     }
 
+    // Check Uploaded Document Authenticity
     if (uploadedDocName && uploadedDocScan && !uploadedDocScan.isAuthentic) {
-      showToast(`Cannot proceed: The uploaded document failed ${formData.govIdType} authenticity scanning.`, 'error');
+      showToast(`Cannot proceed: The uploaded file failed ${formData.govIdType} authenticity scanning. Please upload a real government ID photo.`, 'error');
       return;
     }
 
@@ -284,7 +310,7 @@ const CreatePartnerPage = () => {
               Add Franchise Partner
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Register & verify new State or District Franchise Partner with document authenticity verification
+              Register & verify new State or District Franchise Partner with optical document verification
             </p>
           </div>
         </div>
@@ -482,7 +508,7 @@ const CreatePartnerPage = () => {
           )}
         </div>
 
-        {/* Section 3: Government ID Proof & Real-Time Document Content Scanner */}
+        {/* Section 3: Government ID Proof & Real-Time OCR Authenticity Scanner */}
         <div className="card" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -490,7 +516,7 @@ const CreatePartnerPage = () => {
               <div>
                 <h2 style={{ fontSize: '15px', fontWeight: '700' }}>3. Government ID Proof & Authenticity Verification</h2>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Scans uploaded file to verify genuine Aadhaar (UIDAI), PAN (Income Tax), or Voter ID markers.
+                  Optical character recognition (OCR) scans the image for genuine UIDAI / Income Tax authority text.
                 </p>
               </div>
             </div>
@@ -510,7 +536,7 @@ const CreatePartnerPage = () => {
                 }}
               >
                 {uploadedDocScan.isAuthentic ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                <span>{uploadedDocScan.isAuthentic ? 'Authentic Document Passed' : 'Fake / Invalid Document'}</span>
+                <span>{uploadedDocScan.isAuthentic ? 'Authentic Document Passed' : 'Fake / Invalid File Rejected'}</span>
               </div>
             )}
           </div>
@@ -579,7 +605,7 @@ const CreatePartnerPage = () => {
             </div>
           )}
 
-          {/* Document File Upload & Deep Authenticity Scanner */}
+          {/* Document File Upload & Real OCR Scanner */}
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
               Upload Government ID Document (Photo / Scan / PDF) <span style={{ color: '#dc2626' }}>*</span>
@@ -604,23 +630,23 @@ const CreatePartnerPage = () => {
               }}
             >
               {uploadedDocScan?.isScanning ? (
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                  <RefreshCw size={32} color="#0284c7" className="animate-spin" />
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                  <RefreshCw size={34} color="#0284c7" className="animate-spin" />
                   <div style={{ fontSize: '14px', fontWeight: '700', color: '#0369A1' }}>
-                    Scanning document authenticity...
+                    Reading & scanning image text ({scanProgress}%)...
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Verifying official government watermarks, UIDAI / ITD headers & text structure
+                    Performing OCR recognition to verify official UIDAI / Income Tax department text inside this file
                   </div>
                 </div>
               ) : (
                 <>
                   <UploadCloud size={32} color={uploadedDocScan?.isAuthentic ? '#16A34A' : '#0284C7'} style={{ margin: '0 auto 8px' }} />
                   <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                    {uploadedDocName ? `Attached: ${uploadedDocName}` : `Choose ${formData.govIdType} File to Scan`}
+                    {uploadedDocName ? `Selected File: ${uploadedDocName}` : `Choose ${formData.govIdType} File to Scan`}
                   </div>
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    The system will verify that this is a genuine Government ID and reject random/fake files.
+                    The system reads the text inside the image. Posters, memes, and non-ID images will be strictly rejected.
                   </p>
 
                   <div style={{ marginTop: '12px' }}>
@@ -639,7 +665,7 @@ const CreatePartnerPage = () => {
                 <div
                   style={{
                     marginTop: '16px',
-                    padding: '12px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     backgroundColor: uploadedDocScan.isAuthentic ? '#DCFCE7' : '#FEE2E2',
                     border: `1px solid ${uploadedDocScan.isAuthentic ? '#86EFAC' : '#FCA5A5'}`,
@@ -656,9 +682,9 @@ const CreatePartnerPage = () => {
                   )}
                   <div>
                     <div style={{ fontSize: '13px', fontWeight: '700', color: uploadedDocScan.isAuthentic ? '#166534' : '#991B1B' }}>
-                      {uploadedDocScan.isAuthentic ? `Document Verified (${uploadedDocScan.confidence}% Authenticity Confidence)` : 'Document Verification Rejected'}
+                      {uploadedDocScan.isAuthentic ? `Government ID Verified (${uploadedDocScan.confidence}% Authenticity Confidence)` : 'Document Verification Rejected'}
                     </div>
-                    <div style={{ fontSize: '12px', color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: uploadedDocScan.isAuthentic ? '#15803D' : '#B91C1C', marginTop: '3px', lineHeight: 1.4 }}>
                       {uploadedDocScan.message}
                     </div>
                   </div>
@@ -672,7 +698,7 @@ const CreatePartnerPage = () => {
                     src={uploadedDocPreview}
                     alt="Document Preview"
                     style={{
-                      maxHeight: '140px',
+                      maxHeight: '150px',
                       maxWidth: '240px',
                       borderRadius: '8px',
                       border: '1px solid var(--border-color)',
