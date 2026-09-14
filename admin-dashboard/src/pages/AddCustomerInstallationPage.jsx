@@ -26,6 +26,7 @@ import {
   Lock,
   Search,
   Navigation,
+  ShieldAlert,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -116,6 +117,8 @@ const AddCustomerInstallationPage = () => {
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState('');
   const [locationVerification, setLocationVerification] = useState(null);
+  const [showOversmartAlert, setShowOversmartAlert] = useState(false);
+  const [breachData, setBreachData] = useState(null);
 
   // Step 7 OTP Verification State
   const [otpSent, setOtpSent] = useState(false);
@@ -498,7 +501,21 @@ const AddCustomerInstallationPage = () => {
 
           if (locData.verificationStatus === 'VERIFIED') {
             showToast(`📍 GPS captured & verified in authorized territory (${locData.district || 'Territory'}).`, 'success');
-          } else if (locData.verificationStatus === 'TERRITORY_MISMATCH') {
+          } else if (locData.verificationStatus === 'TERRITORY_MISMATCH' || locData.territoryMatch === false) {
+            setBreachData({
+              detectedDistrict: locData.district,
+              detectedState: locData.state,
+              authorizedDistrict: locData.authorizedDistrict || partner?.district || formData.district,
+              authorizedState: locData.authorizedState || partner?.state || formData.state,
+              latitude,
+              longitude,
+              accuracy,
+              locationVerificationId: locData.locationVerificationId,
+              parentName: partner?.parentPartnerId?.fullName || partner?.parentPartner?.fullName || null,
+              partnerName: partner?.fullName,
+              franchiseId: partner?.franchiseId,
+            });
+            setShowOversmartAlert(true);
             showToast(`⛔ Territory Mismatch: GPS is in ${locData.district || 'Different District'}. You cannot proceed outside authorized territory.`, 'error');
           } else if (locData.accuracyStatus === 'POOR') {
             showToast(`⚠️ GPS Accuracy is ±${accuracy.toFixed(0)}m (Low). Move to an open area if possible.`, 'warning');
@@ -633,6 +650,20 @@ const AddCustomerInstallationPage = () => {
 
         if (partner.franchiseType !== 'STATE_FRANCHISE') {
           if (!locationVerification.territoryMatch) {
+            setBreachData({
+              detectedDistrict: locationVerification.district,
+              detectedState: locationVerification.state,
+              authorizedDistrict: locationVerification.authorizedDistrict || partner?.district || formData.district,
+              authorizedState: locationVerification.authorizedState || partner?.state || formData.state,
+              latitude: locationVerification.latitude,
+              longitude: locationVerification.longitude,
+              accuracy: locationVerification.accuracyMeters,
+              locationVerificationId: locationVerification.locationVerificationId,
+              parentName: partner?.parentPartnerId?.fullName || partner?.parentPartner?.fullName || null,
+              partnerName: partner?.fullName,
+              franchiseId: partner?.franchiseId,
+            });
+            setShowOversmartAlert(true);
             showToast(`⛔ Territory Restriction: Detected GPS location (${locationVerification.district || 'Different District'}, ${locationVerification.state}) is outside your authorized area (${partner.district}, ${partner.state}). You cannot proceed with this customer onboarding.`, 'error');
             return false;
           }
@@ -2085,6 +2116,191 @@ const AddCustomerInstallationPage = () => {
           )}
         </div>
       </div>
+
+      {/* DON'T BE OVERSMART / GEOFENCE BREACH WARNING POPUP MODAL */}
+      {showOversmartAlert && breachData && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '20px',
+              maxWidth: '560px',
+              width: '100%',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(220, 38, 38, 0.35), 0 0 0 2px #ef4444',
+              animation: 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            {/* Top Red Header */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+                color: '#ffffff',
+                padding: '26px 22px',
+                textAlign: 'center',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  width: '68px',
+                  height: '68px',
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 12px',
+                  border: '2px solid rgba(255, 255, 255, 0.45)',
+                  boxShadow: '0 0 20px rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                <AlertTriangle size={38} color="#ffffff" />
+              </div>
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  letterSpacing: '1.5px',
+                  textTransform: 'uppercase',
+                  color: '#fecaca',
+                  marginBottom: '6px',
+                }}
+              >
+                🚨 GEOFENCE SECURITY VIOLATION
+              </div>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: '23px',
+                  fontWeight: 900,
+                  letterSpacing: '0.5px',
+                  color: '#ffffff',
+                  textShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                }}
+              >
+                ⚠️ DON'T TRY TO BE OVER-SMART!
+              </h2>
+              <p style={{ margin: '6px 0 0', fontSize: '13.5px', color: '#fee2e2', fontWeight: 500 }}>
+                Unauthorized cross-border card installation attempt blocked by GPS Tracker.
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px 22px' }}>
+              <div
+                style={{
+                  background: '#fef2f2',
+                  border: '1.5px solid #fecaca',
+                  borderRadius: '12px',
+                  padding: '14px 16px',
+                  marginBottom: '18px',
+                }}
+              >
+                <div style={{ fontSize: '13.5px', color: '#991b1b', lineHeight: '1.5', fontWeight: 600 }}>
+                  Aap apni authorized territory boundary se bahar card install karne ki koshish kar rahe hain!
+                </div>
+              </div>
+
+              {/* Side-by-Side Location Contrast */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px' }}>
+                <div
+                  style={{
+                    background: '#fee2e2',
+                    border: '1.5px solid #f87171',
+                    borderRadius: '10px',
+                    padding: '14px',
+                  }}
+                >
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    ❌ DETECTED LIVE GPS
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#7f1d1d' }}>
+                    {breachData.detectedDistrict || 'Unknown'}, {breachData.detectedState}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#991b1b', marginTop: '3px', fontFamily: 'monospace' }}>
+                    {breachData.latitude ? `${breachData.latitude.toFixed(5)}, ${breachData.longitude.toFixed(5)}` : 'Captured'}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border: '1.5px solid #86efac',
+                    borderRadius: '10px',
+                    padding: '14px',
+                  }}
+                >
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    ✅ YOUR AUTHORIZED AREA
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#14532d' }}>
+                    {breachData.authorizedDistrict || 'Assigned'}, {breachData.authorizedState}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#166534', marginTop: '3px', fontWeight: 600 }}>
+                    Franchise: {breachData.franchiseId || partner?.franchiseId}
+                  </div>
+                </div>
+              </div>
+
+              {/* Real-time Security Notice */}
+              <div
+                style={{
+                  background: '#fffbeb',
+                  border: '1px solid #fde68a',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                  <ShieldAlert size={18} color="#b45309" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <div style={{ fontSize: '12px', color: '#92400e', lineHeight: '1.45' }}>
+                    <strong>🛡️ Real-Time Audit Recorded:</strong> Ye breach incident exact GPS coordinates aur timestamp ke sath <strong>Super Admin</strong> {breachData.parentName ? `aur aapke Parent Franchise Partner (${breachData.parentName})` : ''} ke portal par live notify ho chuka hai.
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button
+                type="button"
+                onClick={() => setShowOversmartAlert(false)}
+                className="btn btn-primary"
+                style={{
+                  width: '100%',
+                  height: '46px',
+                  background: '#dc2626',
+                  borderColor: '#b91c1c',
+                  fontSize: '14px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  borderRadius: '10px',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.3)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span>Dismiss & Return to Authorized Territory</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
