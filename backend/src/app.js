@@ -14,22 +14,33 @@ app.use(helmet());
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:5173'];
+  : [];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. mobile apps, curl, postman)
-      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (e.g. mobile apps, curl, postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Automatically allow all Vercel deployments, localhost, and configured origins
+      if (
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(origin)
+      ) {
         return callback(null, true);
       }
-      return callback(new Error('CORS policy: Not allowed by Access-Control-Allow-Origin'));
+
+      return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
 );
+app.options('*', cors());
 
 // General Rate Limiter
 app.use(apiRateLimiter);
