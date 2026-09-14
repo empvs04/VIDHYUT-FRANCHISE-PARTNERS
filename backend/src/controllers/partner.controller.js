@@ -13,6 +13,7 @@ import {
 import { generateFranchiseId } from '../utils/idGenerator.js';
 import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
 import { scanAndVerifyDocument } from '../utils/documentScanner.js';
+import { createAndSendPartnerRegistrationOTP } from '../services/otp.service.js';
 import { DEFAULT_PAGINATION, ACCOUNT_STATUS, USER_ROLES, FRANCHISE_TYPES } from '../config/constants.js';
 
 // Preview Generated Franchise ID in Real-Time
@@ -156,8 +157,31 @@ export const createPartner = async (req, res, next) => {
 
     const partner = await createFranchisePartner(req.body, req.user);
 
+    // Trigger Registration OTP delivery to newly created partner's registered contact details
+    const otpResult = await createAndSendPartnerRegistrationOTP({
+      partner,
+      creatorUser: req.user,
+      reqMetadata: {
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('user-agent'),
+      },
+    });
+
+    let successMessage = 'Franchise Partner registered successfully.';
+    if (partner.mobileNumber && partner.email) {
+      successMessage = 'Partner created successfully. OTP has been sent to the registered mobile number and email.';
+    } else if (partner.mobileNumber) {
+      successMessage = 'Partner created successfully. OTP has been sent to the registered mobile number.';
+    } else if (partner.email) {
+      successMessage = 'Partner created successfully. OTP has been sent to the registered email.';
+    }
+
     res.status(201).json(
-      new ApiResponse(201, partner, 'Franchise Partner registered successfully.')
+      new ApiResponse(
+        201,
+        partner,
+        successMessage
+      )
     );
   } catch (err) {
     next(err);

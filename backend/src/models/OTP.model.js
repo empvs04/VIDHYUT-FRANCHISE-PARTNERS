@@ -5,9 +5,22 @@ const otpSchema = new mongoose.Schema(
   {
     mobileNumber: {
       type: String,
-      required: true,
       index: true,
       trim: true,
+      default: '',
+    },
+    email: {
+      type: String,
+      index: true,
+      trim: true,
+      lowercase: true,
+      default: '',
+    },
+    partnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FranchisePartner',
+      default: null,
+      index: true,
     },
     otpHash: {
       type: String,
@@ -17,6 +30,12 @@ const otpSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(OTP_PURPOSE),
       default: OTP_PURPOSE.PARTNER_LOGIN,
+      index: true,
+    },
+    channel: {
+      type: String,
+      enum: ['SMS', 'EMAIL', 'BOTH'],
+      default: 'SMS',
     },
     attempts: {
       type: Number,
