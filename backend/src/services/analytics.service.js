@@ -148,7 +148,15 @@ export const getPartnerScopeData = async (user, partner) => {
   if (!user || user.role === USER_ROLES.SUPER_ADMIN || !partner) {
     // For Admin: Include only Franchise Partners (State & District Franchise), strictly excluding Sub-Franchise
     const franchisePartnerIds = await FranchisePartner.find({
-      franchiseType: { $in: [FRANCHISE_TYPES.STATE_FRANCHISE, FRANCHISE_TYPES.DISTRICT_FRANCHISE] },
+      franchiseType: {
+        $in: [
+          FRANCHISE_TYPES.STATE_FRANCHISE,
+          FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+          FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+        ],
+      },
     }).distinct('_id');
 
     return {

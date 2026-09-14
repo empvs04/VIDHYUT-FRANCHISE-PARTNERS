@@ -479,7 +479,12 @@ export const getInstallations = async (queryParams, user, partner) => {
     }
     if (partner.franchiseType === 'SUB_FRANCHISE') {
       filter.partnerId = partner._id;
-    } else if (partner.franchiseType === 'DISTRICT_FRANCHISE') {
+    } else if (
+      partner.franchiseType === 'DISTRICT_FRANCHISE' ||
+      partner.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ||
+      partner.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT' ||
+      partner.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT'
+    ) {
       const subPartnerIds = await FranchisePartner.find({
         parentPartnerId: partner._id,
       }).distinct('_id');
@@ -499,7 +504,23 @@ export const getInstallations = async (queryParams, user, partner) => {
       const downlinePartnerIds = await FranchisePartner.find({
         $or: [{ parentPartnerId: partner._id }, { _id: partner._id }, { state: partner.state }],
       }).distinct('_id');
-      filter.partnerId = { $in: downlinePartnerIds };
+
+      const subPartnerIds = await FranchisePartner.find({
+        $or: [{ parentPartnerId: partner._id }, { state: partner.state }],
+      }).distinct('_id');
+
+      if (source === 'MY_INSTALLATIONS') {
+        filter.partnerId = partner._id;
+      } else if (source === 'SUB_FRANCHISE_INSTALLATIONS') {
+        filter.partnerId = { $in: subPartnerIds };
+      } else {
+        filter.$or = [
+          { partnerId: partner._id },
+          { partnerId: { $in: downlinePartnerIds } },
+          { parentPartnerId: partner._id },
+          { partnerId: { $in: subPartnerIds } },
+        ];
+      }
     } else {
       filter.partnerId = partner._id;
     }

@@ -229,14 +229,26 @@ export const getAllPartners = async (req, res, next) => {
     if (franchiseType) {
       if (franchiseType === 'FRANCHISE_ONLY' || franchiseType === 'STATE_AND_DISTRICT') {
         query.franchiseType = {
-          $in: [FRANCHISE_TYPES.STATE_FRANCHISE, FRANCHISE_TYPES.DISTRICT_FRANCHISE],
+          $in: [
+            FRANCHISE_TYPES.STATE_FRANCHISE,
+            FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+            FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+            FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+            FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+          ],
         };
       } else {
         query.franchiseType = franchiseType;
       }
     } else if (excludeSubFranchise === 'true' || excludeSubFranchise === true) {
       query.franchiseType = {
-        $in: [FRANCHISE_TYPES.STATE_FRANCHISE, FRANCHISE_TYPES.DISTRICT_FRANCHISE],
+        $in: [
+          FRANCHISE_TYPES.STATE_FRANCHISE,
+          FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+          FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+        ],
       };
     }
 

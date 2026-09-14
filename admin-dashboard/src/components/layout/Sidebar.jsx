@@ -36,7 +36,13 @@ const Sidebar = ({ isOpen, onClose }) => {
   const getRoleBadge = () => {
     if (isSuperAdmin) return 'Super Admin';
     if (partner?.franchiseType === 'STATE_FRANCHISE') return 'State Partner';
-    if (partner?.franchiseType === 'DISTRICT_FRANCHISE') return 'District Partner';
+    if (
+      partner?.franchiseType === 'DISTRICT_FRANCHISE' ||
+      partner?.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ||
+      partner?.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT' ||
+      partner?.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT'
+    )
+      return 'District Partner';
     if (partner?.franchiseType === 'SUB_FRANCHISE') return 'Sub-Franchise';
     return 'Partner';
   };

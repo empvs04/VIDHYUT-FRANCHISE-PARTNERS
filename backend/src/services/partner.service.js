@@ -230,13 +230,21 @@ export const updateFranchisePartnerStatus = async (partnerId, newStatus) => {
   // Duplicate district protection when changing status to ACTIVE
   if (
     newStatus === ACCOUNT_STATUS.ACTIVE &&
-    partner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE
+    (partner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE ||
+      partner.franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT ||
+      partner.franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT)
   ) {
     const existingActive = await FranchisePartner.findOne({
       _id: { $ne: partner._id },
       state: partner.state,
       district: partner.district,
-      franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+      franchiseType: {
+        $in: [
+          FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+          FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+        ],
+      },
       accountStatus: ACCOUNT_STATUS.ACTIVE,
     });
 

@@ -74,7 +74,12 @@ export const getCustomers = async (queryParams, user, partner) => {
     if (partner.franchiseType === 'SUB_FRANCHISE') {
       // Sub-Franchise can ONLY see customers created by themselves
       filter.createdByPartnerId = partner._id;
-    } else if (partner.franchiseType === 'DISTRICT_FRANCHISE') {
+    } else if (
+      partner.franchiseType === 'DISTRICT_FRANCHISE' ||
+      partner.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ||
+      partner.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT' ||
+      partner.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT'
+    ) {
       const subPartnerIds = await FranchisePartner.find({
         parentPartnerId: partner._id,
       }).distinct('_id');
@@ -200,7 +205,12 @@ export const getCustomerById = async (id, user, partner) => {
   if (user.role !== USER_ROLES.SUPER_ADMIN && partner) {
     const isDirectOwner = String(customer.createdByPartnerId?._id || customer.createdByPartnerId) === String(partner._id);
     const isParentOwner = String(customer.parentPartnerId?._id || customer.parentPartnerId) === String(partner._id);
-    const isStateOrDistrict = partner.franchiseType === 'STATE_FRANCHISE' || partner.franchiseType === 'DISTRICT_FRANCHISE';
+    const isStateOrDistrict =
+      partner.franchiseType === 'STATE_FRANCHISE' ||
+      partner.franchiseType === 'DISTRICT_FRANCHISE' ||
+      partner.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ||
+      partner.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT' ||
+      partner.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT';
 
     if (!isDirectOwner && !isParentOwner && !isStateOrDistrict) {
       throw new ApiError(403, 'Access denied: You are not authorized to view this customer.');

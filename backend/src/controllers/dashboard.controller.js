@@ -35,7 +35,16 @@ export const getAdminMetrics = async (req, res, next) => {
       FranchisePartner.countDocuments({ accountStatus: ACCOUNT_STATUS.EXPIRED }),
       FranchisePartner.countDocuments({ accountStatus: ACCOUNT_STATUS.PENDING_APPROVAL }),
       FranchisePartner.countDocuments({ franchiseType: FRANCHISE_TYPES.STATE_FRANCHISE }),
-      FranchisePartner.countDocuments({ franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE }),
+      FranchisePartner.countDocuments({
+        franchiseType: {
+          $in: [
+            FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+            FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+            FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+            FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+          ],
+        },
+      }),
       FranchisePartner.countDocuments({ franchiseType: FRANCHISE_TYPES.SUB_FRANCHISE }),
       FranchisePartner.countDocuments({
         franchiseType: FRANCHISE_TYPES.SUB_FRANCHISE,
@@ -50,7 +59,19 @@ export const getAdminMetrics = async (req, res, next) => {
         .select('franchiseId fullName mobileNumber email state district franchiseType accountStatus createdAt parentPartnerId'),
       // Aggregate distinct active districts
       FranchisePartner.aggregate([
-        { $match: { accountStatus: ACCOUNT_STATUS.ACTIVE, franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE } },
+        {
+          $match: {
+            accountStatus: ACCOUNT_STATUS.ACTIVE,
+            franchiseType: {
+              $in: [
+                FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+                FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+                FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+                FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+              ],
+            },
+          },
+        },
         { $group: { _id: { state: '$state', district: '$district' }, count: { $sum: 1 } } },
       ]),
       Customer.countDocuments(),

@@ -250,7 +250,14 @@ export const getDistrictsByState = async (req, res) => {
 export const getTerritoryCoverage = async (req, res, next) => {
   try {
     const activeDistrictPartners = await FranchisePartner.find({
-      franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+      franchiseType: {
+        $in: [
+          FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+          FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+        ],
+      },
       accountStatus: ACCOUNT_STATUS.ACTIVE,
     }).select('franchiseId fullName state district mobileNumber email joiningDate');
 

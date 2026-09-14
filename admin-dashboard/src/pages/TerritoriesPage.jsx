@@ -76,7 +76,12 @@ const TerritoriesPage = () => {
   const totalStates = new Set(partners.map((p) => p.state).filter(Boolean)).size;
   const totalDistricts = new Set(partners.map((p) => `${p.state}-${p.district}`).filter((d) => !d.startsWith('-'))).size;
   const activeDistrictPartners = partners.filter(
-    (p) => p.franchiseType === 'DISTRICT_FRANCHISE' && p.accountStatus === 'ACTIVE'
+    (p) =>
+      (p.franchiseType === 'DISTRICT_FRANCHISE' ||
+        p.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ||
+        p.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT' ||
+        p.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT') &&
+      p.accountStatus === 'ACTIVE'
   ).length;
   const subFranchisePartners = partners.filter(
     (p) => p.franchiseType === 'SUB_FRANCHISE'

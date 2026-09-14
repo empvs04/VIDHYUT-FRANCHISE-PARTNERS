@@ -80,7 +80,12 @@ export const createDistributionTransaction = async (data, user, partner) => {
 
   // 3. Territory & Hierarchy Authorization Check
   if (sellerPartner && user.role !== USER_ROLES.SUPER_ADMIN) {
-    if (sellerPartner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE) {
+    if (
+      sellerPartner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE ||
+      sellerPartner.franchiseType === FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT ||
+      sellerPartner.franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT ||
+      sellerPartner.franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT
+    ) {
       // District Franchise can only distribute to Sub-Franchises in their district/state or direct children
       const isDirectChild =
         buyerPartner.parentPartnerId &&
