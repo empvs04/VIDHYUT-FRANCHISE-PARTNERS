@@ -38,7 +38,7 @@ const NotificationDropdown = () => {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 45000); // Polling every 45s
+    const interval = setInterval(fetchNotifications, 15000); // Polling every 15s for instant alerts
     return () => clearInterval(interval);
   }, []);
 
@@ -66,15 +66,15 @@ const NotificationDropdown = () => {
       } catch {}
     }
 
-    // Optional Quick Navigation based on entityType
-    if (notif.entityType === 'TRANSACTION') {
+    // Optional Quick Navigation based on entityType & type
+    if (notif.type === 'TERRITORY_MISMATCH' || notif.entityType === 'LOCATION_VERIFICATION') {
+      navigate('/location-verifications');
+      setIsOpen(false);
+    } else if (notif.entityType === 'TRANSACTION') {
       navigate('/transactions');
       setIsOpen(false);
     } else if (notif.entityType === 'INSTALLATION') {
       navigate('/installations');
-      setIsOpen(false);
-    } else if (notif.entityType === 'LOCATION_VERIFICATION') {
-      navigate('/location-verifications');
       setIsOpen(false);
     } else if (notif.entityType === 'PARTNER') {
       navigate('/partners');
@@ -94,7 +94,7 @@ const NotificationDropdown = () => {
   const getNotificationIcon = (type) => {
     if (type?.includes('CARD')) return <CreditCard size={16} color="#0284c7" />;
     if (type?.includes('INSTALLATION')) return <Zap size={16} color="#16a34a" />;
-    if (type?.includes('MISMATCH') || type?.includes('DISPUTED')) return <AlertTriangle size={16} color="#dc2626" />;
+    if (type?.includes('MISMATCH') || type?.includes('DISPUTED')) return <AlertTriangle size={17} color="#dc2626" />;
     if (type?.includes('PARTNER')) return <Building2 size={16} color="#7e22ce" />;
     return <Info size={16} color="#0284c7" />;
   };
@@ -138,6 +138,7 @@ const NotificationDropdown = () => {
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid #ffffff',
+              animation: 'pulseGlow 2s infinite',
             }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -152,11 +153,11 @@ const NotificationDropdown = () => {
             position: 'absolute',
             right: 0,
             top: '46px',
-            width: '360px',
-            maxWidth: '90vw',
+            width: '370px',
+            maxWidth: '92vw',
             background: '#ffffff',
-            borderRadius: '10px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
+            boxShadow: '0 12px 30px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
             border: '1px solid #e2e8f0',
             zIndex: 1000,
             overflow: 'hidden',
@@ -200,47 +201,56 @@ const NotificationDropdown = () => {
           {/* List */}
           <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
             {notifications.length > 0 ? (
-              notifications.map((notif) => (
-                <div
-                  key={notif._id}
-                  onClick={(e) => handleMarkAsRead(notif, e)}
-                  style={{
-                    padding: '12px 16px',
-                    borderBottom: '1px solid #f1f5f9',
-                    display: 'flex',
-                    gap: '12px',
-                    cursor: 'pointer',
-                    background: notif.isRead ? '#ffffff' : '#f0f9ff',
-                    transition: 'background 0.15s',
-                  }}
-                >
-                  <div style={{ marginTop: '2px' }}>{getNotificationIcon(notif.type)}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '13px', fontWeight: notif.isRead ? 600 : 700, color: '#0f172a' }}>
-                        {notif.title}
-                      </span>
-                      {!notif.isRead && (
-                        <span
-                          style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: '#0284c7',
-                            marginTop: '4px',
-                          }}
-                        />
-                      )}
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px', lineHeight: 1.4 }}>
-                      {notif.message}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-                      {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(notif.createdAt).toLocaleDateString('en-IN')}
+              notifications.map((notif) => {
+                const isMismatch = notif.type === 'TERRITORY_MISMATCH';
+
+                return (
+                  <div
+                    key={notif._id}
+                    onClick={(e) => handleMarkAsRead(notif, e)}
+                    style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid #f1f5f9',
+                      borderLeft: isMismatch ? '4px solid #dc2626' : 'none',
+                      display: 'flex',
+                      gap: '12px',
+                      cursor: 'pointer',
+                      background: notif.isRead
+                        ? '#ffffff'
+                        : isMismatch
+                        ? '#fff5f5'
+                        : '#f0f9ff',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <div style={{ marginTop: '2px' }}>{getNotificationIcon(notif.type)}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '13px', fontWeight: notif.isRead ? 600 : 700, color: isMismatch ? '#991b1b' : '#0f172a' }}>
+                          {notif.title}
+                        </span>
+                        {!notif.isRead && (
+                          <span
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: isMismatch ? '#dc2626' : '#0284c7',
+                              marginTop: '4px',
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: isMismatch ? '#7f1d1d' : '#475569', marginTop: '2px', lineHeight: 1.4 }}>
+                        {notif.message}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+                        {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(notif.createdAt).toLocaleDateString('en-IN')}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div style={{ padding: '30px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
                 No notifications right now.

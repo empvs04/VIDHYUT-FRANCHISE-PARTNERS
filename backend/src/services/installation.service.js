@@ -22,7 +22,10 @@ import {
   INSTALLATION_VERIFICATION_STATUS,
   LOCATION_VERIFICATION_STATUS,
   DEFAULT_PAGINATION,
+  NOTIFICATION_TYPES,
+  ENTITY_TYPES,
 } from '../config/constants.js';
+import { createNotification, notifySuperAdmins } from './notification.service.js';
 
 // 1. Get Cards Eligible for Installation for the Logged-in Partner
 export const getInstallationEligibleCards = async (user, partner) => {
@@ -153,23 +156,67 @@ export const createInstallation = async (data, user, partner) => {
       d.trim().toLowerCase()
     );
 
+    let isViolated = false;
+    let violationMessage = '';
+
     if (executingPartner.franchiseType === 'STATE_FRANCHISE') {
       if (custState !== partnerState) {
-        throw new ApiError(
-          403,
-          `Territory Violation: Customer state "${address.state}" is outside your authorized state "${executingPartner.state}".`
-        );
+        isViolated = true;
+        violationMessage = `Territory Violation: Customer state "${address.state}" is outside your authorized state "${executingPartner.state}".`;
       }
     } else {
       // District / Sub Franchise
       const isDistrictAuthorized =
         custDistrict === partnerDistrict || partnerAuthDistricts.includes(custDistrict);
       if (custState !== partnerState || !isDistrictAuthorized) {
-        throw new ApiError(
-          403,
-          `Territory Violation: Installation address (${address.district}, ${address.state}) is outside your authorized district (${executingPartner.district}, ${executingPartner.state}).`
-        );
+        isViolated = true;
+        violationMessage = `Territory Violation: Installation address (${address.district}, ${address.state}) is outside your authorized district (${executingPartner.district}, ${executingPartner.state}).`;
       }
+    }
+
+    if (isViolated) {
+      // Dispatch in-app notification to Super Admin & Parent Partner
+      if (executingPartner.parentPartnerId) {
+        FranchisePartner.findById(executingPartner.parentPartnerId).populate('userId').then((parentPartner) => {
+          if (parentPartner?.userId) {
+            const parentUserId = parentPartner.userId._id || parentPartner.userId;
+            createNotification({
+              recipientUserId: parentUserId,
+              recipientPartnerId: parentPartner._id,
+              type: NOTIFICATION_TYPES.TERRITORY_MISMATCH,
+              title: `🚨 Sub-Franchise Territory Breach: ${executingPartner.fullName}`,
+              message: `Sub-Partner ${executingPartner.fullName} (${executingPartner.franchiseId}) attempted installation in ${address.district}, ${address.state} (Authorized: ${executingPartner.district}, ${executingPartner.state}).`,
+              entityType: ENTITY_TYPES.LOCATION_VERIFICATION,
+              metadata: {
+                subPartnerName: executingPartner.fullName,
+                subPartnerCode: executingPartner.franchiseId,
+                parentPartnerName: parentPartner.fullName,
+                attemptedState: address.state,
+                attemptedDistrict: address.district,
+                authorizedState: executingPartner.state,
+                authorizedDistrict: executingPartner.district,
+              },
+            }).catch(() => {});
+          }
+        }).catch(() => {});
+      }
+
+      notifySuperAdmins({
+        type: NOTIFICATION_TYPES.TERRITORY_MISMATCH,
+        title: `🚨 Geofence Breach: ${executingPartner.fullName}`,
+        message: `Partner ${executingPartner.fullName} (${executingPartner.franchiseId}) attempted installation in ${address.district}, ${address.state} (Authorized: ${executingPartner.district}, ${executingPartner.state}).`,
+        entityType: ENTITY_TYPES.LOCATION_VERIFICATION,
+        metadata: {
+          partnerName: executingPartner.fullName,
+          partnerCode: executingPartner.franchiseId,
+          attemptedState: address.state,
+          attemptedDistrict: address.district,
+          authorizedState: executingPartner.state,
+          authorizedDistrict: executingPartner.district,
+        },
+      }).catch(() => {});
+
+      throw new ApiError(403, violationMessage);
     }
   }
 
