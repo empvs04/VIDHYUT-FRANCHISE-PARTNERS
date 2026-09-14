@@ -169,11 +169,23 @@ export const createDistributionTransaction = async (data, user, partner) => {
     }
   }
 
-  // 6. Recalculate Total on Backend
+  // 6. Recalculate Total on Backend (Accounting for Free / Complimentary Cards)
   const quantity = cards.length;
+  const rawFreeQty = Math.max(0, parseInt(data.freeQuantity, 10) || 0);
+  const freeQuantity =
+    transactionType === TRANSACTION_TYPES.COMPLIMENTARY
+      ? quantity
+      : Math.min(rawFreeQty, quantity);
+  const paidQuantity =
+    transactionType === TRANSACTION_TYPES.COMPLIMENTARY
+      ? 0
+      : Math.max(0, quantity - freeQuantity);
+
   const verifiedPricePerCard =
-    transactionType === TRANSACTION_TYPES.SALE ? Math.max(0, parseFloat(pricePerCard) || 0) : 0;
-  const totalAmount = quantity * verifiedPricePerCard;
+    transactionType === TRANSACTION_TYPES.SALE && paidQuantity > 0
+      ? Math.max(0, parseFloat(pricePerCard) || 0)
+      : 0;
+  const totalAmount = paidQuantity * verifiedPricePerCard;
 
   // 7. Generate Unique Transaction ID
   let transactionId;
@@ -191,12 +203,14 @@ export const createDistributionTransaction = async (data, user, partner) => {
   // 8. Create Transaction Record (Direct & Instant Card Allocation)
   const newTransaction = await Transaction.create({
     transactionId,
-    transactionType,
+    transactionType: freeQuantity === quantity ? TRANSACTION_TYPES.COMPLIMENTARY : transactionType,
     sellerPartnerId: sellerPartner ? sellerPartner._id : (data.sellerPartnerId || null),
     buyerPartnerId: buyerPartner._id,
     cardIds: cards.map((c) => c._id),
     cardSerialNumbers: cards.map((c) => c.serialNumber),
     quantity,
+    freeQuantity,
+    paidQuantity,
     pricePerCard: verifiedPricePerCard,
     totalAmount,
     currency: 'INR',
@@ -222,7 +236,7 @@ export const createDistributionTransaction = async (data, user, partner) => {
         assignedAt: transactionDate,
         previousOwnerId: sellerPartner ? sellerPartner._id : null,
         previousOwnerType: sellerPartner ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
-        notes: `Allocated directly to ${buyerPartner.fullName} (${buyerPartner.franchiseId}) @ ₹${verifiedPricePerCard}/card via Txn ${transactionId}`,
+        notes: `Allocated directly to ${buyerPartner.fullName} (${buyerPartner.franchiseId}) [${paidQuantity} Paid @ ₹${verifiedPricePerCard}, ${freeQuantity} Free] via Txn ${transactionId}`,
       },
     }
   );
@@ -240,10 +254,13 @@ export const createDistributionTransaction = async (data, user, partner) => {
     newStatus: finalCardStatus,
     performedBy: user._id,
     performedByRole: user.role,
-    reason: `Direct card allocation to ${buyerPartner.fullName} (${buyerPartner.franchiseId}) by ${user.fullName} (${quantity} cards @ ₹${verifiedPricePerCard}/card, Total ₹${totalAmount}). Serial: ${card.serialNumber}. Txn: ${transactionId}`,
+    reason: `Direct card allocation to ${buyerPartner.fullName} (${buyerPartner.franchiseId}) by ${user.fullName} (${quantity} cards: ${paidQuantity} Paid @ ₹${verifiedPricePerCard}/card + ${freeQuantity} Free Cards, Total ₹${totalAmount}). Serial: ${card.serialNumber}. Txn: ${transactionId}`,
     metadata: {
       transactionId,
       transactionType,
+      quantity,
+      freeQuantity,
+      paidQuantity,
       pricePerCard: verifiedPricePerCard,
       totalAmount,
       serialNumber: card.serialNumber,

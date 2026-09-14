@@ -54,6 +54,16 @@ const transactionSchema = new mongoose.Schema(
       required: [true, 'Card quantity is required'],
       min: [1, 'Quantity must be at least 1'],
     },
+    freeQuantity: {
+      type: Number,
+      default: 0,
+      min: [0, 'Free cards cannot be negative'],
+    },
+    paidQuantity: {
+      type: Number,
+      default: 0,
+      min: [0, 'Paid cards cannot be negative'],
+    },
     pricePerCard: {
       type: Number,
       required: [true, 'Price per card is required'],

@@ -995,14 +995,23 @@ const TransactionsPage = () => {
 
                         {/* 4. Cards & Commercials */}
                         <td style={{ padding: '16px 18px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                          <div style={{ fontWeight: '800', fontSize: '14.5px', color: '#0F172A' }}>
-                            {t.quantity} Cards
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontWeight: '800', fontSize: '14.5px', color: '#0F172A' }}>
+                              {t.quantity} Cards
+                            </span>
+                            {t.freeQuantity > 0 && (
+                              <span style={{ fontSize: '11px', fontWeight: '800', color: '#86198F', backgroundColor: '#FDF4FF', border: '1px solid #F0ABFC', padding: '1px 6px', borderRadius: '4px' }}>
+                                🎁 {t.freeQuantity} Free
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
                             {t.transactionType === 'SALE' ? (
                               <span>
                                 @ ₹{t.pricePerCard}/card = <strong style={{ color: '#16A34A', fontSize: '13px' }}>₹{(t.totalAmount || 0).toLocaleString('en-IN')}</strong>
                               </span>
+                            ) : t.transactionType === 'COMPLIMENTARY' ? (
+                              <span style={{ color: '#059669', fontWeight: '700' }}>🎁 100% Free Allotment</span>
                             ) : (
                               <span style={{ color: '#64748B', fontWeight: '600' }}>Stock Transfer</span>
                             )}
@@ -1241,15 +1250,21 @@ const TransactionsPage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #E2E8F0', flexWrap: 'wrap', gap: '8px' }}>
                       <div>
                         <div style={{ fontSize: '10px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.4px' }}>CARDS QUANTITY</div>
-                        <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A' }}>
-                          {t.quantity} Units <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '500' }}>{t.transactionType === 'SALE' ? `@ ₹${t.pricePerCard}/card` : '(Transfer)'}</span>
+                        <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span>{t.quantity} Units</span>
+                          {t.freeQuantity > 0 && (
+                            <span style={{ fontSize: '10.5px', fontWeight: '800', color: '#86198F', backgroundColor: '#FDF4FF', border: '1px solid #F0ABFC', padding: '1px 5px', borderRadius: '4px' }}>
+                              🎁 {t.freeQuantity} Free
+                            </span>
+                          )}
+                          <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '500' }}>{t.transactionType === 'SALE' ? `@ ₹${t.pricePerCard}/card` : '(Transfer)'}</span>
                         </div>
                       </div>
 
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '10px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.4px' }}>TOTAL VALUE</div>
                         <div style={{ fontSize: '15px', fontWeight: '900', color: t.transactionType === 'SALE' ? '#16A34A' : '#0284C7' }}>
-                          {t.transactionType === 'SALE' ? `₹${(t.totalAmount || 0).toLocaleString('en-IN')}` : 'Stock Transfer'}
+                          {t.transactionType === 'SALE' ? `₹${(t.totalAmount || 0).toLocaleString('en-IN')}` : t.transactionType === 'COMPLIMENTARY' ? '🎁 Free' : 'Stock Transfer'}
                         </div>
                       </div>
                     </div>

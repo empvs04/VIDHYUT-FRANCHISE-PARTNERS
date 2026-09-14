@@ -51,7 +51,9 @@ export const validateCreateTransaction = (req, res, next) => {
     return next(new ApiError(400, 'Price per card must be a valid positive number or zero.'));
   }
 
-  if (transactionType === TRANSACTION_TYPES.SALE && parsedPrice <= 0) {
+  const parsedFreeQuantity = Math.max(0, parseInt(req.body.freeQuantity, 10) || 0);
+
+  if (transactionType === TRANSACTION_TYPES.SALE && parsedPrice <= 0 && parsedFreeQuantity === 0) {
     return next(
       new ApiError(400, 'For a SALE transaction, a valid Price Per Card (greater than ₹0) is required.')
     );
@@ -63,6 +65,7 @@ export const validateCreateTransaction = (req, res, next) => {
     cardSerialNumbers: serials,
     cardIds: ids,
     pricePerCard: transactionType === TRANSACTION_TYPES.SALE ? parsedPrice : 0,
+    freeQuantity: parsedFreeQuantity,
     notes: notes ? String(notes).trim() : '',
   };
 

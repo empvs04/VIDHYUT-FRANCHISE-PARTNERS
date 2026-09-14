@@ -59,6 +59,7 @@ const DistributeCardsPage = () => {
   // Commercials & metadata
   const [transactionType, setTransactionType] = useState('SALE'); // 'SALE' | 'TRANSFER' | 'COMPLIMENTARY'
   const [pricePerCard, setPricePerCard] = useState(500);
+  const [freeCount, setFreeCount] = useState('0');
   const [notes, setNotes] = useState('Stock allocation for franchise territory distribution');
   const [submitting, setSubmitting] = useState(false);
 
@@ -362,10 +363,19 @@ const DistributeCardsPage = () => {
     setQuickCount('');
   };
 
-  // Pricing calculations
+  // Pricing & Free Cards calculations
+  const totalCardsCount = selectedCardIds.size;
+  const parsedFreeCount = Math.max(0, parseInt(freeCount, 10) || 0);
+  const effectiveFreeCount = Math.min(parsedFreeCount, totalCardsCount);
+  const effectivePaidCount = Math.max(0, totalCardsCount - effectiveFreeCount);
   const effectivePrice = Math.max(0, Number(pricePerCard) || 0);
-  const totalAmount = selectedCardIds.size * effectivePrice;
-  const determinedTxnType = effectivePrice > 0 ? 'SALE' : 'TRANSFER';
+  const totalAmount = effectivePaidCount * effectivePrice;
+  const determinedTxnType =
+    totalAmount === 0 || effectiveFreeCount === totalCardsCount
+      ? 'COMPLIMENTARY'
+      : effectivePrice > 0
+      ? 'SALE'
+      : 'TRANSFER';
 
   // Submit Distribution Transaction
   const handleSubmit = async (e) => {
@@ -387,6 +397,8 @@ const DistributeCardsPage = () => {
         cardIds: Array.from(selectedCardIds),
         transactionType: determinedTxnType,
         pricePerCard: effectivePrice,
+        freeQuantity: effectiveFreeCount,
+        paidQuantity: effectivePaidCount,
         notes: notes.trim() || undefined,
       };
 
@@ -394,7 +406,7 @@ const DistributeCardsPage = () => {
       const createdTxn = res.data?.data?.transaction || res.data?.data;
 
       showToast(
-        `Successfully allocated ${selectedCardIds.size} cards to ${selectedPartner?.fullName || 'partner'}! Transaction ID: ${createdTxn?.transactionId || ''}`,
+        `Successfully allocated ${selectedCardIds.size} cards (${effectivePaidCount} paid + ${effectiveFreeCount} free) to ${selectedPartner?.fullName || 'partner'}!`,
         'success'
       );
       navigate(`/transactions/${createdTxn?._id || ''}`);
@@ -1408,14 +1420,95 @@ const DistributeCardsPage = () => {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+            {/* Quick Commercial Allocation Mode Selector */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap',
+                marginBottom: '16px',
+                backgroundColor: '#F8FAFC',
+                padding: '8px',
+                borderRadius: '10px',
+                border: '1.5px solid #E2E8F0',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setFreeCount('0');
+                  if (pricePerCard === 0) setPricePerCard(500);
+                }}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: effectiveFreeCount === 0 && effectivePrice > 0 ? '#0284C7' : '#FFFFFF',
+                  color: effectiveFreeCount === 0 && effectivePrice > 0 ? '#FFFFFF' : '#334155',
+                  boxShadow: effectiveFreeCount === 0 && effectivePrice > 0 ? '0 2px 6px rgba(2, 132, 199, 0.3)' : '0 1px 2px rgba(0,0,0,0.05)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                💳 Standard Paid Sale
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFreeCount(totalCardsCount.toString());
+                  setPricePerCard(0);
+                }}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: effectiveFreeCount === totalCardsCount && totalCardsCount > 0 ? '#16A34A' : '#FFFFFF',
+                  color: effectiveFreeCount === totalCardsCount && totalCardsCount > 0 ? '#FFFFFF' : '#334155',
+                  boxShadow: effectiveFreeCount === totalCardsCount && totalCardsCount > 0 ? '0 2px 6px rgba(22, 163, 74, 0.3)' : '0 1px 2px rgba(0,0,0,0.05)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                🎁 100% Free / Complimentary Allotment (₹0)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (pricePerCard === 0) setPricePerCard(500);
+                  const suggestedFree = Math.min(5, Math.floor(totalCardsCount * 0.1) || 1);
+                  setFreeCount(suggestedFree.toString());
+                }}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  border: 'none',
+                  cursor: 'pointer',
+                  backgroundColor: effectiveFreeCount > 0 && effectiveFreeCount < totalCardsCount ? '#7E22CE' : '#FFFFFF',
+                  color: effectiveFreeCount > 0 && effectiveFreeCount < totalCardsCount ? '#FFFFFF' : '#334155',
+                  boxShadow: effectiveFreeCount > 0 && effectiveFreeCount < totalCardsCount ? '0 2px 6px rgba(126, 34, 206, 0.3)' : '0 1px 2px rgba(0,0,0,0.05)',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                🎯 Mixed Allocation (Paid + Free Bonus Cards)
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '16px' }}>
               {/* 1. Total Cards to Consign */}
               <div style={{ backgroundColor: '#F8FAFC', padding: '14px 16px', borderRadius: '10px', border: '1.5px solid #E2E8F0' }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#64748B', letterSpacing: '0.5px', marginBottom: '4px', textTransform: 'uppercase' }}>
-                  TOTAL CARDS TO CONSIGN
+                  TOTAL CARDS SELECTED
                 </label>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: '#0284C7' }}>
-                  {selectedCardIds.size} Cards
+                  {totalCardsCount} Cards
                 </div>
                 <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
                   Selected from Step 2
@@ -1450,20 +1543,83 @@ const DistributeCardsPage = () => {
                   />
                 </div>
                 <div style={{ fontSize: '11px', color: '#64748B', marginTop: '3px' }}>
-                  Enter ₹0 for complimentary transfer
+                  {effectivePrice === 0 ? 'Free / ₹0 allocation' : 'Commercial billing rate'}
                 </div>
               </div>
 
-              {/* 3. Total Calculation Box */}
+              {/* 3. Free Cards Option */}
+              <div style={{ backgroundColor: '#FDF4FF', padding: '14px 16px', borderRadius: '10px', border: '1.5px solid #F0ABFC' }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#86198F', letterSpacing: '0.5px', marginBottom: '4px', textTransform: 'uppercase' }}>
+                  🎁 FREE / BONUS CARDS
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max={totalCardsCount}
+                    step="1"
+                    className="form-control"
+                    placeholder="e.g. 10 free cards"
+                    value={freeCount}
+                    onChange={(e) => setFreeCount(e.target.value)}
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: '800',
+                      height: '42px',
+                      borderRadius: '8px',
+                      border: '1.5px solid #E879F9',
+                      backgroundColor: '#FFFFFF',
+                      color: '#86198F',
+                    }}
+                  />
+                </div>
+                {/* Quick Free Card Preset Chips */}
+                <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setFreeCount('0')}
+                    style={{ border: 'none', background: '#F5D0FE', color: '#701A75', fontSize: '10.5px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    0 Free
+                  </button>
+                  {totalCardsCount >= 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setFreeCount('5')}
+                      style={{ border: 'none', background: '#F5D0FE', color: '#701A75', fontSize: '10.5px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      5 Free
+                    </button>
+                  )}
+                  {totalCardsCount >= 10 && (
+                    <button
+                      type="button"
+                      onClick={() => setFreeCount('10')}
+                      style={{ border: 'none', background: '#F5D0FE', color: '#701A75', fontSize: '10.5px', fontWeight: '700', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      10 Free
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setFreeCount(totalCardsCount.toString())}
+                    style={{ border: 'none', background: '#E879F9', color: '#FFFFFF', fontSize: '10.5px', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    All Free
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Total Calculation Box */}
               <div style={{ backgroundColor: '#ECFDF5', padding: '14px 16px', borderRadius: '10px', border: '1.5px solid #A7F3D0' }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '800', color: '#047857', letterSpacing: '0.5px', marginBottom: '4px', textTransform: 'uppercase' }}>
-                  TOTAL CONSIGNMENT VALUE
+                  TOTAL PAYABLE VALUE
                 </label>
                 <div style={{ fontSize: '22px', fontWeight: '800', color: '#047857' }}>
                   ₹{totalAmount.toLocaleString('en-IN')}
                 </div>
                 <div style={{ fontSize: '11.5px', color: '#059669', marginTop: '2px', fontWeight: '700' }}>
-                  {selectedCardIds.size} Cards × ₹{effectivePrice || 0}/card
+                  {effectivePaidCount} Paid @ ₹{effectivePrice} + {effectiveFreeCount} Free (₹0)
                 </div>
               </div>
             </div>
@@ -1525,9 +1681,14 @@ const DistributeCardsPage = () => {
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px' }}>QUANTITY</div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#38BDF8', marginTop: '2px' }}>
-                    {selectedCardIds.size} Units
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#38BDF8', marginTop: '2px' }}>
+                    {totalCardsCount} Units
                   </div>
+                  {effectiveFreeCount > 0 && (
+                    <div style={{ fontSize: '11px', color: '#E879F9', fontWeight: '700' }}>
+                      ({effectivePaidCount} Paid + {effectiveFreeCount} Free)
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ borderLeft: '1.5px solid rgba(255,255,255,0.15)', paddingLeft: '20px' }}>

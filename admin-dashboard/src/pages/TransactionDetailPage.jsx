@@ -437,9 +437,27 @@ const TransactionDetailPage = () => {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Quantity:</span>
+              <span style={{ color: 'var(--text-muted)' }}>Total Quantity:</span>
               <span style={{ fontWeight: '800', color: '#0284C7' }}>{transaction.quantity} Cards</span>
             </div>
+
+            {transaction.freeQuantity !== undefined && transaction.freeQuantity > 0 && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Chargeable (Paid) Cards:</span>
+                  <span style={{ fontWeight: '700', color: '#334155' }}>
+                    {transaction.paidQuantity !== undefined ? transaction.paidQuantity : Math.max(0, transaction.quantity - transaction.freeQuantity)} Cards
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#FDF4FF', padding: '4px 8px', borderRadius: '6px', border: '1px solid #F0ABFC' }}>
+                  <span style={{ color: '#86198F', fontWeight: '700' }}>🎁 Free / Complimentary:</span>
+                  <span style={{ fontWeight: '800', color: '#86198F' }}>
+                    {transaction.freeQuantity} Free Cards (₹0)
+                  </span>
+                </div>
+              </>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text-muted)' }}>Rate Per Card:</span>
