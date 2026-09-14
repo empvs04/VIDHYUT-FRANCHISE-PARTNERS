@@ -4,7 +4,13 @@ import Customer from '../models/Customer.model.js';
 import Installation from '../models/Installation.model.js';
 import Card from '../models/Card.model.js';
 import { ApiResponse } from '../utils/apiResponse.js';
-import { ACCOUNT_STATUS, FRANCHISE_TYPES, USER_ROLES, CARD_STATUS } from '../config/constants.js';
+import {
+  ACCOUNT_STATUS,
+  FRANCHISE_TYPES,
+  USER_ROLES,
+  CARD_STATUS,
+  CONFIRMATION_STATUS,
+} from '../config/constants.js';
 
 // Admin Dashboard Real-time Metrics (Aggregated from live MongoDB database)
 export const getAdminMetrics = async (req, res, next) => {
@@ -182,7 +188,17 @@ export const getPartnerSummary = async (req, res, next) => {
       Customer.countDocuments({ createdByPartnerId: partner._id }),
       Installation.countDocuments({ partnerId: partner._id }),
       Card.countDocuments({ currentOwnerId: partner._id, status: CARD_STATUS.INSTALLED }),
-      Card.countDocuments({ currentOwnerId: partner._id, status: { $in: [CARD_STATUS.ASSIGNED, CARD_STATUS.AVAILABLE] } }),
+      Card.countDocuments({
+        currentOwnerId: partner._id,
+        status: {
+          $in: [
+            CARD_STATUS.ASSIGNED,
+            CARD_STATUS.AVAILABLE,
+            CARD_STATUS.TRANSFERRED,
+            CARD_STATUS.PENDING_TRANSFER,
+          ],
+        },
+      }),
       Installation.countDocuments({
         partnerId: partner._id,
         $or: [
@@ -218,7 +234,19 @@ export const getPartnerSummary = async (req, res, next) => {
           { $group: { _id: '$currentOwnerId', count: { $sum: 1 } } },
         ]),
         Card.aggregate([
-          { $match: { currentOwnerId: { $in: subPartnerIds }, status: { $in: [CARD_STATUS.ASSIGNED, CARD_STATUS.AVAILABLE] } } },
+          {
+            $match: {
+              currentOwnerId: { $in: subPartnerIds },
+              status: {
+                $in: [
+                  CARD_STATUS.ASSIGNED,
+                  CARD_STATUS.AVAILABLE,
+                  CARD_STATUS.TRANSFERRED,
+                  CARD_STATUS.PENDING_TRANSFER,
+                ],
+              },
+            },
+          },
           { $group: { _id: '$currentOwnerId', count: { $sum: 1 } } },
         ]),
       ]);

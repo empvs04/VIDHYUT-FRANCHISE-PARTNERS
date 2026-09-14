@@ -147,7 +147,13 @@ const TransactionDetailPage = () => {
     }
     setActionLoading(true);
     try {
+      const targetQuantity = Number(
+        editForm.customQuantity ||
+          (Number(editForm.paidQuantity || 0) + Number(editForm.freeQuantity || 0))
+      );
+
       const payload = {
+        quantity: targetQuantity,
         pricePerCard: Number(editForm.pricePerCard),
         freeQuantity: Number(editForm.freeQuantity),
         paidQuantity: Number(editForm.paidQuantity),
@@ -954,15 +960,15 @@ const TransactionDetailPage = () => {
                   )}
                 </div>
 
-                {/* Section 2: Card Serials & Quantity Adjustment */}
+                {/* Section 2: Card Serials & Total Quantity Adjustment */}
                 <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                        2. Card Allocation & Serials ({editForm.cardSerialNumbers.length} Total)
+                        2. Total Consignment Cards & Allocation ({editForm.customQuantity || ((editForm.paidQuantity || 0) + (editForm.freeQuantity || 0))} Total)
                       </label>
                       <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
-                        Remove cards or quickly adjust the total allocated quantity
+                        Set total cards to assign, or fine-tune individual serials
                       </div>
                     </div>
 
@@ -971,109 +977,166 @@ const TransactionDetailPage = () => {
                       onClick={() => {
                         const originalSerials = transaction.cardSerialNumbers || [];
                         const origFree = transaction.freeQuantity || 0;
-                        const origPaid = Math.max(0, originalSerials.length - origFree);
+                        const origPaid = transaction.paidQuantity || Math.max(0, (transaction.quantity || originalSerials.length) - origFree);
+                        const origTotal = transaction.quantity || (origPaid + origFree);
                         setEditForm({
                           ...editForm,
                           cardSerialNumbers: [...originalSerials],
-                          customQuantity: originalSerials.length,
+                          customQuantity: origTotal,
+                          freeQuantity: origFree,
                           paidQuantity: origPaid,
-                          totalAmount: origPaid * editForm.pricePerCard,
+                          totalAmount: origPaid * (transaction.pricePerCard || editForm.pricePerCard),
                         });
                       }}
                       style={{ background: 'transparent', border: 'none', color: '#0284C7', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <RotateCcw size={12} /> Reset Serials
+                      <RotateCcw size={12} /> Reset to Original ({transaction.quantity || transaction.cardSerialNumbers?.length || 0} Cards)
                     </button>
                   </div>
 
-                  {/* Quick Quantity Trimmer */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
-                    <Sliders size={18} style={{ color: '#0284C7' }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>
-                        Quick Trim Quantity: Keep First {editForm.cardSerialNumbers.length} Cards
+                  {/* Direct Total Cards Input Box & Quick Buttons */}
+                  <div style={{ backgroundColor: '#FFFFFF', padding: '14px 16px', borderRadius: '10px', border: '1.5px solid #BAE6FD', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800' }}>
+                        <CreditCard size={20} />
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
-                        Drag or type count to reduce assignment (e.g. keep first 20 cards and reclaim 30 back to HQ)
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
+                          Total Cards to Assign in this Consignment
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#64748B' }}>
+                          Type any quantity (e.g. 530, 500, 100) — automatically adjusts Paid + Free balance
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input
                         type="number"
                         min="1"
-                        max={transaction.cardSerialNumbers?.length || 100}
-                        value={editForm.cardSerialNumbers.length}
+                        step="1"
+                        value={editForm.customQuantity || ((editForm.paidQuantity || 0) + (editForm.freeQuantity || 0))}
                         onChange={(e) => {
-                          const targetCount = Math.max(1, Math.min(transaction.cardSerialNumbers?.length || 100, parseInt(e.target.value, 10) || 1));
-                          const trimmed = (transaction.cardSerialNumbers || []).slice(0, targetCount);
-                          const newFree = Math.min(editForm.freeQuantity, trimmed.length);
-                          const newPaid = Math.max(0, trimmed.length - newFree);
+                          const newTotal = Math.max(1, parseInt(e.target.value, 10) || 1);
+                          const free = editForm.freeQuantity || 0;
+                          const newPaid = Math.max(0, newTotal - free);
+                          const trimmedSerials = (transaction.cardSerialNumbers || []).slice(0, newTotal);
                           setEditForm({
                             ...editForm,
-                            cardSerialNumbers: trimmed,
-                            customQuantity: trimmed.length,
-                            freeQuantity: newFree,
+                            customQuantity: newTotal,
                             paidQuantity: newPaid,
-                            totalAmount: newPaid * editForm.pricePerCard,
+                            cardSerialNumbers: trimmedSerials.length > 0 ? trimmedSerials : editForm.cardSerialNumbers,
+                            totalAmount: newPaid * (editForm.pricePerCard || 0),
                           });
                         }}
-                        style={{ width: '65px', padding: '6px 8px', borderRadius: '6px', border: '1.5px solid #0284C7', fontWeight: '800', textAlign: 'center', fontSize: '14px' }}
+                        style={{
+                          width: '100px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          border: '2px solid #0284C7',
+                          fontWeight: '800',
+                          textAlign: 'center',
+                          fontSize: '18px',
+                          color: '#0369A1',
+                          backgroundColor: '#F0F9FF',
+                        }}
                       />
-                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B' }}>Cards</span>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Cards</span>
                     </div>
                   </div>
 
-                  {/* Badges of Currently Allocated Serials with Remove (X) */}
-                  <div style={{ maxHeight: '160px', overflowY: 'auto', padding: '8px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #CBD5E1', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {editForm.cardSerialNumbers.map((serial, idx) => (
-                      <span
-                        key={serial}
+                  {/* Quick Preset Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', color: '#64748B', marginRight: '4px' }}>Quick Presets:</span>
+                    {[50, 100, 200, 500, 530, 1000].map((qty) => (
+                      <button
+                        key={qty}
+                        type="button"
+                        onClick={() => {
+                          const free = editForm.freeQuantity || 0;
+                          const newPaid = Math.max(0, qty - free);
+                          setEditForm({
+                            ...editForm,
+                            customQuantity: qty,
+                            paidQuantity: newPaid,
+                            totalAmount: newPaid * (editForm.pricePerCard || 0),
+                          });
+                        }}
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          backgroundColor: '#EFF6FF',
-                          color: '#1E40AF',
-                          border: '1px solid #BFDBFE',
-                          padding: '4px 8px',
+                          padding: '3px 10px',
                           borderRadius: '6px',
+                          border: editForm.customQuantity === qty ? '1.5px solid #0284C7' : '1px solid #CBD5E1',
+                          backgroundColor: editForm.customQuantity === qty ? '#E0F2FE' : '#FFFFFF',
+                          color: editForm.customQuantity === qty ? '#0369A1' : '#475569',
                           fontSize: '11.5px',
-                          fontFamily: 'monospace',
                           fontWeight: '700',
+                          cursor: 'pointer',
                         }}
                       >
-                        <span>{serial}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = editForm.cardSerialNumbers.filter((s) => s !== serial);
-                            const newFree = Math.min(editForm.freeQuantity, updated.length);
-                            const newPaid = Math.max(0, updated.length - newFree);
-                            setEditForm({
-                              ...editForm,
-                              cardSerialNumbers: updated,
-                              customQuantity: updated.length,
-                              freeQuantity: newFree,
-                              paidQuantity: newPaid,
-                              totalAmount: newPaid * editForm.pricePerCard,
-                            });
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#EF4444',
-                            cursor: 'pointer',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                          }}
-                          title="Remove this card from consignment"
-                        >
-                          <X size={13} />
-                        </button>
-                      </span>
+                        {qty} Cards
+                      </button>
                     ))}
                   </div>
+
+                  {/* Badges of Currently Allocated Serials */}
+                  {editForm.cardSerialNumbers.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#64748B', marginBottom: '6px' }}>
+                        Assigned Serials ({editForm.cardSerialNumbers.length} mapped):
+                      </div>
+                      <div style={{ maxHeight: '120px', overflowY: 'auto', padding: '8px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #CBD5E1', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {editForm.cardSerialNumbers.map((serial) => (
+                          <span
+                            key={serial}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              backgroundColor: '#EFF6FF',
+                              color: '#1E40AF',
+                              border: '1px solid #BFDBFE',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontFamily: 'monospace',
+                              fontWeight: '700',
+                            }}
+                          >
+                            <span>{serial}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = editForm.cardSerialNumbers.filter((s) => s !== serial);
+                                const newTotal = Math.max(1, (editForm.customQuantity || editForm.cardSerialNumbers.length) - 1);
+                                const newFree = Math.min(editForm.freeQuantity, newTotal);
+                                const newPaid = Math.max(0, newTotal - newFree);
+                                setEditForm({
+                                  ...editForm,
+                                  cardSerialNumbers: updated,
+                                  customQuantity: newTotal,
+                                  freeQuantity: newFree,
+                                  paidQuantity: newPaid,
+                                  totalAmount: newPaid * editForm.pricePerCard,
+                                });
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#EF4444',
+                                cursor: 'pointer',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                              title="Remove this card"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Section 3: Commercials & Free Cards Breakdown */}

@@ -959,17 +959,35 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
       transaction.quantity = quantity;
     } else if (quantity > transaction.quantity) {
       const cardsToAddCount = quantity - transaction.quantity;
-      const availableCards = await Card.find({
+      let availableCards = await Card.find({
         currentOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
         currentOwnerId: seller ? seller._id : null,
         status: CARD_STATUS.AVAILABLE,
       }).limit(cardsToAddCount);
 
       if (availableCards.length < cardsToAddCount) {
-        throw new ApiError(
-          400,
-          `Insufficient stock at ${seller ? seller.fullName : 'HQ'}. Only ${availableCards.length} cards available, but needed ${cardsToAddCount}.`
-        );
+        if (!seller) {
+          // Auto generate shortage cards for HQ so Super Admin is never blocked
+          const needed = cardsToAddCount - availableCards.length;
+          const { getNextAvailableSerialRange } = await import('./card.service.js');
+          const range = await getNextAvailableSerialRange('VS', 6, needed);
+          const newCardsDocs = [];
+          for (let i = range.nextStartNumber; i <= range.nextEndNumber; i++) {
+            newCardsDocs.push({
+              serialNumber: `VS${String(i).padStart(6, '0')}`,
+              status: CARD_STATUS.AVAILABLE,
+              currentOwnerType: CARD_OWNER_TYPES.HEADQUARTERS,
+              currentOwnerId: null,
+            });
+          }
+          const created = await Card.insertMany(newCardsDocs, { ordered: false });
+          availableCards = [...availableCards, ...created];
+        } else {
+          throw new ApiError(
+            400,
+            `Insufficient stock at ${seller.fullName}. Only ${availableCards.length} cards available, but needed ${cardsToAddCount}.`
+          );
+        }
       }
 
       const newOwnerStatus =

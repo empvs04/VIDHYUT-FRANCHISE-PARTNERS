@@ -48,6 +48,63 @@ export const createAndSendOTP = async (mobileNumber, purpose = OTP_PURPOSE.PARTN
     isUsed: false,
   });
 
+  // SMS Gateway Dispatch Function
+  const sendRealSMS = async (phone, otp) => {
+    try {
+      // 1. Fast2SMS (India)
+      if (process.env.FAST2SMS_API_KEY) {
+        const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
+          method: 'POST',
+          headers: {
+            authorization: process.env.FAST2SMS_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            route: 'otp',
+            variables_values: otp,
+            numbers: phone,
+          }),
+        });
+        const data = await response.json();
+        console.log(`[SMS Gateway: Fast2SMS] Response for ${phone}:`, data);
+        return;
+      }
+
+      // 2. 2Factor (India)
+      if (process.env.TWOFACTOR_API_KEY) {
+        const url = `https://2factor.in/v1/API/V1/${process.env.TWOFACTOR_API_KEY}/SMS/${phone}/${otp}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log(`[SMS Gateway: 2Factor] Response for ${phone}:`, data);
+        return;
+      }
+
+      // 3. MSG91 (India)
+      if (process.env.MSG91_AUTH_KEY && process.env.MSG91_TEMPLATE_ID) {
+        const response = await fetch('https://api.msg91.com/api/v5/otp', {
+          method: 'POST',
+          headers: {
+            authkey: process.env.MSG91_AUTH_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            template_id: process.env.MSG91_TEMPLATE_ID,
+            mobile: `91${phone}`,
+            otp,
+          }),
+        });
+        const data = await response.json();
+        console.log(`[SMS Gateway: MSG91] Response for ${phone}:`, data);
+        return;
+      }
+    } catch (smsErr) {
+      console.error(`[SMS Dispatch Error] Failed to send SMS to ${phone}:`, smsErr.message);
+    }
+  };
+
+  // Dispatch real SMS asynchronously if configured
+  await sendRealSMS(mobileNumber, rawOTP);
+
   // SMS Dispatch Logic / Development Logger
   if (process.env.ENABLE_DEV_OTP_LOG === 'true' || process.env.NODE_ENV !== 'production') {
     console.log(`\n========================================`);
@@ -57,11 +114,18 @@ export const createAndSendOTP = async (mobileNumber, purpose = OTP_PURPOSE.PARTN
     console.log(`========================================\n`);
   }
 
+  // Determine if a live SMS gateway is configured
+  const hasLiveSmsGateway = Boolean(
+    process.env.FAST2SMS_API_KEY ||
+    process.env.TWOFACTOR_API_KEY ||
+    (process.env.MSG91_AUTH_KEY && process.env.MSG91_TEMPLATE_ID)
+  );
+
   return {
     expiresInMinutes: OTP_EXPIRY_MINUTES,
     cooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
-    // Return OTP code in dev for easy inspection if configured
-    devCode: (process.env.ENABLE_DEV_OTP_LOG === 'true' || process.env.NODE_ENV !== 'production') ? rawOTP : undefined,
+    // Return devCode whenever live SMS gateway is absent or dev log is enabled
+    devCode: (!hasLiveSmsGateway || process.env.ENABLE_DEV_OTP_LOG === 'true' || process.env.NODE_ENV !== 'production') ? rawOTP : undefined,
   };
 };
 

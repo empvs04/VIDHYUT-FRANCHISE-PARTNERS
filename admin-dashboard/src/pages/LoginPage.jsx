@@ -450,6 +450,46 @@ const LoginPage = () => {
                   <div style={{ fontSize: '12px', color: '#1E40AF' }}>
                     OTP sent to: <strong>{otpMeta?.maskedMobile}</strong> ({otpMeta?.franchiseId})
                   </div>
+
+                  {otpMeta?.devCode && (
+                    <div
+                      style={{
+                        marginTop: '8px',
+                        padding: '8px 10px',
+                        backgroundColor: '#FEF3C7',
+                        border: '1px dashed #F59E0B',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        color: '#92400E',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span>
+                        🧪 <strong>Testing OTP:</strong>{' '}
+                        <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: '800', letterSpacing: '2px', color: '#B45309' }}>
+                          {otpMeta.devCode}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setOtpCode(otpMeta.devCode)}
+                        style={{
+                          background: '#F59E0B',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Auto-Fill
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: '18px' }}>
