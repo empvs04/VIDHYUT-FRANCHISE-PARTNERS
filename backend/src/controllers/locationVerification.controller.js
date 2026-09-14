@@ -20,7 +20,7 @@ export const verifyLocationHandler = async (req, res, next) => {
 
 export const getLocationStatsHandler = async (req, res, next) => {
   try {
-    const stats = await getLocationVerificationStats(req.user);
+    const stats = await getLocationVerificationStats(req.user, req.partner);
     return res.status(200).json(
       new ApiResponse(200, stats, 'Location verification metrics retrieved successfully.')
     );
@@ -31,7 +31,7 @@ export const getLocationStatsHandler = async (req, res, next) => {
 
 export const listLocationsHandler = async (req, res, next) => {
   try {
-    const result = await listLocationVerifications(req.query, req.user);
+    const result = await listLocationVerifications(req.query, req.user, req.partner);
     return res.status(200).json(
       new ApiResponse(200, result, 'Location verification records retrieved successfully.')
     );
@@ -42,7 +42,7 @@ export const listLocationsHandler = async (req, res, next) => {
 
 export const getLocationByIdHandler = async (req, res, next) => {
   try {
-    const record = await getLocationVerificationById(req.params.id, req.user);
+    const record = await getLocationVerificationById(req.params.id, req.user, req.partner);
     return res.status(200).json(
       new ApiResponse(200, record, 'Location verification details retrieved successfully.')
     );

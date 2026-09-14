@@ -17,7 +17,10 @@ import {
   LOCATION_VERIFICATION_STATUS,
   GPS_ACCURACY_STATUS,
   ACCOUNT_STATUS,
+  NOTIFICATION_TYPES,
+  ENTITY_TYPES,
 } from '../config/constants.js';
+import { createNotification, notifySuperAdmins } from './notification.service.js';
 
 /**
  * 1. Verify Installation Location (Partner GPS Submission)
@@ -27,6 +30,7 @@ import {
  * - Pulls authoritative partner authorization from MongoDB
  * - Determines territoryMatch & customerAddressMatch
  * - Saves immutable LocationVerification record
+ * - Dispatches Real-Time Geofence Breach Notifications to Super Admin & Parent Franchise Partner
  */
 export const verifyLocation = async (data, user, partner) => {
   const {
@@ -59,6 +63,8 @@ export const verifyLocation = async (data, user, partner) => {
     if (mongoose.Types.ObjectId.isValid(partnerId)) {
       executingPartner = await FranchisePartner.findById(partnerId);
     }
+  } else if (!executingPartner && partnerId && mongoose.Types.ObjectId.isValid(partnerId)) {
+    executingPartner = await FranchisePartner.findById(partnerId);
   }
 
   if (!executingPartner && user.role !== USER_ROLES.SUPER_ADMIN) {
@@ -97,7 +103,7 @@ export const verifyLocation = async (data, user, partner) => {
     if (!stateMatched) {
       territoryMatch = false;
       verificationStatus = LOCATION_VERIFICATION_STATUS.TERRITORY_MISMATCH;
-      verificationReason = `State Mismatch: Captured GPS location is in ${detectedState}, but partner is authorized for ${authState}.`;
+      verificationReason = `State Mismatch: Captured GPS location is in ${detectedDistrict} (${detectedState}), but partner is authorized for ${authDistrict} (${authState}).`;
     } else {
       if (franchiseType === 'STATE_FRANCHISE') {
         // State franchise authorized across the state
@@ -134,13 +140,24 @@ export const verifyLocation = async (data, user, partner) => {
     }
   }
 
-  // H. Generate Unique Verification Record
+  // H. Identify Parent Partner for Sub-Franchise Hierarchy
+  let parentPartner = null;
+  let parentPartnerId = null;
+  if (executingPartner && executingPartner.parentPartnerId) {
+    parentPartner = await FranchisePartner.findById(executingPartner.parentPartnerId).populate('userId');
+    if (parentPartner) {
+      parentPartnerId = parentPartner._id;
+    }
+  }
+
+  // I. Generate Unique Verification Record
   const count = await LocationVerification.countDocuments();
   const locationVerificationId = generateLocationVerificationId(count + 1);
 
   const verificationRecord = new LocationVerification({
     locationVerificationId,
     partnerId: executingPartner ? executingPartner._id : user._id,
+    parentPartnerId,
     customerId: customerId && mongoose.Types.ObjectId.isValid(customerId) ? customerId : null,
     latitude: lat,
     longitude: lng,
@@ -169,6 +186,94 @@ export const verifyLocation = async (data, user, partner) => {
 
   await verificationRecord.save();
 
+  // J. Dispatch Real-Time Geofence Breach Notifications if Out-of-Territory Detected
+  if (!territoryMatch || verificationStatus === LOCATION_VERIFICATION_STATUS.TERRITORY_MISMATCH) {
+    if (parentPartner) {
+      // Sub-Franchise Breach: Alert both Super Admin AND Parent Franchise Partner
+      const parentUserId = parentPartner.userId?._id || parentPartner.userId;
+      if (parentUserId) {
+        await createNotification({
+          recipientUserId: parentUserId,
+          recipientPartnerId: parentPartner._id,
+          type: NOTIFICATION_TYPES.TERRITORY_MISMATCH,
+          title: `🚨 Sub-Franchise Out-of-Territory Alert: ${executingPartner.fullName}`,
+          message: `Your Sub-Franchise Partner ${executingPartner.fullName} (${executingPartner.franchiseId}) attempted card installation in ${detectedDistrict}, ${detectedState} (Authorized: ${authDistrict}, ${authState}).`,
+          entityType: ENTITY_TYPES.LOCATION_VERIFICATION,
+          entityId: locationVerificationId,
+          metadata: {
+            isSubFranchiseViolation: true,
+            subPartnerId: executingPartner._id,
+            subPartnerName: executingPartner.fullName,
+            subPartnerCode: executingPartner.franchiseId,
+            subPartnerPhone: executingPartner.mobileNumber,
+            parentPartnerId: parentPartner._id,
+            parentPartnerName: parentPartner.fullName,
+            parentPartnerCode: parentPartner.franchiseId,
+            detectedState,
+            detectedDistrict,
+            authorizedState: authState,
+            authorizedDistrict: authDistrict,
+            latitude: lat,
+            longitude: lng,
+            formattedAddress: geocoded.formattedAddress,
+            locationVerificationId,
+          },
+        });
+      }
+
+      // Alert Super Admin about Sub-Franchise Breach
+      await notifySuperAdmins({
+        type: NOTIFICATION_TYPES.TERRITORY_MISMATCH,
+        title: `🚨 Geofence Breach: Sub-Franchise ${executingPartner.fullName} (Parent: ${parentPartner.fullName})`,
+        message: `Sub-Franchise Partner ${executingPartner.fullName} (${executingPartner.franchiseId}) under parent ${parentPartner.fullName} (${parentPartner.franchiseId}) attempted card installation outside territory in ${detectedDistrict}, ${detectedState} (Authorized: ${authDistrict}, ${authState}).`,
+        entityType: ENTITY_TYPES.LOCATION_VERIFICATION,
+        entityId: locationVerificationId,
+        metadata: {
+          isSubFranchiseViolation: true,
+          subPartnerId: executingPartner._id,
+          subPartnerName: executingPartner.fullName,
+          subPartnerCode: executingPartner.franchiseId,
+          subPartnerPhone: executingPartner.mobileNumber,
+          parentPartnerId: parentPartner._id,
+          parentPartnerName: parentPartner.fullName,
+          parentPartnerCode: parentPartner.franchiseId,
+          detectedState,
+          detectedDistrict,
+          authorizedState: authState,
+          authorizedDistrict: authDistrict,
+          latitude: lat,
+          longitude: lng,
+          formattedAddress: geocoded.formattedAddress,
+          locationVerificationId,
+        },
+      });
+    } else if (executingPartner) {
+      // Direct Franchise Partner Breach: Alert Super Admin ONLY
+      await notifySuperAdmins({
+        type: NOTIFICATION_TYPES.TERRITORY_MISMATCH,
+        title: `🚨 Geofence Breach: Franchise Partner ${executingPartner.fullName}`,
+        message: `Franchise Partner ${executingPartner.fullName} (${executingPartner.franchiseId}) attempted card installation outside authorized territory in ${detectedDistrict}, ${detectedState} (Authorized: ${authDistrict}, ${authState}).`,
+        entityType: ENTITY_TYPES.LOCATION_VERIFICATION,
+        entityId: locationVerificationId,
+        metadata: {
+          isSubFranchiseViolation: false,
+          partnerId: executingPartner._id,
+          partnerName: executingPartner.fullName,
+          partnerCode: executingPartner.franchiseId,
+          partnerPhone: executingPartner.mobileNumber,
+          detectedState,
+          detectedDistrict,
+          authorizedState: authState,
+          authorizedDistrict: authDistrict,
+          latitude: lat,
+          longitude: lng,
+          formattedAddress: geocoded.formattedAddress,
+          locationVerificationId,
+        },
+      });
+    }
+  }
+
   return {
     locationVerificationId: verificationRecord.locationVerificationId,
     _id: verificationRecord._id,
@@ -185,6 +290,14 @@ export const verifyLocation = async (data, user, partner) => {
     customerAddressMatch,
     verificationStatus,
     verificationReason,
+    parentPartner: parentPartner
+      ? {
+          _id: parentPartner._id,
+          fullName: parentPartner.fullName,
+          franchiseId: parentPartner.franchiseId,
+          mobileNumber: parentPartner.mobileNumber,
+        }
+      : null,
     gpsCapturedAt: verificationRecord.gpsCapturedAt,
     serverTimestamp: verificationRecord.serverTimestamp,
     canProceed: verificationStatus === LOCATION_VERIFICATION_STATUS.VERIFIED,
@@ -194,7 +307,7 @@ export const verifyLocation = async (data, user, partner) => {
 /**
  * 2. Get Location Verification Record by ID
  */
-export const getLocationVerificationById = async (id, user) => {
+export const getLocationVerificationById = async (id, user, partner = null) => {
   let query = {};
   if (mongoose.Types.ObjectId.isValid(id)) {
     query._id = id;
@@ -202,8 +315,25 @@ export const getLocationVerificationById = async (id, user) => {
     query.locationVerificationId = id;
   }
 
+  // Role scoping
+  if (user.role === USER_ROLES.FRANCHISE_PARTNER && partner) {
+    const subPartners = await FranchisePartner.find({ parentPartnerId: partner._id }).select('_id');
+    const partnerIds = [partner._id, ...subPartners.map((p) => p._id)];
+    query.partnerId = { $in: partnerIds };
+  } else if (user.role === USER_ROLES.SUB_FRANCHISE && partner) {
+    query.partnerId = partner._id;
+  }
+
   const record = await LocationVerification.findOne(query)
-    .populate('partnerId', 'fullName franchiseId franchiseType mobileNumber email state district')
+    .populate({
+      path: 'partnerId',
+      select: 'fullName franchiseId franchiseType mobileNumber email state district parentPartnerId',
+      populate: {
+        path: 'parentPartnerId',
+        select: 'fullName franchiseId mobileNumber state district',
+      },
+    })
+    .populate('parentPartnerId', 'fullName franchiseId mobileNumber state district')
     .populate('customerId', 'customerId fullName mobileNumber address')
     .populate('installationId', 'installationId connectedLoadKw installedCardCount cardSerialNumbers')
     .populate('auditHistory.reviewedBy', 'fullName email role')
@@ -287,16 +417,45 @@ export const adminReviewLocation = async (id, action, reviewReason, user) => {
 };
 
 /**
- * 4. Get Location Verification Overview Statistics (Admin Metrics)
+ * 4. Get Location Verification Overview Statistics
+ * - Super Admin: Aggregated stats across the entire system.
+ * - Parent Franchise Partner: Aggregated stats across their own + all Sub-Franchise partners.
+ * - Sub-Franchise: Stats for their own account.
  */
-export const getLocationVerificationStats = async (user) => {
-  const [total, verified, mismatch, lowAccuracy, reviewRequired, rejected] = await Promise.all([
-    LocationVerification.countDocuments(),
-    LocationVerification.countDocuments({ verificationStatus: LOCATION_VERIFICATION_STATUS.VERIFIED }),
-    LocationVerification.countDocuments({ verificationStatus: LOCATION_VERIFICATION_STATUS.TERRITORY_MISMATCH }),
-    LocationVerification.countDocuments({ verificationStatus: LOCATION_VERIFICATION_STATUS.LOW_ACCURACY }),
-    LocationVerification.countDocuments({ verificationStatus: LOCATION_VERIFICATION_STATUS.REVIEW_REQUIRED }),
-    LocationVerification.countDocuments({ verificationStatus: LOCATION_VERIFICATION_STATUS.REJECTED }),
+export const getLocationVerificationStats = async (user, partner = null) => {
+  let query = {};
+  if (user.role === USER_ROLES.FRANCHISE_PARTNER && partner) {
+    const subPartners = await FranchisePartner.find({ parentPartnerId: partner._id }).select('_id');
+    const partnerIds = [partner._id, ...subPartners.map((p) => p._id)];
+    query.partnerId = { $in: partnerIds };
+  } else if (user.role === USER_ROLES.SUB_FRANCHISE && partner) {
+    query.partnerId = partner._id;
+  }
+
+  const [total, verified, mismatch, lowAccuracy, reviewRequired, rejected, recentMismatches] = await Promise.all([
+    LocationVerification.countDocuments(query),
+    LocationVerification.countDocuments({ ...query, verificationStatus: LOCATION_VERIFICATION_STATUS.VERIFIED }),
+    LocationVerification.countDocuments({ ...query, verificationStatus: LOCATION_VERIFICATION_STATUS.TERRITORY_MISMATCH }),
+    LocationVerification.countDocuments({ ...query, verificationStatus: LOCATION_VERIFICATION_STATUS.LOW_ACCURACY }),
+    LocationVerification.countDocuments({ ...query, verificationStatus: LOCATION_VERIFICATION_STATUS.REVIEW_REQUIRED }),
+    LocationVerification.countDocuments({ ...query, verificationStatus: LOCATION_VERIFICATION_STATUS.REJECTED }),
+    LocationVerification.find({
+      ...query,
+      verificationStatus: LOCATION_VERIFICATION_STATUS.TERRITORY_MISMATCH,
+    })
+      .populate({
+        path: 'partnerId',
+        select: 'fullName franchiseId franchiseType state district mobileNumber parentPartnerId',
+        populate: {
+          path: 'parentPartnerId',
+          select: 'fullName franchiseId mobileNumber state district',
+        },
+      })
+      .populate('parentPartnerId', 'fullName franchiseId mobileNumber state district')
+      .populate('installationId', 'installationId connectedLoadKw installedCardCount cardSerialNumbers')
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean(),
   ]);
 
   return {
@@ -306,20 +465,31 @@ export const getLocationVerificationStats = async (user) => {
     lowAccuracy,
     reviewRequired,
     rejected,
+    recentMismatches: recentMismatches || [],
   };
 };
 
 /**
- * 5. List Location Verifications with Filters & Pagination (Admin View)
+ * 5. List Location Verifications with Filters & Pagination
  */
-export const listLocationVerifications = async (params, user) => {
+export const listLocationVerifications = async (params, user, partner = null) => {
   const page = Math.max(1, parseInt(params.page, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(params.limit, 10) || 10));
   const skip = (page - 1) * limit;
 
   const query = {};
 
-  if (params.status && params.status.trim()) {
+  if (user.role === USER_ROLES.FRANCHISE_PARTNER && partner) {
+    const subPartners = await FranchisePartner.find({ parentPartnerId: partner._id }).select('_id');
+    const partnerIds = [partner._id, ...subPartners.map((p) => p._id)];
+    query.partnerId = { $in: partnerIds };
+  } else if (user.role === USER_ROLES.SUB_FRANCHISE && partner) {
+    query.partnerId = partner._id;
+  }
+
+  if (params.verificationStatus && params.verificationStatus.trim()) {
+    query.verificationStatus = params.verificationStatus.trim();
+  } else if (params.status && params.status.trim()) {
     query.verificationStatus = params.status.trim();
   }
 
@@ -346,6 +516,8 @@ export const listLocationVerifications = async (params, user) => {
       { formattedAddress: new RegExp(s, 'i') },
       { district: new RegExp(s, 'i') },
       { state: new RegExp(s, 'i') },
+      { customerEnteredState: new RegExp(s, 'i') },
+      { customerEnteredDistrict: new RegExp(s, 'i') },
     ];
   }
 
@@ -355,22 +527,50 @@ export const listLocationVerifications = async (params, user) => {
     if (params.dateTo) query.serverTimestamp.$lte = new Date(params.dateTo);
   }
 
-  const [records, total] = await Promise.all([
+  const [records, total, recentMismatches] = await Promise.all([
     LocationVerification.find(query)
-      .populate('partnerId', 'fullName franchiseId franchiseType state district mobileNumber')
-      .populate('customerId', 'customerId fullName mobileNumber')
+      .populate({
+        path: 'partnerId',
+        select: 'fullName franchiseId franchiseType state district mobileNumber parentPartnerId',
+        populate: {
+          path: 'parentPartnerId',
+          select: 'fullName franchiseId mobileNumber state district',
+        },
+      })
+      .populate('parentPartnerId', 'fullName franchiseId mobileNumber state district')
+      .populate('customerId', 'customerId fullName mobileNumber address')
       .populate('installationId', 'installationId connectedLoadKw installedCardCount cardSerialNumbers')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
     LocationVerification.countDocuments(query),
+    LocationVerification.find({
+      ...query,
+      verificationStatus: LOCATION_VERIFICATION_STATUS.TERRITORY_MISMATCH,
+    })
+      .populate({
+        path: 'partnerId',
+        select: 'fullName franchiseId franchiseType state district mobileNumber parentPartnerId',
+        populate: {
+          path: 'parentPartnerId',
+          select: 'fullName franchiseId mobileNumber state district',
+        },
+      })
+      .populate('parentPartnerId', 'fullName franchiseId mobileNumber state district')
+      .populate('installationId', 'installationId connectedLoadKw installedCardCount cardSerialNumbers')
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean(),
   ]);
 
   return {
+    verifications: records,
     records,
+    recentMismatches: recentMismatches || [],
     pagination: {
       total,
+      totalRecords: total,
       page,
       limit,
       totalPages: Math.ceil(total / limit) || 1,

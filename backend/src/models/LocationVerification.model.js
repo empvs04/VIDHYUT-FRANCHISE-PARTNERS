@@ -59,6 +59,12 @@ const locationVerificationSchema = new mongoose.Schema(
       required: [true, 'Franchise Partner reference is required'],
       index: true,
     },
+    parentPartnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FranchisePartner',
+      default: null,
+      index: true,
+    },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
@@ -198,6 +204,7 @@ const locationVerificationSchema = new mongoose.Schema(
 
 // Compound Indexes for fast queries & analytics
 locationVerificationSchema.index({ partnerId: 1, createdAt: -1 });
+locationVerificationSchema.index({ parentPartnerId: 1, createdAt: -1 });
 locationVerificationSchema.index({ verificationStatus: 1, createdAt: -1 });
 locationVerificationSchema.index({ state: 1, district: 1, createdAt: -1 });
 locationVerificationSchema.index({ latitude: 1, longitude: 1 });
