@@ -24,6 +24,12 @@ import {
   Layers,
   Printer,
   Copy,
+  Edit3,
+  Trash2,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  Sliders,
 } from 'lucide-react';
 import api from '../services/api';
 import {
@@ -46,12 +52,30 @@ const TransactionDetailPage = () => {
   const [loading, setLoading] = useState(true);
 
   // Modals
-  const [activeModal, setActiveModal] = useState(null); // 'CONFIRM' | 'DISPUTE' | 'PAYMENT_PROOF' | 'VERIFY_PAYMENT' | 'CANCEL'
+  const [activeModal, setActiveModal] = useState(null); // 'CONFIRM' | 'DISPUTE' | 'PAYMENT_PROOF' | 'VERIFY_PAYMENT' | 'CANCEL' | 'EDIT_TRANSACTION'
   const [modalNotes, setModalNotes] = useState('');
   const [disputeReason, setDisputeReason] = useState('QUANTITY_MISMATCH');
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Super Admin Edit Form State
+  const [editForm, setEditForm] = useState({
+    pricePerCard: 0,
+    freeQuantity: 0,
+    paidQuantity: 0,
+    totalAmount: 0,
+    paymentStatus: 'PENDING',
+    paymentReference: '',
+    paymentProofNotes: '',
+    status: 'CONFIRMED',
+    notes: '',
+    cardSerialNumbers: [],
+    customQuantity: 0,
+  });
+  const [availableHqCards, setAvailableHqCards] = useState([]);
+  const [loadingHqCards, setLoadingHqCards] = useState(false);
+  const [cardSearch, setCardSearch] = useState('');
 
   // Fetch transaction details
   const fetchTransaction = async () => {
@@ -71,6 +95,74 @@ const TransactionDetailPage = () => {
   useEffect(() => {
     fetchTransaction();
   }, [id]);
+
+  const openEditModal = async () => {
+    if (!transaction) return;
+    const initialSerials = transaction.cardSerialNumbers || [];
+    const initialFree = transaction.freeQuantity || 0;
+    const initialPaid = transaction.paidQuantity || Math.max(0, initialSerials.length - initialFree);
+    const initialPrice = transaction.pricePerCard || 0;
+    const initialTotal = transaction.totalAmount || initialPaid * initialPrice;
+
+    setEditForm({
+      pricePerCard: initialPrice,
+      freeQuantity: initialFree,
+      paidQuantity: initialPaid,
+      totalAmount: initialTotal,
+      paymentStatus: transaction.paymentStatus || 'PENDING',
+      paymentReference: transaction.paymentReference || '',
+      paymentProofNotes: transaction.paymentProofNotes || '',
+      status: transaction.status || 'CONFIRMED',
+      notes: transaction.notes || '',
+      cardSerialNumbers: [...initialSerials],
+      customQuantity: initialSerials.length,
+    });
+    setActiveModal('EDIT_TRANSACTION');
+
+    try {
+      setLoadingHqCards(true);
+      const res = await api.get('/transactions/my-available-cards');
+      if (res.data?.data?.cards) {
+        setAvailableHqCards(res.data.data.cards);
+      }
+    } catch {
+      // non-blocking
+    } finally {
+      setLoadingHqCards(false);
+    }
+  };
+
+  const handleSaveEdit = async (e) => {
+    if (e) e.preventDefault();
+    if (editForm.cardSerialNumbers.length === 0 && editForm.status !== 'CANCELLED') {
+      showToast('Transaction must contain at least 1 card serial number, or change status to CANCELLED.', 'warning');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const payload = {
+        pricePerCard: Number(editForm.pricePerCard),
+        freeQuantity: Number(editForm.freeQuantity),
+        paidQuantity: Number(editForm.paidQuantity),
+        totalAmount: Number(editForm.totalAmount),
+        paymentStatus: editForm.paymentStatus,
+        paymentReference: editForm.paymentReference,
+        paymentProofNotes: editForm.paymentProofNotes,
+        status: editForm.status,
+        notes: editForm.notes,
+        cardSerialNumbers: editForm.cardSerialNumbers,
+      };
+
+      await api.put(`/transactions/${id}`, payload);
+      showToast('Consignment parameters, rates, cards & inventory updated successfully!', 'success');
+      setActiveModal(null);
+      fetchTransaction();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to update transaction', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Actions
   const handleConfirmTransaction = async () => {
@@ -274,6 +366,24 @@ const TransactionDetailPage = () => {
 
           {/* Quick Actions in Header */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {isSuperAdmin && (
+              <button
+                onClick={openEditModal}
+                className="btn btn-primary"
+                style={{
+                  backgroundColor: '#0284C7',
+                  borderColor: '#0284C7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: '700',
+                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.35)',
+                }}
+              >
+                <Edit3 size={16} /> Edit Consignment / Rates
+              </button>
+            )}
+
             {canConfirm && (
               <button
                 onClick={() => {
@@ -712,12 +822,440 @@ const TransactionDetailPage = () => {
               Cancel Consignment
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Are you sure? All {transaction.quantity} locked cards will be released back into your available inventory.
+              Are you sure? All {transaction.quantity} cards will be returned / released back into available inventory.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button className="btn btn-outline" onClick={() => setActiveModal(null)}>Back</button>
               <button className="btn btn-primary" onClick={handleCancelTransaction} style={{ backgroundColor: '#DC2626' }}>Confirm Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 6: Super Admin Edit Transaction (Rates, Cards, Quantities, Status, Notes) */}
+      {activeModal === 'EDIT_TRANSACTION' && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div
+            className="card"
+            style={{
+              maxWidth: '720px',
+              width: '100%',
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: 0,
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              borderRadius: '16px',
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid var(--border-color)',
+                backgroundColor: '#0F172A',
+                color: '#FFFFFF',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF' }}>
+                  <Edit3 size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#FFFFFF' }}>
+                    Edit Consignment Parameters
+                  </h3>
+                  <div style={{ fontSize: '12px', color: '#94A3B8', fontFamily: 'monospace' }}>
+                    {transaction.transactionId} • {buyerPartner?.fullName || 'Partner'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                {/* Section 1: Transaction Status & Lifecycle */}
+                <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                    1. Consignment Status
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+                    {[
+                      { val: 'CONFIRMED', label: 'Confirmed (Active)', color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+                      { val: 'PENDING_CONFIRMATION', label: 'Pending Acceptance', color: '#D97706', bg: '#FEF3C7', border: '#FDE68A' },
+                      { val: 'CANCELLED', label: 'Cancelled / Void', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+                      { val: 'DISPUTED', label: 'Disputed', color: '#9333EA', bg: '#FAF5FF', border: '#F3E8FF' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => setEditForm({ ...editForm, status: opt.val })}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: `2px solid ${editForm.status === opt.val ? opt.color : opt.border}`,
+                          backgroundColor: editForm.status === opt.val ? opt.bg : '#FFFFFF',
+                          color: editForm.status === opt.val ? opt.color : '#475569',
+                          fontWeight: editForm.status === opt.val ? '800' : '600',
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {editForm.status === 'CANCELLED' && (
+                    <div style={{ marginTop: '12px', padding: '10px 12px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: '#991B1B' }}>
+                      <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                      <span><strong>Warning:</strong> Saving as CANCELLED will immediately return all uninstalled cards back into HQ stock.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 2: Card Serials & Quantity Adjustment */}
+                <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                        2. Card Allocation & Serials ({editForm.cardSerialNumbers.length} Total)
+                      </label>
+                      <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
+                        Remove cards or quickly adjust the total allocated quantity
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const originalSerials = transaction.cardSerialNumbers || [];
+                        const origFree = transaction.freeQuantity || 0;
+                        const origPaid = Math.max(0, originalSerials.length - origFree);
+                        setEditForm({
+                          ...editForm,
+                          cardSerialNumbers: [...originalSerials],
+                          customQuantity: originalSerials.length,
+                          paidQuantity: origPaid,
+                          totalAmount: origPaid * editForm.pricePerCard,
+                        });
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: '#0284C7', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <RotateCcw size={12} /> Reset Serials
+                    </button>
+                  </div>
+
+                  {/* Quick Quantity Trimmer */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                    <Sliders size={18} style={{ color: '#0284C7' }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A' }}>
+                        Quick Trim Quantity: Keep First {editForm.cardSerialNumbers.length} Cards
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        Drag or type count to reduce assignment (e.g. keep first 20 cards and reclaim 30 back to HQ)
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max={transaction.cardSerialNumbers?.length || 100}
+                        value={editForm.cardSerialNumbers.length}
+                        onChange={(e) => {
+                          const targetCount = Math.max(1, Math.min(transaction.cardSerialNumbers?.length || 100, parseInt(e.target.value, 10) || 1));
+                          const trimmed = (transaction.cardSerialNumbers || []).slice(0, targetCount);
+                          const newFree = Math.min(editForm.freeQuantity, trimmed.length);
+                          const newPaid = Math.max(0, trimmed.length - newFree);
+                          setEditForm({
+                            ...editForm,
+                            cardSerialNumbers: trimmed,
+                            customQuantity: trimmed.length,
+                            freeQuantity: newFree,
+                            paidQuantity: newPaid,
+                            totalAmount: newPaid * editForm.pricePerCard,
+                          });
+                        }}
+                        style={{ width: '65px', padding: '6px 8px', borderRadius: '6px', border: '1.5px solid #0284C7', fontWeight: '800', textAlign: 'center', fontSize: '14px' }}
+                      />
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B' }}>Cards</span>
+                    </div>
+                  </div>
+
+                  {/* Badges of Currently Allocated Serials with Remove (X) */}
+                  <div style={{ maxHeight: '160px', overflowY: 'auto', padding: '8px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #CBD5E1', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {editForm.cardSerialNumbers.map((serial, idx) => (
+                      <span
+                        key={serial}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          backgroundColor: '#EFF6FF',
+                          color: '#1E40AF',
+                          border: '1px solid #BFDBFE',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          fontWeight: '700',
+                        }}
+                      >
+                        <span>{serial}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = editForm.cardSerialNumbers.filter((s) => s !== serial);
+                            const newFree = Math.min(editForm.freeQuantity, updated.length);
+                            const newPaid = Math.max(0, updated.length - newFree);
+                            setEditForm({
+                              ...editForm,
+                              cardSerialNumbers: updated,
+                              customQuantity: updated.length,
+                              freeQuantity: newFree,
+                              paidQuantity: newPaid,
+                              totalAmount: newPaid * editForm.pricePerCard,
+                            });
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#EF4444',
+                            cursor: 'pointer',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                          title="Remove this card from consignment"
+                        >
+                          <X size={13} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 3: Commercials & Free Cards Breakdown */}
+                <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'block' }}>
+                    3. Pricing & Free Breakdown
+                  </label>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
+                    {/* Rate Per Card */}
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
+                        Rate Per Card (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="form-control"
+                        value={editForm.pricePerCard}
+                        onChange={(e) => {
+                          const rate = Math.max(0, parseFloat(e.target.value) || 0);
+                          setEditForm({
+                            ...editForm,
+                            pricePerCard: rate,
+                            totalAmount: editForm.paidQuantity * rate,
+                          });
+                        }}
+                        style={{ fontSize: '14px', fontWeight: '700' }}
+                      />
+                    </div>
+
+                    {/* Free Cards */}
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700', color: '#15803D' }}>
+                        🎁 Free Cards (Complimentary)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max={editForm.cardSerialNumbers.length}
+                        className="form-control"
+                        value={editForm.freeQuantity}
+                        onChange={(e) => {
+                          const free = Math.max(0, Math.min(editForm.cardSerialNumbers.length, parseInt(e.target.value, 10) || 0));
+                          const paid = Math.max(0, editForm.cardSerialNumbers.length - free);
+                          setEditForm({
+                            ...editForm,
+                            freeQuantity: free,
+                            paidQuantity: paid,
+                            totalAmount: paid * editForm.pricePerCard,
+                          });
+                        }}
+                        style={{ fontSize: '14px', fontWeight: '700', borderColor: '#86EFAC' }}
+                      />
+                    </div>
+
+                    {/* Paid Cards */}
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
+                        Billable (Paid) Cards
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control"
+                        value={editForm.paidQuantity}
+                        onChange={(e) => {
+                          const paid = Math.max(0, parseInt(e.target.value, 10) || 0);
+                          setEditForm({
+                            ...editForm,
+                            paidQuantity: paid,
+                            totalAmount: paid * editForm.pricePerCard,
+                          });
+                        }}
+                        style={{ fontSize: '14px', fontWeight: '700' }}
+                      />
+                    </div>
+
+                    {/* Total Commercial Amount */}
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700', color: '#0369A1' }}>
+                        Total Amount Due (₹) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control"
+                        value={editForm.totalAmount}
+                        onChange={(e) => {
+                          const tot = Math.max(0, parseFloat(e.target.value) || 0);
+                          setEditForm({ ...editForm, totalAmount: tot });
+                        }}
+                        style={{ fontSize: '15px', fontWeight: '800', color: '#0369A1', borderColor: '#7DD3FC' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Visual Calculation Strip */}
+                  <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '12px', color: '#166534', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <span>
+                      📊 <strong>Calculation:</strong> {editForm.cardSerialNumbers.length} Total Cards = <strong>{editForm.freeQuantity} Free</strong> + <strong>{editForm.paidQuantity} Paid</strong> @ ₹{editForm.pricePerCard}/card
+                    </span>
+                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#15803D' }}>
+                      = ₹{Number(editForm.totalAmount || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Section 4: Payment Details & Reference */}
+                <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px', display: 'block' }}>
+                    4. Payment Evidence & Status
+                  </label>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
+                        Payment Status
+                      </label>
+                      <select
+                        className="form-control"
+                        value={editForm.paymentStatus}
+                        onChange={(e) => setEditForm({ ...editForm, paymentStatus: e.target.value })}
+                        style={{ fontSize: '13px' }}
+                      >
+                        <option value="PENDING">Pending Payment</option>
+                        <option value="SUBMITTED">Submitted (Under Verification)</option>
+                        <option value="VERIFIED">Verified / Settled</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
+                        UTR / Transaction Ref Number
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="e.g. UTR1234567890"
+                        value={editForm.paymentReference}
+                        onChange={(e) => setEditForm({ ...editForm, paymentReference: e.target.value })}
+                        style={{ fontSize: '13px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 5: Admin Edit Remarks */}
+                <div>
+                  <label className="form-label" style={{ fontSize: '12px', fontWeight: '700' }}>
+                    Consignment Remarks / Admin Adjustment Notes
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows="2"
+                    placeholder="e.g. Quantity adjusted to 20 cards and updated unit rate to ₹450 by Admin"
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                    style={{ fontSize: '13px' }}
+                  />
+                </div>
+
+              </div>
+
+              {/* Modal Footer */}
+              <div
+                style={{
+                  padding: '16px 24px',
+                  borderTop: '1px solid var(--border-color)',
+                  backgroundColor: '#F8FAFC',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                }}
+              >
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setActiveModal(null)}
+                  disabled={actionLoading}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={actionLoading}
+                  style={{
+                    backgroundColor: '#0284C7',
+                    borderColor: '#0284C7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontWeight: '800',
+                    padding: '10px 24px',
+                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.35)',
+                  }}
+                >
+                  {actionLoading ? <RefreshCw className="spin" size={16} /> : <Check size={16} />}
+                  Save All Changes & Update Inventory
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

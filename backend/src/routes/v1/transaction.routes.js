@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   createTransaction,
+  updateTransaction,
   getAllTransactions,
   getSingleTransaction,
   confirmTransfer,
@@ -92,6 +93,19 @@ router.get(
     USER_ROLES.FRANCHISE_PARTNER
   ),
   getSingleTransaction
+);
+
+// 5B. Super Admin: Update / Edit Transaction (Rates, Cards, Quantities, Status, Notes)
+router.put(
+  '/:id',
+  authorize(USER_ROLES.SUPER_ADMIN),
+  updateTransaction
+);
+
+router.patch(
+  '/:id',
+  authorize(USER_ROLES.SUPER_ADMIN),
+  updateTransaction
 );
 
 // 6. Confirm Transaction Receipt (Buyer Partner)

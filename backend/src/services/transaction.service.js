@@ -604,14 +604,19 @@ export const disputeTransaction = async (transactionId, disputeData, user, partn
   return transaction;
 };
 
-// 6. Cancel Transaction (Seller or Super Admin cancels pending transaction)
+// 6. Cancel Transaction (Seller or Super Admin cancels transaction, revoking uninstalled cards)
 export const cancelTransaction = async (transactionId, cancelData, user, partner) => {
   const { cancelReason } = cancelData;
 
   const transaction = await Transaction.findById(transactionId);
   if (!transaction) throw new ApiError(404, 'Transaction not found.');
 
-  if (transaction.status !== TRANSACTION_STATUS.PENDING_CONFIRMATION) {
+  if (transaction.status === TRANSACTION_STATUS.CANCELLED) {
+    throw new ApiError(400, 'Transaction is already cancelled.');
+  }
+
+  // Non-admins can only cancel pending transactions
+  if (transaction.status !== TRANSACTION_STATUS.PENDING_CONFIRMATION && user.role !== USER_ROLES.SUPER_ADMIN) {
     throw new ApiError(
       400,
       `Cannot cancel transaction: Current status is already ${transaction.status}.`
@@ -626,23 +631,40 @@ export const cancelTransaction = async (transactionId, cancelData, user, partner
   }
 
   const cancelDate = new Date();
-  const seller = await FranchisePartner.findById(transaction.sellerPartnerId);
+  const seller = transaction.sellerPartnerId ? await FranchisePartner.findById(transaction.sellerPartnerId) : null;
+  const buyer = await FranchisePartner.findById(transaction.buyerPartnerId);
   const cards = await Card.find({ _id: { $in: transaction.cardIds } });
 
-  // 1. Unlock cards back to Seller
+  // Check if any card has been installed
+  const installedCards = cards.filter((c) => c.status === CARD_STATUS.INSTALLED);
+  if (installedCards.length > 0) {
+    throw new ApiError(
+      400,
+      `Cannot cancel transaction: ${installedCards.length} cards have already been installed by customers.`
+    );
+  }
+
+  const revertOwnerType = seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS;
+  const revertOwnerId = seller ? seller._id : null;
+  const revertStatus = seller ? CARD_STATUS.ASSIGNED : CARD_STATUS.AVAILABLE;
+
+  // 1. Unlock / Reclaim cards back to Seller / HQ
   await Card.updateMany(
     { _id: { $in: transaction.cardIds } },
     {
       $set: {
-        status: seller ? CARD_STATUS.ASSIGNED : CARD_STATUS.AVAILABLE,
-        notes: `Transfer cancelled. Reason: ${cancelReason}. Txn: ${transaction.transactionId}`,
+        currentOwnerType: revertOwnerType,
+        currentOwnerId: revertOwnerId,
+        status: revertStatus,
+        assignedAt: seller ? new Date() : null,
+        notes: `Transfer cancelled/reclaimed. Reason: ${cancelReason || 'Cancelled by Admin'}. Txn: ${transaction.transactionId}`,
       },
     }
   );
 
   // 2. Update Transaction
   transaction.status = TRANSACTION_STATUS.CANCELLED;
-  transaction.cancelReason = cancelReason || 'Cancelled by initiator';
+  transaction.cancelReason = cancelReason || 'Cancelled by admin/initiator';
   transaction.cancelledBy = user._id;
   transaction.cancelledAt = cancelDate;
   await transaction.save();
@@ -652,23 +674,394 @@ export const cancelTransaction = async (transactionId, cancelData, user, partner
     cardId: card._id,
     serialNumber: card.serialNumber,
     action: CARD_ACTIONS.TRANSFER_CANCELLED,
-    fromOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
-    fromOwnerId: seller ? seller._id : null,
-    toOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
-    toOwnerId: seller ? seller._id : null,
-    previousStatus: CARD_STATUS.PENDING_TRANSFER,
-    newStatus: seller ? CARD_STATUS.ASSIGNED : CARD_STATUS.AVAILABLE,
+    fromOwnerType: buyer ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : (seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS),
+    fromOwnerId: buyer ? buyer._id : (seller ? seller._id : null),
+    toOwnerType: revertOwnerType,
+    toOwnerId: revertOwnerId,
+    previousStatus: card.status,
+    newStatus: revertStatus,
     performedBy: user._id,
     performedByRole: user.role,
-    reason: `Transfer cancelled by ${user.fullName}. Reason: ${cancelReason}. Cards unlocked back to seller. Txn: ${transaction.transactionId}`,
+    reason: `Transfer cancelled/reclaimed by ${user.fullName}. Reason: ${cancelReason || 'Consignment revoked'}. Stock returned to ${seller ? seller.fullName : 'HQ'}. Txn: ${transaction.transactionId}`,
     metadata: {
       transactionId: transaction.transactionId,
-      cancelReason,
     },
     timestamp: cancelDate,
   }));
 
   await CardHistory.insertMany(historyRecords, { ordered: false });
+
+  return transaction;
+};
+
+// 6B. Admin Full Transaction Edit (Rate, Cards, Quantities, Payment, Status, Notes)
+export const adminUpdateTransaction = async (transactionId, updateData, user) => {
+  if (user.role !== USER_ROLES.SUPER_ADMIN) {
+    throw new ApiError(403, 'Only Super Admin is authorized to edit transaction parameters.');
+  }
+
+  const transaction = await Transaction.findById(transactionId);
+  if (!transaction) {
+    throw new ApiError(404, 'Transaction not found.');
+  }
+
+  const {
+    pricePerCard,
+    freeQuantity,
+    paidQuantity,
+    totalAmount,
+    paymentStatus,
+    paymentReference,
+    paymentProofNotes,
+    status,
+    notes,
+    cardSerialNumbers,
+    quantity,
+    cancelReason,
+  } = updateData;
+
+  const seller = transaction.sellerPartnerId ? await FranchisePartner.findById(transaction.sellerPartnerId) : null;
+  const buyer = await FranchisePartner.findById(transaction.buyerPartnerId);
+  if (!buyer) {
+    throw new ApiError(404, 'Buyer franchise partner associated with this transaction was not found.');
+  }
+
+  // 1. If Status is changing to CANCELLED
+  if (status && status === TRANSACTION_STATUS.CANCELLED && transaction.status !== TRANSACTION_STATUS.CANCELLED) {
+    const cards = await Card.find({ _id: { $in: transaction.cardIds } });
+    const installedCards = cards.filter((c) => c.status === CARD_STATUS.INSTALLED);
+    if (installedCards.length > 0) {
+      throw new ApiError(
+        400,
+        `Cannot cancel transaction: ${installedCards.length} cards have already been installed by customers.`
+      );
+    }
+
+    const revertOwnerType = seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS;
+    const revertOwnerId = seller ? seller._id : null;
+    const revertStatus = seller ? CARD_STATUS.ASSIGNED : CARD_STATUS.AVAILABLE;
+
+    await Card.updateMany(
+      { _id: { $in: transaction.cardIds } },
+      {
+        $set: {
+          currentOwnerType: revertOwnerType,
+          currentOwnerId: revertOwnerId,
+          status: revertStatus,
+          assignedAt: seller ? new Date() : null,
+          notes: `Consignment revoked by Admin. Stock returned to ${seller ? seller.fullName : 'HQ'}. Txn: ${transaction.transactionId}`,
+        },
+      }
+    );
+
+    const historyRecords = cards.map((c) => ({
+      cardId: c._id,
+      serialNumber: c.serialNumber,
+      action: CARD_ACTIONS.RECLAIMED_BY_ADMIN,
+      fromOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+      fromOwnerId: buyer._id,
+      toOwnerType: revertOwnerType,
+      toOwnerId: revertOwnerId,
+      previousStatus: c.status,
+      newStatus: revertStatus,
+      performedBy: user._id,
+      performedByRole: user.role,
+      reason: `Transaction cancelled by Admin (${user.fullName}). Reason: ${cancelReason || notes || 'Consignment revoked'}. Txn: ${transaction.transactionId}`,
+      metadata: { transactionId: transaction.transactionId },
+      timestamp: new Date(),
+    }));
+    await CardHistory.insertMany(historyRecords, { ordered: false });
+
+    transaction.status = TRANSACTION_STATUS.CANCELLED;
+    transaction.cancelledBy = user._id;
+    transaction.cancelledAt = new Date();
+    transaction.cancelReason = cancelReason || notes || 'Cancelled by Admin';
+  } else if (status && status !== transaction.status) {
+    transaction.status = status;
+    if (status === TRANSACTION_STATUS.CONFIRMED && !transaction.confirmedAt) {
+      transaction.confirmedAt = new Date();
+      transaction.confirmedBy = user._id;
+    }
+  }
+
+  // 2. Card Allocation & Serial Synchronization
+  if (Array.isArray(cardSerialNumbers) && cardSerialNumbers.length > 0) {
+    const newSerials = cardSerialNumbers.map((s) => String(s).trim().toUpperCase());
+    const currentSerials = (transaction.cardSerialNumbers || []).map((s) => String(s).trim().toUpperCase());
+
+    const serialsToRemove = currentSerials.filter((s) => !newSerials.includes(s));
+    const serialsToAdd = newSerials.filter((s) => !currentSerials.includes(s));
+
+    // Handle Card Removals
+    if (serialsToRemove.length > 0) {
+      const cardsToRemove = await Card.find({ serialNumber: { $in: serialsToRemove } });
+      const installedToRemove = cardsToRemove.filter((c) => c.status === CARD_STATUS.INSTALLED);
+      if (installedToRemove.length > 0) {
+        throw new ApiError(
+          400,
+          `Cannot remove cards [${installedToRemove.map((c) => c.serialNumber).join(', ')}] because they are already installed.`
+        );
+      }
+
+      const revertOwnerType = seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS;
+      const revertOwnerId = seller ? seller._id : null;
+      const revertStatus = seller ? CARD_STATUS.ASSIGNED : CARD_STATUS.AVAILABLE;
+
+      await Card.updateMany(
+        { _id: { $in: cardsToRemove.map((c) => c._id) } },
+        {
+          $set: {
+            currentOwnerType: revertOwnerType,
+            currentOwnerId: revertOwnerId,
+            status: revertStatus,
+            notes: `Removed from Txn ${transaction.transactionId} during admin edit. Returned to ${seller ? seller.fullName : 'HQ'}.`,
+          },
+        }
+      );
+
+      const removeHistory = cardsToRemove.map((c) => ({
+        cardId: c._id,
+        serialNumber: c.serialNumber,
+        action: CARD_ACTIONS.RECLAIMED_BY_ADMIN,
+        fromOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+        fromOwnerId: buyer._id,
+        toOwnerType: revertOwnerType,
+        toOwnerId: revertOwnerId,
+        previousStatus: c.status,
+        newStatus: revertStatus,
+        performedBy: user._id,
+        performedByRole: user.role,
+        reason: `Card removed during Admin edit. Returned to ${seller ? seller.fullName : 'HQ'}. Txn: ${transaction.transactionId}`,
+        metadata: { transactionId: transaction.transactionId },
+        timestamp: new Date(),
+      }));
+      await CardHistory.insertMany(removeHistory, { ordered: false });
+    }
+
+    // Handle Card Additions
+    if (serialsToAdd.length > 0) {
+      const cardsToAdd = await Card.find({ serialNumber: { $in: serialsToAdd } });
+      if (cardsToAdd.length !== serialsToAdd.length) {
+        throw new ApiError(400, 'Some newly selected card serial numbers do not exist in the system.');
+      }
+
+      for (const c of cardsToAdd) {
+        if (seller) {
+          if (String(c.currentOwnerId) !== String(seller._id)) {
+            throw new ApiError(400, `Card ${c.serialNumber} is not owned by the seller.`);
+          }
+        } else {
+          if (c.status !== CARD_STATUS.AVAILABLE) {
+            throw new ApiError(400, `Card ${c.serialNumber} is not available at HQ (Current status: ${c.status}).`);
+          }
+        }
+      }
+
+      const newOwnerStatus =
+        transaction.status === TRANSACTION_STATUS.CONFIRMED
+          ? CARD_STATUS.TRANSFERRED
+          : CARD_STATUS.PENDING_TRANSFER;
+
+      await Card.updateMany(
+        { _id: { $in: cardsToAdd.map((c) => c._id) } },
+        {
+          $set: {
+            currentOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+            currentOwnerId: buyer._id,
+            status: newOwnerStatus,
+            assignedAt: new Date(),
+            notes: `Assigned to ${buyer.fullName} (${buyer.franchiseId}) during admin edit. Txn: ${transaction.transactionId}`,
+          },
+        }
+      );
+
+      const addHistory = cardsToAdd.map((c) => ({
+        cardId: c._id,
+        serialNumber: c.serialNumber,
+        action: CARD_ACTIONS.TRANSFERRED,
+        fromOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
+        fromOwnerId: seller ? seller._id : null,
+        toOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+        toOwnerId: buyer._id,
+        previousStatus: c.status,
+        newStatus: newOwnerStatus,
+        performedBy: user._id,
+        performedByRole: user.role,
+        reason: `Card added during Admin edit. Assigned to ${buyer.fullName}. Txn: ${transaction.transactionId}`,
+        metadata: { transactionId: transaction.transactionId },
+        timestamp: new Date(),
+      }));
+      await CardHistory.insertMany(addHistory, { ordered: false });
+    }
+
+    const allFinalCards = await Card.find({ serialNumber: { $in: newSerials } });
+    transaction.cardSerialNumbers = newSerials;
+    transaction.cardIds = allFinalCards.map((c) => c._id);
+    transaction.quantity = newSerials.length;
+  } else if (typeof quantity === 'number' && quantity > 0 && quantity !== transaction.quantity) {
+    // Direct numerical quantity adjustment
+    if (quantity < transaction.quantity) {
+      const cardsInTxn = await Card.find({ _id: { $in: transaction.cardIds } });
+      const uninstalledCards = cardsInTxn.filter((c) => c.status !== CARD_STATUS.INSTALLED);
+      const cardsToReclaimCount = transaction.quantity - quantity;
+
+      if (uninstalledCards.length < cardsToReclaimCount) {
+        throw new ApiError(
+          400,
+          `Cannot reduce quantity to ${quantity}: Too many cards are already installed.`
+        );
+      }
+
+      const cardsToReclaim = uninstalledCards.slice(-cardsToReclaimCount);
+      const reclaimIds = cardsToReclaim.map((c) => c._id);
+      const reclaimSerials = cardsToReclaim.map((c) => c.serialNumber);
+
+      const revertOwnerType = seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS;
+      const revertOwnerId = seller ? seller._id : null;
+      const revertStatus = seller ? CARD_STATUS.ASSIGNED : CARD_STATUS.AVAILABLE;
+
+      await Card.updateMany(
+        { _id: { $in: reclaimIds } },
+        {
+          $set: {
+            currentOwnerType: revertOwnerType,
+            currentOwnerId: revertOwnerId,
+            status: revertStatus,
+            notes: `Reclaimed during admin quantity adjustment (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+          },
+        }
+      );
+
+      const historyRecords = cardsToReclaim.map((c) => ({
+        cardId: c._id,
+        serialNumber: c.serialNumber,
+        action: CARD_ACTIONS.RECLAIMED_BY_ADMIN,
+        fromOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+        fromOwnerId: buyer._id,
+        toOwnerType: revertOwnerType,
+        toOwnerId: revertOwnerId,
+        previousStatus: c.status,
+        newStatus: revertStatus,
+        performedBy: user._id,
+        performedByRole: user.role,
+        reason: `Reclaimed during admin quantity adjustment (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+        metadata: { transactionId: transaction.transactionId },
+        timestamp: new Date(),
+      }));
+      await CardHistory.insertMany(historyRecords, { ordered: false });
+
+      transaction.cardIds = transaction.cardIds.filter(
+        (id) => !reclaimIds.some((rId) => String(rId) === String(id))
+      );
+      transaction.cardSerialNumbers = transaction.cardSerialNumbers.filter(
+        (s) => !reclaimSerials.includes(s)
+      );
+      transaction.quantity = quantity;
+    } else if (quantity > transaction.quantity) {
+      const cardsToAddCount = quantity - transaction.quantity;
+      const availableCards = await Card.find({
+        currentOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
+        currentOwnerId: seller ? seller._id : null,
+        status: CARD_STATUS.AVAILABLE,
+      }).limit(cardsToAddCount);
+
+      if (availableCards.length < cardsToAddCount) {
+        throw new ApiError(
+          400,
+          `Insufficient stock at ${seller ? seller.fullName : 'HQ'}. Only ${availableCards.length} cards available, but needed ${cardsToAddCount}.`
+        );
+      }
+
+      const newOwnerStatus =
+        transaction.status === TRANSACTION_STATUS.CONFIRMED
+          ? CARD_STATUS.TRANSFERRED
+          : CARD_STATUS.PENDING_TRANSFER;
+
+      await Card.updateMany(
+        { _id: { $in: availableCards.map((c) => c._id) } },
+        {
+          $set: {
+            currentOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+            currentOwnerId: buyer._id,
+            status: newOwnerStatus,
+            assignedAt: new Date(),
+            notes: `Assigned to ${buyer.fullName} during admin quantity increase (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+          },
+        }
+      );
+
+      const addHistory = availableCards.map((c) => ({
+        cardId: c._id,
+        serialNumber: c.serialNumber,
+        action: CARD_ACTIONS.TRANSFERRED,
+        fromOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
+        fromOwnerId: seller ? seller._id : null,
+        toOwnerType: CARD_OWNER_TYPES.FRANCHISE_PARTNER,
+        toOwnerId: buyer._id,
+        previousStatus: c.status,
+        newStatus: newOwnerStatus,
+        performedBy: user._id,
+        performedByRole: user.role,
+        reason: `Allocated during admin quantity increase (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+        metadata: { transactionId: transaction.transactionId },
+        timestamp: new Date(),
+      }));
+      await CardHistory.insertMany(addHistory, { ordered: false });
+
+      transaction.cardIds.push(...availableCards.map((c) => c._id));
+      transaction.cardSerialNumbers.push(...availableCards.map((c) => c.serialNumber));
+      transaction.quantity = quantity;
+    }
+  }
+
+  // 3. Pricing, Free Cards, and Calculations
+  if (typeof pricePerCard === 'number' && pricePerCard >= 0) {
+    transaction.pricePerCard = pricePerCard;
+  }
+  if (typeof freeQuantity === 'number' && freeQuantity >= 0) {
+    transaction.freeQuantity = Math.min(freeQuantity, transaction.quantity);
+  }
+
+  const calcPaid = Math.max(0, transaction.quantity - (transaction.freeQuantity || 0));
+  transaction.paidQuantity = typeof paidQuantity === 'number' && paidQuantity >= 0 ? paidQuantity : calcPaid;
+
+  if (typeof totalAmount === 'number' && totalAmount >= 0) {
+    transaction.totalAmount = totalAmount;
+  } else {
+    transaction.totalAmount = transaction.paidQuantity * (transaction.pricePerCard || 0);
+  }
+
+  // 4. Payment Details
+  if (paymentStatus && Object.values(PAYMENT_STATUS).includes(paymentStatus)) {
+    transaction.paymentStatus = paymentStatus;
+    if (paymentStatus === PAYMENT_STATUS.VERIFIED && !transaction.paymentVerifiedAt) {
+      transaction.paymentVerifiedAt = new Date();
+      transaction.paymentVerifiedBy = user._id;
+    }
+  }
+  if (paymentReference !== undefined) {
+    transaction.paymentReference = String(paymentReference).trim();
+  }
+  if (paymentProofNotes !== undefined) {
+    transaction.paymentProofNotes = String(paymentProofNotes).trim();
+  }
+
+  // 5. Notes
+  if (notes !== undefined) {
+    transaction.notes = String(notes).trim();
+  }
+
+  await transaction.save();
+
+  await transaction.populate([
+    { path: 'sellerPartnerId', select: 'fullName franchiseId franchiseType state district mobileNumber email city addressLine1' },
+    { path: 'buyerPartnerId', select: 'fullName franchiseId franchiseType state district mobileNumber email city addressLine1' },
+    { path: 'createdBy', select: 'fullName email role' },
+    { path: 'confirmedBy', select: 'fullName email role' },
+    { path: 'disputedBy', select: 'fullName email role' },
+    { path: 'cancelledBy', select: 'fullName email role' },
+    { path: 'paymentVerifiedBy', select: 'fullName email role' },
+  ]);
 
   return transaction;
 };

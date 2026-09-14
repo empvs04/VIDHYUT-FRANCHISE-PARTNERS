@@ -27,6 +27,7 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Sparkles,
+  Edit3,
 } from 'lucide-react';
 import api from '../services/api';
 import {
@@ -1093,6 +1094,18 @@ const TransactionsPage = () => {
                               >
                                 <X size={14} />
                               </button>
+                            )}
+
+                            {/* Super Admin Edit Consignment */}
+                            {isSuperAdmin && (
+                              <Link
+                                to={`/transactions/${t._id}`}
+                                className="btn btn-outline"
+                                title="Edit Consignment Parameters & Inventory"
+                                style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '700', color: '#0284C7', borderColor: '#BAE6FD', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                              >
+                                <Edit3 size={14} /> Edit
+                              </Link>
                             )}
 
                             {/* View Detail Link */}

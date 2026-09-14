@@ -6,6 +6,7 @@ import {
   confirmTransaction,
   disputeTransaction,
   cancelTransaction,
+  adminUpdateTransaction,
   submitPaymentProof,
   verifyPayment,
   rejectPayment,
@@ -22,6 +23,22 @@ export const createTransaction = async (req, res, next) => {
         201,
         result,
         `Transaction ${result.transactionId} created successfully. ${result.quantity} cards reserved awaiting buyer confirmation.`
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 1B. Admin Update / Edit Transaction Parameters (Cards, Rates, Quantities, Status, Notes)
+export const updateTransaction = async (req, res, next) => {
+  try {
+    const result = await adminUpdateTransaction(req.params.id, req.body, req.user);
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        result,
+        `Transaction ${result.transactionId} updated successfully.`
       )
     );
   } catch (err) {
