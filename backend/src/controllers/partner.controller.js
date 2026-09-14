@@ -54,13 +54,13 @@ export const verifyGovDocumentLive = async (req, res, next) => {
 // Deep Document Content & Authenticity Scanner (Inspects uploaded image/PDF)
 export const scanUploadedDocument = async (req, res, next) => {
   try {
-    const { docType, extractedText, fileMeta } = req.body;
+    const { docType, extractedText, fileMeta, idNumber } = req.body;
 
     if (!docType) {
       throw new ApiError(400, 'docType is required.');
     }
 
-    const scanResult = scanAndVerifyDocument(docType, extractedText, fileMeta);
+    const scanResult = scanAndVerifyDocument(docType, extractedText, fileMeta, idNumber);
 
     res.status(200).json(
       new ApiResponse(
