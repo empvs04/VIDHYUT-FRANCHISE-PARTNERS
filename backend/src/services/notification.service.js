@@ -1,7 +1,7 @@
 import Notification from '../models/Notification.model.js';
 import User from '../models/User.model.js';
 import FranchisePartner from '../models/FranchisePartner.model.js';
-import { DEFAULT_PAGINATION, USER_ROLES } from '../config/constants.js';
+import { DEFAULT_PAGINATION, USER_ROLES, ACCOUNT_STATUS } from '../config/constants.js';
 
 // Helper: Generate Unique Notification ID
 const generateNotificationId = () => {
@@ -50,12 +50,16 @@ export const notifySuperAdmins = async ({
   type,
   title,
   message,
-  entityType,
-  entityId,
+  entityType = 'SYSTEM',
+  entityId = '',
   metadata = {},
 }) => {
   try {
-    const superAdmins = await User.find({ role: USER_ROLES.SUPER_ADMIN, isActive: true }).select('_id');
+    const superAdmins = await User.find({
+      role: USER_ROLES.SUPER_ADMIN,
+      status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+    }).select('_id');
+
     const promises = superAdmins.map((admin) =>
       createNotification({
         recipientUserId: admin._id,
