@@ -36,6 +36,66 @@ import CardAllotmentCelebrationModal from '../components/common/CardAllotmentCel
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 
+const getFranchiseTypeMeta = (type) => {
+  switch (type) {
+    case 'PREMIUM_EXCLUSIVE_DISTRICT':
+      return {
+        label: 'Premium Exclusive District Franchise',
+        icon: '👑',
+        badgeBg: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+        badgeBorder: '#fde68a',
+        badgeColor: '#b45309',
+        glow: '0 2px 8px rgba(245, 158, 11, 0.25)',
+      };
+    case 'STANDARD_EXCLUSIVE_DISTRICT':
+      return {
+        label: 'Standard Exclusive District Franchise',
+        icon: '🛡️',
+        badgeBg: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+        badgeBorder: '#bbf7d0',
+        badgeColor: '#15803d',
+        glow: '0 2px 8px rgba(34, 197, 94, 0.2)',
+      };
+    case 'NON_EXCLUSIVE_DISTRICT':
+      return {
+        label: 'Non-Exclusive District Franchise',
+        icon: '📍',
+        badgeBg: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+        badgeBorder: '#bae6fd',
+        badgeColor: '#0369a1',
+        glow: '0 2px 8px rgba(14, 165, 233, 0.2)',
+      };
+    case 'STATE_FRANCHISE':
+      return {
+        label: 'State Franchise Partner',
+        icon: '🌐',
+        badgeBg: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+        badgeBorder: '#bfdbfe',
+        badgeColor: '#1d4ed8',
+        glow: '0 2px 8px rgba(59, 130, 246, 0.2)',
+      };
+    case 'SUB_FRANCHISE':
+      return {
+        label: 'Sub-Franchise Partner (Field Operations)',
+        icon: '⚡',
+        badgeBg: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+        badgeBorder: '#e9d5ff',
+        badgeColor: '#7e22ce',
+        glow: '0 2px 8px rgba(168, 85, 247, 0.2)',
+      };
+    case 'DISTRICT_FRANCHISE':
+    default:
+      return {
+        label: 'District Franchise Partner',
+        icon: '🏢',
+        badgeBg: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+        badgeBorder: '#bbf7d0',
+        badgeColor: '#166534',
+        glow: '0 2px 8px rgba(34, 197, 94, 0.2)',
+      };
+  }
+};
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { isSuperAdmin, partner: authPartner } = useAuth();
@@ -159,7 +219,7 @@ const DashboardPage = () => {
     const subStats = partnerSummary?.subFranchises;
     const isSub = partner?.franchiseType === 'SUB_FRANCHISE';
     const subPerformance = partnerSummary?.subFranchises?.performance || [];
-    const custMetrics = partnerSummary?.customers;
+    const typeMeta = getFranchiseTypeMeta(partner?.franchiseType);
 
     return (
       <div>
@@ -173,9 +233,48 @@ const DashboardPage = () => {
               <h1 className="page-title">
                 Welcome, {partner?.fullName || 'Partner'}!
               </h1>
-              <p className="page-subtitle">
-                {isSub ? 'Sub-Franchise Field Operations & Customer Portal' : 'Vidhyut Saathi Franchise Operations Portal'}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: typeMeta.badgeBg,
+                    border: `1.5px solid ${typeMeta.badgeBorder}`,
+                    color: typeMeta.badgeColor,
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '13px',
+                    fontWeight: 800,
+                    boxShadow: typeMeta.glow,
+                    letterSpacing: '0.3px',
+                  }}
+                >
+                  <span>{typeMeta.icon}</span>
+                  <span>{typeMeta.label}</span>
+                </span>
+                {partner?.district && (
+                  <span style={{ fontSize: '12.5px', color: '#64748b', fontWeight: 600 }}>
+                    • 📍 {partner.district}, {partner.state}
+                  </span>
+                )}
+                {partner?.franchiseId && (
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      color: '#0369a1',
+                      background: '#f0f9ff',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontWeight: 700,
+                      border: '1px solid #bae6fd',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    ID: {partner.franchiseId}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
