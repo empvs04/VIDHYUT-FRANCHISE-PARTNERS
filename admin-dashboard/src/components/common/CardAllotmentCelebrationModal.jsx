@@ -158,13 +158,14 @@ const CardAllotmentCelebrationModal = ({
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: '580px',
+          maxWidth: '540px',
+          maxHeight: '92vh',
+          overflowY: 'auto',
           background: 'linear-gradient(145deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-          borderRadius: '20px',
+          borderRadius: '18px',
           border: '1.5px solid rgba(245, 158, 11, 0.35)',
           boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.8), 0 0 45px rgba(245, 158, 11, 0.25)',
           color: '#F8FAFC',
-          overflow: 'hidden',
           zIndex: 2,
           transform: animateIn ? 'scale(1) translateY(0)' : 'scale(0.92) translateY(20px)',
           transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -187,14 +188,14 @@ const CardAllotmentCelebrationModal = ({
           aria-label="Close"
           style={{
             position: 'absolute',
-            top: '16px',
-            right: '16px',
+            top: '12px',
+            right: '12px',
             width: '32px',
             height: '32px',
             borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            color: '#94A3B8',
+            background: 'rgba(255, 255, 255, 0.12)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            color: '#CBD5E1',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -207,46 +208,46 @@ const CardAllotmentCelebrationModal = ({
             e.currentTarget.style.color = '#FFFFFF';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.color = '#94A3B8';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+            e.currentTarget.style.color = '#CBD5E1';
           }}
         >
           <X size={18} />
         </button>
 
-        <div style={{ padding: '28px 24px 24px' }}>
+        <div style={{ padding: '20px 16px 16px' }}>
           {/* Festive Trophy & Sparkle Header */}
-          <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '14px' }}>
             {/* Top Pill Badge */}
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '5px 14px',
+                gap: '5px',
+                padding: '4px 12px',
                 background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(16, 185, 129, 0.2))',
                 border: '1px solid rgba(245, 158, 11, 0.4)',
                 borderRadius: '999px',
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: '800',
-                letterSpacing: '1px',
+                letterSpacing: '0.8px',
                 color: '#FBBF24',
                 textTransform: 'uppercase',
-                marginBottom: '14px',
+                marginBottom: '10px',
                 boxShadow: '0 0 16px rgba(245, 158, 11, 0.2)',
               }}
             >
-              <Sparkles size={13} color="#FBBF24" />
+              <Sparkles size={12} color="#FBBF24" />
               <span>STOCK ALLOTMENT CELEBRATION</span>
-              <Zap size={13} color="#FBBF24" />
+              <Zap size={12} color="#FBBF24" />
             </div>
 
             {/* Glowing Icon Container */}
-            <div style={{ position: 'relative', display: 'inline-block', marginBottom: '12px' }}>
+            <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
               <div
                 style={{
                   position: 'absolute',
-                  inset: '-10px',
+                  inset: '-8px',
                   background: 'radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0) 70%)',
                   borderRadius: '50%',
                   animation: 'pulseGlow 2s infinite',
@@ -255,25 +256,25 @@ const CardAllotmentCelebrationModal = ({
               <div
                 style={{
                   position: 'relative',
-                  width: '68px',
-                  height: '68px',
+                  width: '56px',
+                  height: '56px',
                   margin: '0 auto',
-                  borderRadius: '20px',
+                  borderRadius: '16px',
                   background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 10px 25px rgba(245, 158, 11, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 8px 20px rgba(245, 158, 11, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
                 }}
               >
-                <Award size={36} color="#FFFFFF" />
+                <Award size={30} color="#FFFFFF" />
               </div>
             </div>
 
             {/* Title & Subtitle */}
             <h2
               style={{
-                fontSize: '22px',
+                fontSize: 'clamp(18px, 4.5vw, 21px)',
                 fontWeight: '800',
                 color: '#FFFFFF',
                 marginBottom: '4px',
@@ -284,9 +285,9 @@ const CardAllotmentCelebrationModal = ({
             </h2>
             <p
               style={{
-                fontSize: '13.5px',
+                fontSize: '12.5px',
                 color: '#CBD5E1',
-                lineHeight: '1.45',
+                lineHeight: '1.4',
                 maxWidth: '440px',
                 margin: '0 auto',
               }}
@@ -300,19 +301,19 @@ const CardAllotmentCelebrationModal = ({
             style={{
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 95, 70, 0.25) 100%)',
               border: '1.5px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '16px',
-              padding: '16px 20px',
+              borderRadius: '14px',
+              padding: '12px 14px',
               textAlign: 'center',
-              marginBottom: '18px',
+              marginBottom: '14px',
               position: 'relative',
               overflow: 'hidden',
             }}
           >
             <div
               style={{
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: '700',
-                letterSpacing: '1px',
+                letterSpacing: '0.8px',
                 color: '#34D399',
                 textTransform: 'uppercase',
                 marginBottom: '2px',
@@ -322,9 +323,9 @@ const CardAllotmentCelebrationModal = ({
             </div>
             <div
               style={{
-                fontSize: '34px',
+                fontSize: 'clamp(24px, 6.5vw, 32px)',
                 fontWeight: '900',
-                letterSpacing: '-1px',
+                letterSpacing: '-0.5px',
                 color: '#FFFFFF',
                 textShadow: '0 0 25px rgba(52, 211, 153, 0.6)',
                 display: 'flex',
@@ -333,10 +334,10 @@ const CardAllotmentCelebrationModal = ({
                 gap: '8px',
               }}
             >
-              <CreditCard size={30} color="#34D399" />
+              <CreditCard size={24} color="#34D399" />
               <span>+{cardCount} Smart Cards</span>
             </div>
-            <div style={{ fontSize: '12px', color: '#A7F3D0', fontWeight: '500' }}>
+            <div style={{ fontSize: '11.5px', color: '#A7F3D0', fontWeight: '500', marginTop: '2px' }}>
               Active and ready for immediate territory distribution
             </div>
           </div>
@@ -346,34 +347,34 @@ const CardAllotmentCelebrationModal = ({
             style={{
               background: 'rgba(15, 23, 42, 0.75)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '14px',
-              padding: '14px 16px',
-              marginBottom: '20px',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              marginBottom: '16px',
             }}
           >
             <div
               style={{
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: '700',
-                letterSpacing: '0.8px',
+                letterSpacing: '0.6px',
                 color: '#94A3B8',
                 textTransform: 'uppercase',
-                marginBottom: '10px',
+                marginBottom: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
               }}
             >
-              <ShieldCheck size={14} color="#38BDF8" />
+              <ShieldCheck size={13} color="#38BDF8" />
               <span>ALLOTMENT DETAILS &amp; SERIAL MANIFEST</span>
             </div>
 
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '10px',
-                fontSize: '12.5px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                gap: '8px',
+                fontSize: '12px',
               }}
             >
               {/* Serial Range */}

@@ -206,23 +206,23 @@ const DashboardPage = () => {
               background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(16, 185, 129, 0.12) 100%)',
               border: '1.5px solid rgba(245, 158, 11, 0.4)',
               borderRadius: '14px',
-              padding: '14px 18px',
-              marginBottom: '20px',
+              padding: '12px 14px',
+              marginBottom: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '14px',
+              gap: '12px',
               flexWrap: 'wrap',
               boxShadow: '0 4px 15px rgba(245, 158, 11, 0.08)',
               position: 'relative',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 300px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: '1 1 260px' }}>
               <div
                 style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
                   background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                   display: 'flex',
                   alignItems: 'center',
@@ -230,61 +230,65 @@ const DashboardPage = () => {
                   color: '#FFFFFF',
                   flexShrink: 0,
                   boxShadow: '0 4px 12px rgba(245, 158, 11, 0.35)',
+                  marginTop: '2px',
                 }}
               >
-                <Sparkles size={22} />
+                <Sparkles size={18} />
               </div>
-              <div>
-                <div style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '14.5px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <span>🎉 New Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Smart Energy Cards</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: '800', color: 'var(--text-primary)', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span>🎉 Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards</span>
                   <span
                     style={{
-                      fontSize: '10.5px',
+                      fontSize: '9.5px',
                       background: 'rgba(16, 185, 129, 0.15)',
                       color: '#059669',
                       border: '1px solid rgba(16, 185, 129, 0.3)',
-                      padding: '2px 8px',
+                      padding: '1px 6px',
                       borderRadius: '999px',
                       fontWeight: '800',
-                      letterSpacing: '0.5px',
+                      letterSpacing: '0.4px',
                     }}
                   >
-                    READY TO USE
+                    READY
                   </span>
                 </div>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '3px', lineHeight: '1.4' }}>
-                  Range: <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>{partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}</strong> • Allocated by {partnerSummary.latestAllotment.assignedBy}
+                <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: '1.35', wordBreak: 'break-word' }}>
+                  Range: <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>{partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}</strong>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', width: '100%', maxWidth: '340px', justifyContent: 'flex-start' }}>
               <button
                 type="button"
                 onClick={() => setShowCelebrationModal(true)}
                 className="btn btn-outline"
                 style={{
-                  fontSize: '12.5px',
-                  height: '36px',
+                  fontSize: '11.5px',
+                  height: '32px',
+                  padding: '0 10px',
                   borderColor: 'rgba(245, 158, 11, 0.5)',
                   color: '#D97706',
                   fontWeight: '700',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '4px',
                   background: '#FFFFFF',
+                  flex: '1 1 auto',
+                  justifyContent: 'center',
                 }}
               >
-                <Award size={15} color="#D97706" />
-                <span>View Allotment Certificate</span>
+                <Award size={13} color="#D97706" />
+                <span>Certificate</span>
               </button>
               <Link
                 to={isSub ? '/customers/new' : '/cards/distribute'}
                 className="btn btn-primary"
-                style={{ fontSize: '12.5px', height: '36px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ fontSize: '11.5px', height: '32px', padding: '0 10px', display: 'flex', alignItems: 'center', gap: '4px', flex: '1 1 auto', justifyContent: 'center' }}
               >
-                <Zap size={14} />
-                <span>{isSub ? 'Install Cards' : 'Distribute Stock'}</span>
+                <Zap size={13} />
+                <span>{isSub ? 'Install Cards' : 'Distribute'}</span>
               </Link>
               <button
                 type="button"
@@ -292,9 +296,9 @@ const DashboardPage = () => {
                 title="Dismiss Banner"
                 aria-label="Dismiss Banner"
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '6px',
                   border: '1px solid rgba(0, 0, 0, 0.12)',
                   background: '#FFFFFF',
                   color: '#64748B',
@@ -316,7 +320,7 @@ const DashboardPage = () => {
                   e.currentTarget.style.color = '#64748B';
                 }}
               >
-                <X size={17} />
+                <X size={15} />
               </button>
             </div>
           </div>

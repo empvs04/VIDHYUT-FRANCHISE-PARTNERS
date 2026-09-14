@@ -1,5 +1,7 @@
 import FranchisePartner from '../models/FranchisePartner.model.js';
 import User from '../models/User.model.js';
+import Card from '../models/Card.model.js';
+import Transaction from '../models/Transaction.model.js';
 import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import {
@@ -330,6 +332,45 @@ export const getPartnerById = async (req, res, next) => {
       .select('fullName franchiseId franchiseType mobileNumber email state district city accountStatus joiningDate')
       .sort({ createdAt: -1 });
 
+    // Fetch Card Allocation & Inventory Stats
+    const [cardCounts, partnerTransactions] = await Promise.all([
+      Card.aggregate([
+        { $match: { currentOwnerId: partner._id } },
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Transaction.find({ buyerPartnerId: partner._id })
+        .sort({ createdAt: -1 })
+        .select('transactionId quantity paidQuantity freeQuantity pricePerCard totalAmount status paymentStatus createdAt cardSerialNumbers sellerPartnerId')
+        .populate('sellerPartnerId', 'fullName franchiseId')
+        .lean(),
+    ]);
+
+    const statusMap = new Map(cardCounts.map((c) => [c._id, c.count]));
+    const installedCards = statusMap.get('INSTALLED') || 0;
+    const inventoryCards =
+      (statusMap.get('ASSIGNED') || 0) +
+      (statusMap.get('AVAILABLE') || 0) +
+      (statusMap.get('TRANSFERRED') || 0) +
+      (statusMap.get('PENDING_TRANSFER') || 0);
+
+    // Sum transactions for accurate commercial paid vs free tally
+    const validTxns = partnerTransactions.filter((t) => t.status !== 'CANCELLED');
+    const totalAllottedFromTxns = validTxns.reduce((acc, t) => acc + (t.quantity || 0), 0);
+    const totalPaidFromTxns = validTxns.reduce((acc, t) => acc + (t.paidQuantity || 0), 0);
+    const totalFreeFromTxns = validTxns.reduce((acc, t) => acc + (t.freeQuantity || 0), 0);
+    const totalConsignmentValue = validTxns.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
+
+    const totalCardsAllotted = Math.max(
+      totalAllottedFromTxns,
+      installedCards + inventoryCards,
+      totalPaidFromTxns + totalFreeFromTxns
+    );
+
     res.status(200).json(
       new ApiResponse(
         200,
@@ -339,6 +380,15 @@ export const getPartnerById = async (req, res, next) => {
           childPartners,
           totalChildren: childPartners.length,
           activeChildren: childPartners.filter((c) => c.accountStatus === ACCOUNT_STATUS.ACTIVE).length,
+          cardSummary: {
+            totalCardsAllotted,
+            paidCardsAllotted: totalPaidFromTxns || Math.max(0, totalCardsAllotted - totalFreeFromTxns),
+            freeCardsAllotted: totalFreeFromTxns,
+            currentInventory: inventoryCards || Math.max(0, totalCardsAllotted - installedCards),
+            installedCards,
+            totalConsignmentValue,
+          },
+          transactions: partnerTransactions,
         },
         'Partner details retrieved successfully.'
       )

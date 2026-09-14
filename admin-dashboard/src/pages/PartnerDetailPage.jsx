@@ -23,9 +23,16 @@ import {
   Wrench,
   BarChart3,
   ExternalLink,
+  Send,
+  Package,
 } from 'lucide-react';
 import api from '../services/api';
-import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
+import {
+  StatusBadge,
+  FranchiseTypeBadge,
+  PaymentStatusBadge,
+  TransactionStatusBadge,
+} from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -248,6 +255,156 @@ const PartnerDetailPage = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Card Stock & Allotment Summary Breakdown */}
+      <div className="card" style={{ marginBottom: '20px', padding: '18px 20px', border: '1.5px solid #BAE6FD', backgroundColor: '#F0F9FF' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#E0F2FE', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CreditCard size={20} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '15.5px', fontWeight: '800', margin: 0, color: '#0F172A' }}>
+                Card Allocation & Stock Summary
+              </h2>
+              <div style={{ fontSize: '12px', color: '#64748B' }}>
+                Real-time stock inventory, chargeable allotments, and complimentary free cards
+              </div>
+            </div>
+          </div>
+
+          {isSuperAdmin && (
+            <Link
+              to={`/transactions/new?buyerId=${partner._id}`}
+              className="btn btn-primary btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Send size={14} />
+              <span>Allot More Stock</span>
+            </Link>
+          )}
+        </div>
+
+        {/* 5-Stat Metric Grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+            gap: '12px',
+            marginBottom: '14px',
+          }}
+        >
+          {/* Total Cards Allotted */}
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Total Allotted</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#0284C7', marginTop: '2px' }}>
+              {partner.cardSummary?.totalCardsAllotted ?? 0}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Total Consignment Cards</div>
+          </div>
+
+          {/* Paid Cards */}
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Paid Cards</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
+              {partner.cardSummary?.paidCardsAllotted ?? 0}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Chargeable Stock</div>
+          </div>
+
+          {/* Free Cards */}
+          <div style={{ backgroundColor: '#F0FDF4', padding: '12px 14px', borderRadius: '10px', border: '1.5px solid #86EFAC', boxShadow: '0 1px 3px rgba(16,185,129,0.1)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#15803D', textTransform: 'uppercase' }}>🎁 Free Cards</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#16A34A', marginTop: '2px' }}>
+              {partner.cardSummary?.freeCardsAllotted ?? 0}
+            </div>
+            <div style={{ fontSize: '11px', color: '#15803D', fontWeight: '600', marginTop: '2px' }}>Complimentary Bonus</div>
+          </div>
+
+          {/* Available Stock Inventory */}
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Available Stock</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#9333EA', marginTop: '2px' }}>
+              {partner.cardSummary?.currentInventory ?? 0}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>In Hand for Distribution</div>
+          </div>
+
+          {/* Installed Cards */}
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 14px', borderRadius: '10px', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>Installed Cards</div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#EA580C', marginTop: '2px' }}>
+              {partner.cardSummary?.installedCards ?? 0}
+            </div>
+            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Active with Customers</div>
+          </div>
+        </div>
+
+        {/* Consignment Allocation History Table */}
+        {partner.transactions && partner.transactions.length > 0 && (
+          <div style={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #CBD5E1', overflow: 'hidden' }}>
+            <div style={{ padding: '9px 14px', backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', fontSize: '11.5px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>Consignment Allotment Manifest ({partner.transactions.length})</span>
+              <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'none', fontWeight: '600' }}>
+                Total Value: <strong>₹{Number(partner.cardSummary?.totalConsignmentValue || 0).toLocaleString('en-IN')}</strong>
+              </span>
+            </div>
+            <div className="table-responsive">
+              <table className="data-table" style={{ width: '100%', margin: 0 }}>
+                <thead>
+                  <tr>
+                    <th>Consignment ID</th>
+                    <th>Total Cards</th>
+                    <th>Commercial Breakdown</th>
+                    <th>Unit Rate</th>
+                    <th>Total Value</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Allotted Date</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {partner.transactions.map((txn) => (
+                    <tr key={txn._id || txn.transactionId}>
+                      <td style={{ fontWeight: '800', color: '#0284C7', fontFamily: 'monospace' }}>
+                        {txn.transactionId}
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
+                          {txn.quantity} Cards
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '12px', fontWeight: '700', color: '#334155' }}>
+                          {txn.paidQuantity || Math.max(0, txn.quantity - (txn.freeQuantity || 0))} Paid
+                        </span>
+                        {txn.freeQuantity > 0 && (
+                          <span style={{ marginLeft: '6px', fontSize: '11px', fontWeight: '800', color: '#15803D', backgroundColor: '#DCFCE7', padding: '2px 6px', borderRadius: '4px' }}>
+                            +{txn.freeQuantity} Free
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ fontWeight: '700' }}>₹{Number(txn.pricePerCard || 0).toLocaleString('en-IN')}</td>
+                      <td style={{ fontWeight: '800', color: '#0369A1' }}>₹{Number(txn.totalAmount || 0).toLocaleString('en-IN')}</td>
+                      <td><PaymentStatusBadge status={txn.paymentStatus} /></td>
+                      <td><TransactionStatusBadge status={txn.status} /></td>
+                      <td style={{ fontSize: '11.5px', color: '#64748B' }}>
+                        {new Date(txn.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <Link to={`/transactions/${txn._id}?edit=true`} className="btn btn-outline btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }}>
+                          ✏️ Edit / View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Grid of Core Details */}
