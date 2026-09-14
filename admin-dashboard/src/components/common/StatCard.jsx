@@ -47,7 +47,7 @@ const StatCard = ({
           {loading ? '...' : (value ?? 0)}
         </div>
         {subtitle && (
-          <div style={{ fontSize: '11.5px', color: isActive ? (iconColor || '#0284c7') : 'var(--text-muted)', marginTop: '4px', fontWeight: isActive ? '600' : '400' }}>
+          <div className="stat-subtitle" style={{ color: isActive ? (iconColor || '#0284c7') : 'var(--text-muted)', fontWeight: isActive ? '600' : '400' }}>
             {subtitle}
           </div>
         )}
