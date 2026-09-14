@@ -47,7 +47,7 @@ const CreatePartnerPage = () => {
     fullName: '',
     mobileNumber: '',
     email: '',
-    franchiseType: isSuperAdmin ? 'DISTRICT_FRANCHISE' : 'SUB_FRANCHISE',
+    franchiseType: 'NON_EXCLUSIVE_DISTRICT',
     parentPartnerId: authPartner ? authPartner._id : '',
     state: authPartner ? authPartner.state : 'Maharashtra',
     district: authPartner ? authPartner.district : '',
@@ -173,7 +173,13 @@ const CreatePartnerPage = () => {
     const districtCode = (formData.district || 'GEN').replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
     const randomDigits = Math.floor(1000 + Math.random() * 9000);
 
-    if (formData.franchiseType === 'STATE_FRANCHISE') {
+    if (formData.franchiseType === 'NON_EXCLUSIVE_DISTRICT') {
+      setPreviewFranchiseId(`VS-NX-${stateCode}-${districtCode}-${randomDigits}`);
+    } else if (formData.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT') {
+      setPreviewFranchiseId(`VS-STD-${stateCode}-${districtCode}-${randomDigits}`);
+    } else if (formData.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT') {
+      setPreviewFranchiseId(`VS-PRM-${stateCode}-${districtCode}-${randomDigits}`);
+    } else if (formData.franchiseType === 'STATE_FRANCHISE') {
       setPreviewFranchiseId(`VS-${stateCode}-ST-${randomDigits}`);
     } else if (formData.franchiseType === 'DISTRICT_FRANCHISE') {
       setPreviewFranchiseId(`VS-${stateCode}-${districtCode}-${randomDigits}`);
@@ -761,7 +767,7 @@ const CreatePartnerPage = () => {
           </div>
 
           <div className="form-grid-2">
-            <div style={{ gridColumn: formData.franchiseType === 'STATE_FRANCHISE' ? '1 / -1' : 'auto' }}>
+            <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Franchise Type <span style={{ color: '#dc2626' }}>*</span>
               </label>
@@ -769,11 +775,10 @@ const CreatePartnerPage = () => {
                 className="select"
                 value={formData.franchiseType}
                 onChange={(e) => setFormData({ ...formData, franchiseType: e.target.value, parentPartnerId: '' })}
-                disabled={!isSuperAdmin}
               >
-                {isSuperAdmin && <option value="STATE_FRANCHISE">State Franchise (Full State Authorization)</option>}
-                {isSuperAdmin && <option value="DISTRICT_FRANCHISE">District Franchise (District Authorization)</option>}
-                <option value="SUB_FRANCHISE">Sub-Franchise (Area / Town Level)</option>
+                <option value="NON_EXCLUSIVE_DISTRICT">Non Exclusive District Franchise Model</option>
+                <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive District Franchise Model</option>
+                <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive District Franchise Model</option>
               </select>
             </div>
 

@@ -64,6 +64,60 @@ export const StatusBadge = ({ status }) => {
 };
 
 export const FranchiseTypeBadge = ({ type }) => {
+  if (type === 'NON_EXCLUSIVE_DISTRICT') {
+    return (
+      <span
+        style={{
+          backgroundColor: '#EFF6FF',
+          color: '#1D4ED8',
+          border: '1px solid #BFDBFE',
+          padding: '3px 8px',
+          borderRadius: '6px',
+          fontSize: '11.5px',
+          fontWeight: '700',
+        }}
+      >
+        Non Exclusive District
+      </span>
+    );
+  }
+
+  if (type === 'STANDARD_EXCLUSIVE_DISTRICT') {
+    return (
+      <span
+        style={{
+          backgroundColor: '#F0FDF4',
+          color: '#15803D',
+          border: '1px solid #BBF7D0',
+          padding: '3px 8px',
+          borderRadius: '6px',
+          fontSize: '11.5px',
+          fontWeight: '700',
+        }}
+      >
+        Standard Exclusive District
+      </span>
+    );
+  }
+
+  if (type === 'PREMIUM_EXCLUSIVE_DISTRICT') {
+    return (
+      <span
+        style={{
+          backgroundColor: '#FEF3C7',
+          color: '#B45309',
+          border: '1px solid #FDE68A',
+          padding: '3px 8px',
+          borderRadius: '6px',
+          fontSize: '11.5px',
+          fontWeight: '700',
+        }}
+      >
+        Premium Exclusive District
+      </span>
+    );
+  }
+
   if (type === 'STATE_FRANCHISE') {
     return (
       <span

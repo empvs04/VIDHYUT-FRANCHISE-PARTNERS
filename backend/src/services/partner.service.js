@@ -50,22 +50,30 @@ export const createFranchisePartner = async (partnerData, creatorUser) => {
     throw new ApiError(409, 'A user with this email address already exists.');
   }
 
-  // 3. Duplicate District Protection for DISTRICT_FRANCHISE
+  // 3. Duplicate District Protection for Exclusive District Franchise Models
   if (
-    franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE &&
+    (franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE ||
+      franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT ||
+      franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT) &&
     accountStatus === ACCOUNT_STATUS.ACTIVE
   ) {
     const activeDistrictPartner = await FranchisePartner.findOne({
       state: { $regex: new RegExp(`^${state.trim()}$`, 'i') },
       district: { $regex: new RegExp(`^${district.trim()}$`, 'i') },
-      franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+      franchiseType: {
+        $in: [
+          FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+          FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+        ],
+      },
       accountStatus: ACCOUNT_STATUS.ACTIVE,
     });
 
     if (activeDistrictPartner) {
       throw new ApiError(
         409,
-        `This district (${district}, ${state}) already has an active District Franchise Partner: ${activeDistrictPartner.fullName} (${activeDistrictPartner.franchiseId}).`
+        `This district (${district}, ${state}) already has an active Exclusive District Franchise Partner: ${activeDistrictPartner.fullName} (${activeDistrictPartner.franchiseId}).`
       );
     }
   }
@@ -97,7 +105,10 @@ export const createFranchisePartner = async (partnerData, creatorUser) => {
     }
 
     if (
-      resolvedParentPartner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE &&
+      (resolvedParentPartner.franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE ||
+        resolvedParentPartner.franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT ||
+        resolvedParentPartner.franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT ||
+        resolvedParentPartner.franchiseType === FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT) &&
       (resolvedParentPartner.state.toLowerCase() !== state.toLowerCase() ||
         resolvedParentPartner.district.toLowerCase() !== district.toLowerCase())
     ) {
@@ -147,7 +158,12 @@ export const createFranchisePartner = async (partnerData, creatorUser) => {
   // Map franchiseType to User Role
   let assignedRole = USER_ROLES.FRANCHISE_PARTNER;
   if (franchiseType === FRANCHISE_TYPES.STATE_FRANCHISE) assignedRole = USER_ROLES.STATE_FRANCHISE;
-  else if (franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE) assignedRole = USER_ROLES.DISTRICT_FRANCHISE;
+  else if (
+    franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE ||
+    franchiseType === FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT ||
+    franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT ||
+    franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT
+  ) assignedRole = USER_ROLES.DISTRICT_FRANCHISE;
   else if (franchiseType === FRANCHISE_TYPES.SUB_FRANCHISE) assignedRole = USER_ROLES.SUB_FRANCHISE;
 
   // 7. Create User account

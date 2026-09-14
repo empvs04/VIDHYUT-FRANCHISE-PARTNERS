@@ -84,15 +84,38 @@ export const getEligibleParents = async (req, res, next) => {
 
     if (franchiseType === FRANCHISE_TYPES.SUB_FRANCHISE) {
       // Sub-Franchise parent can be District Franchise (in same state & district) or State Franchise
-      query.franchiseType = { $in: [FRANCHISE_TYPES.DISTRICT_FRANCHISE, FRANCHISE_TYPES.STATE_FRANCHISE] };
+      query.franchiseType = {
+        $in: [
+          FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+          FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+          FRANCHISE_TYPES.STATE_FRANCHISE,
+        ],
+      };
       if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');
       if (district) {
         query.$or = [
-          { district: new RegExp(`^${district.trim()}$`, 'i'), franchiseType: FRANCHISE_TYPES.DISTRICT_FRANCHISE },
+          {
+            district: new RegExp(`^${district.trim()}$`, 'i'),
+            franchiseType: {
+              $in: [
+                FRANCHISE_TYPES.DISTRICT_FRANCHISE,
+                FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT,
+                FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT,
+                FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT,
+              ],
+            },
+          },
           { franchiseType: FRANCHISE_TYPES.STATE_FRANCHISE },
         ];
       }
-    } else if (franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE) {
+    } else if (
+      franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE ||
+      franchiseType === FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT ||
+      franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT ||
+      franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT
+    ) {
       // District Franchise parent can only be a State Franchise in that state
       query.franchiseType = FRANCHISE_TYPES.STATE_FRANCHISE;
       if (state) query.state = new RegExp(`^${state.trim()}$`, 'i');

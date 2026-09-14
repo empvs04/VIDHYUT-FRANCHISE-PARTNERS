@@ -10,6 +10,12 @@ export const generateFranchiseId = (franchiseType, state, district) => {
 
   if (franchiseType === FRANCHISE_TYPES.STATE_FRANCHISE) {
     return `VS-${stateCode}-ST-${randomNum}`;
+  } else if (franchiseType === FRANCHISE_TYPES.NON_EXCLUSIVE_DISTRICT) {
+    return `VS-NX-${stateCode}-${districtCode}-${randomNum}`;
+  } else if (franchiseType === FRANCHISE_TYPES.STANDARD_EXCLUSIVE_DISTRICT) {
+    return `VS-STD-${stateCode}-${districtCode}-${randomNum}`;
+  } else if (franchiseType === FRANCHISE_TYPES.PREMIUM_EXCLUSIVE_DISTRICT) {
+    return `VS-PRM-${stateCode}-${districtCode}-${randomNum}`;
   } else if (franchiseType === FRANCHISE_TYPES.DISTRICT_FRANCHISE) {
     return `VS-${stateCode}-${districtCode}-${randomNum}`;
   } else {

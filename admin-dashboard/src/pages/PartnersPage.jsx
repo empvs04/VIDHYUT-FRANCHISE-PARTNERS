@@ -399,13 +399,20 @@ const PartnersPage = () => {
             >
               {isSuperAdmin ? (
                 <>
-                  <option value="">All Franchise Partners (State & District)</option>
+                  <option value="">All Franchise Partners</option>
+                  <option value="NON_EXCLUSIVE_DISTRICT">Non Exclusive District</option>
+                  <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive District</option>
+                  <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive District</option>
                   <option value="STATE_FRANCHISE">State Franchise</option>
                   <option value="DISTRICT_FRANCHISE">District Franchise</option>
+                  <option value="SUB_FRANCHISE">Sub-Franchise</option>
                 </>
               ) : (
                 <>
                   <option value="">All Network Partners</option>
+                  <option value="NON_EXCLUSIVE_DISTRICT">Non Exclusive District</option>
+                  <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive District</option>
+                  <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive District</option>
                   <option value="DISTRICT_FRANCHISE">District Franchise</option>
                   <option value="SUB_FRANCHISE">Sub-Franchise</option>
                 </>
