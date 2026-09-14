@@ -16,3 +16,40 @@ export const generateFranchiseId = (franchiseType, state, district) => {
     return `VS-SUB-${stateCode}-${districtCode}-${randomNum}`;
   }
 };
+
+export const generateTransactionId = (type = 'SALE') => {
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const rand = crypto.randomInt(1000, 9999);
+  const prefix = type === 'SALE' ? 'TXN' : type === 'TRANSFER' ? 'TRF' : 'CMP';
+  return `${prefix}-${dateStr}-${rand}`;
+};
+
+export const generateCustomerId = (sequenceNumber) => {
+  if (sequenceNumber !== undefined && sequenceNumber !== null) {
+    const padded = String(sequenceNumber).padStart(6, '0');
+    return `VSCUST${padded}`;
+  }
+  const rand = crypto.randomInt(100000, 999999);
+  return `VSCUST${rand}`;
+};
+
+export const generateInstallationId = (sequenceNumber) => {
+  if (sequenceNumber !== undefined && sequenceNumber !== null) {
+    const padded = String(sequenceNumber).padStart(6, '0');
+    return `VSINS${padded}`;
+  }
+  const rand = crypto.randomInt(100000, 999999);
+  return `VSINS${rand}`;
+};
+
+export const generateLocationVerificationId = (sequenceNumber) => {
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  if (sequenceNumber !== undefined && sequenceNumber !== null) {
+    const padded = String(sequenceNumber).padStart(5, '0');
+    return `LOC-${dateStr}-${padded}`;
+  }
+  const rand = crypto.randomInt(10000, 99999);
+  return `LOC-${dateStr}-${rand}`;
+};
+
+

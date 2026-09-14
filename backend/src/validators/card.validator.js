@@ -25,8 +25,8 @@ export const validateBatchCards = (req, res, next) => {
   }
 
   const count = end - start + 1;
-  if (count > 2000) {
-    return next(new ApiError(400, 'Maximum 2,000 cards can be created in a single batch.'));
+  if (count > 20000) {
+    return next(new ApiError(400, 'Maximum 20,000 cards can be created in a single batch.'));
   }
 
   if (typeof prefix !== 'string' || !/^[A-Z0-9_-]{1,10}$/i.test(prefix.trim())) {
@@ -53,8 +53,8 @@ export const validateManualCards = (req, res, next) => {
     return next(new ApiError(400, 'An array of serial numbers is required.'));
   }
 
-  if (serialNumbers.length > 500) {
-    return next(new ApiError(400, 'Maximum 500 cards can be manually added in a single request.'));
+  if (serialNumbers.length > 2000) {
+    return next(new ApiError(400, 'Maximum 2,000 cards can be manually added in a single request.'));
   }
 
   const cleanSerials = [];

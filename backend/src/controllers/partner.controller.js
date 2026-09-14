@@ -6,6 +6,7 @@ import {
   createFranchisePartner,
   updateFranchisePartnerStatus,
   getPartnerHierarchy as fetchHierarchy,
+  deleteFranchisePartner,
 } from '../services/partner.service.js';
 import { generateFranchiseId } from '../utils/idGenerator.js';
 import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
@@ -150,21 +151,29 @@ export const getAllPartners = async (req, res, next) => {
       franchiseType = '',
       accountStatus = '',
       parentPartnerId = '',
+      excludeSubFranchise = '',
       sortBy = 'createdAt',
       sortOrder = 'desc',
     } = req.query;
 
     const query = {};
 
-    // RBAC Scope Filtering
+    // RBAC Scope Filtering (Exclude self so only downline / network partners are shown)
     if (req.user.role === USER_ROLES.STATE_FRANCHISE && req.partner) {
       query.state = new RegExp(`^${req.partner.state.trim()}$`, 'i');
+      query._id = { $ne: req.partner._id };
     } else if (req.user.role === USER_ROLES.DISTRICT_FRANCHISE && req.partner) {
+      query._id = { $ne: req.partner._id };
       query.$or = [
-        { _id: req.partner._id },
         { parentPartnerId: req.partner._id },
-        { district: new RegExp(`^${req.partner.district.trim()}$`, 'i'), state: new RegExp(`^${req.partner.state.trim()}$`, 'i') },
+        {
+          district: new RegExp(`^${req.partner.district.trim()}$`, 'i'),
+          state: new RegExp(`^${req.partner.state.trim()}$`, 'i'),
+          franchiseType: FRANCHISE_TYPES.SUB_FRANCHISE,
+        },
       ];
+    } else if (req.user.role === USER_ROLES.SUB_FRANCHISE && req.partner) {
+      query._id = { $ne: req.partner._id, parentPartnerId: req.partner._id };
     }
 
     if (search) {
@@ -195,7 +204,17 @@ export const getAllPartners = async (req, res, next) => {
     }
 
     if (franchiseType) {
-      query.franchiseType = franchiseType;
+      if (franchiseType === 'FRANCHISE_ONLY' || franchiseType === 'STATE_AND_DISTRICT') {
+        query.franchiseType = {
+          $in: [FRANCHISE_TYPES.STATE_FRANCHISE, FRANCHISE_TYPES.DISTRICT_FRANCHISE],
+        };
+      } else {
+        query.franchiseType = franchiseType;
+      }
+    } else if (excludeSubFranchise === 'true' || excludeSubFranchise === true) {
+      query.franchiseType = {
+        $in: [FRANCHISE_TYPES.STATE_FRANCHISE, FRANCHISE_TYPES.DISTRICT_FRANCHISE],
+      };
     }
 
     if (accountStatus) {
@@ -205,6 +224,7 @@ export const getAllPartners = async (req, res, next) => {
     if (parentPartnerId) {
       query.parentPartnerId = parentPartnerId;
     }
+
 
     const pageNumber = Math.max(1, parseInt(page, 10));
     const limitNumber = Math.max(1, Math.min(100, parseInt(limit, 10)));
@@ -395,6 +415,24 @@ export const togglePartnerStatus = async (req, res, next) => {
         200,
         updatedPartner,
         `Partner account status changed to ${status}.`
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Permanently Delete Franchise Partner (Super Admin Only)
+export const deletePartner = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteFranchisePartner(id, req.user._id);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        result,
+        `Franchise partner ${result.franchiseId} (${result.fullName}) permanently deleted. ${result.reclaimedCardsCount} cards reclaimed to HQ.`
       )
     );
   } catch (err) {

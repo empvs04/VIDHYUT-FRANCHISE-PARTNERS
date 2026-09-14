@@ -7,6 +7,7 @@ import {
   getEligibleParents,
   updatePartner,
   togglePartnerStatus,
+  deletePartner,
   previewFranchiseId,
   verifyGovDocumentLive,
   scanUploadedDocument,
@@ -81,4 +82,11 @@ router.patch(
   togglePartnerStatus
 );
 
+router.delete(
+  '/:id',
+  authorize(USER_ROLES.SUPER_ADMIN),
+  deletePartner
+);
+
 export default router;
+

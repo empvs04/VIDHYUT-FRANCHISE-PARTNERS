@@ -27,17 +27,48 @@ const AddCardsPage = () => {
 
   // Batch Range Form States
   const [prefix, setPrefix] = useState('VS');
-  const [startNumber, setStartNumber] = useState(101);
-  const [endNumber, setEndNumber] = useState(200);
+  const [startNumber, setStartNumber] = useState(201);
+  const [endNumber, setEndNumber] = useState(300);
   const [paddingLength, setPaddingLength] = useState(6);
   const [batchNotes, setBatchNotes] = useState('Warehouse stock addition');
 
-  // Preview data
+  // Preview data and error state
   const [previewData, setPreviewData] = useState(null);
+  const [previewError, setPreviewError] = useState(null);
 
   // Manual List Form States
   const [manualText, setManualText] = useState('');
   const [manualNotes, setManualNotes] = useState('');
+
+  // Auto-fetch next available serial range
+  const fetchNextAvailableRange = async (currentPrefix = prefix, count = 100, silent = false) => {
+    try {
+      const res = await api.get('/cards/next-serial', {
+        params: { prefix: currentPrefix, paddingLength, count },
+      });
+      if (res.data?.data) {
+        setStartNumber(res.data.data.nextStartNumber);
+        setEndNumber(res.data.data.nextEndNumber);
+        if (!silent) {
+          showToast(
+            `Loaded next available serial range: ${res.data.data.firstSerial} to ${res.data.data.lastSerial}`,
+            'success'
+          );
+        }
+      }
+    } catch {}
+  };
+
+  // Initial mount: load next available conflict-free range from database
+  useEffect(() => {
+    fetchNextAvailableRange('VS', 100, true);
+  }, []);
+
+  // Quick Preset Helper
+  const handleSetQuickCount = (count) => {
+    const start = parseInt(startNumber, 10) || 1;
+    setEndNumber(start + count - 1);
+  };
 
   // 1. Calculate and Pre-Check Batch Range on Change
   useEffect(() => {
@@ -48,8 +79,24 @@ const AddCardsPage = () => {
 
     if (isNaN(start) || isNaN(end) || start <= 0 || end < start) {
       setPreviewData(null);
+      setPreviewError(null);
       return;
     }
+
+    const count = end - start + 1;
+    const clientFirstSerial = `${prefix}${String(start).padStart(paddingLength, '0')}`;
+    const clientLastSerial = `${prefix}${String(end).padStart(paddingLength, '0')}`;
+
+    // Set immediate client-side preview
+    setPreviewData({
+      totalCount: count,
+      firstSerial: clientFirstSerial,
+      lastSerial: clientLastSerial,
+      duplicateCount: 0,
+      duplicates: [],
+      isValid: true,
+    });
+    setPreviewError(null);
 
     const timer = setTimeout(async () => {
       try {
@@ -62,16 +109,21 @@ const AddCardsPage = () => {
         });
         if (res.data?.data) {
           setPreviewData(res.data.data);
+          setPreviewError(null);
         }
-      } catch {
-        setPreviewData(null);
+      } catch (err) {
+        const errorMsg = err.response?.data?.message;
+        if (errorMsg) {
+          setPreviewError(errorMsg);
+        }
       } finally {
         setPreviewLoading(false);
       }
-    }, 400);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [prefix, startNumber, endNumber, paddingLength, activeTab]);
+
 
   // 2. Handle Batch Stock Submission
   const handleBatchSubmit = async (e) => {
@@ -153,18 +205,19 @@ const AddCardsPage = () => {
   return (
     <div style={{ maxWidth: '840px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Link to="/cards" className="btn btn-outline btn-sm">
-          <ArrowLeft size={16} />
-          <span>Back to Inventory</span>
-        </Link>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>
-            Add Cards Stock Entry
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Digitally register new Vidhyut Saathi physical cards with automated uniqueness validation
-          </p>
+      <div className="page-header-wrap">
+        <div className="page-header-left">
+          <Link to="/cards" className="page-header-back-btn" title="Back to Inventory">
+            <ArrowLeft size={18} />
+          </Link>
+          <div className="page-header-text">
+            <h1 className="page-title">
+              Add Cards Stock Entry
+            </h1>
+            <p className="page-subtitle">
+              Digitally register new Vidhyut Saathi physical cards with automated uniqueness validation
+            </p>
+          </div>
         </div>
       </div>
 
@@ -234,12 +287,50 @@ const AddCardsPage = () => {
       {activeTab === 'BATCH' && (
         <form onSubmit={handleBatchSubmit}>
           <div className="card" style={{ marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '4px' }}>
-              1. Serial Number Range Parameters
-            </h2>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '18px' }}>
-              Define the serial prefix and starting/ending serial indices to create a continuous block of cards.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>
+                1. Serial Number Range Parameters
+              </h2>
+              <button
+                type="button"
+                onClick={() => fetchNextAvailableRange(prefix, 100, false)}
+                className="btn btn-outline btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600 }}
+              >
+                <Sparkles size={14} color="#0284c7" />
+                <span>Auto-Suggest Next Range (100 Cards)</span>
+              </button>
+            </div>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              Define the serial prefix and starting/ending serial indices to create a continuous block of cards (up to 20,000 cards per batch).
             </p>
+
+            {/* Quick Batch Size Presets */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                QUICK BATCH SIZES:
+              </span>
+              {[100, 500, 1000, 2500, 5000, 10000].map((qty) => (
+                <button
+                  key={qty}
+                  type="button"
+                  onClick={() => handleSetQuickCount(qty)}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #BAE6FD',
+                    backgroundColor: calculatedTotal === qty ? '#0284C7' : '#F0F9FF',
+                    color: calculatedTotal === qty ? '#FFFFFF' : '#0284C7',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  +{qty.toLocaleString()} Cards
+                </button>
+              ))}
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '18px' }}>
               <div>
@@ -355,7 +446,24 @@ const AddCardsPage = () => {
               </div>
             </div>
 
-            {previewData ? (
+            {previewError ? (
+              <div
+                style={{
+                  padding: '12px',
+                  backgroundColor: '#FEF2F2',
+                  borderRadius: '6px',
+                  border: '1px solid #FECACA',
+                  color: '#991B1B',
+                  fontSize: '13px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}
+              >
+                <AlertCircle size={16} color="#DC2626" />
+                <span>{previewError}</span>
+              </div>
+            ) : previewData ? (
               <div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px', fontSize: '13px' }}>
                   <div>
@@ -378,13 +486,32 @@ const AddCardsPage = () => {
                   </div>
                 ) : (
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#DC2626', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#DC2626', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <AlertTriangle size={16} /> Conflict: {previewData.duplicateCount} cards in this range ALREADY EXIST in MongoDB!
                     </div>
-                    <div style={{ fontSize: '12px', color: '#991B1B', fontFamily: 'monospace' }}>
+                    <div style={{ fontSize: '12px', color: '#991B1B', fontFamily: 'monospace', marginBottom: '12px' }}>
                       Duplicates: {previewData.duplicates.slice(0, 10).join(', ')}
                       {previewData.duplicates.length > 10 && ` (+${previewData.duplicates.length - 10} more)`}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => fetchNextAvailableRange(prefix, calculatedTotal > 0 ? calculatedTotal : 100, false)}
+                      className="btn btn-primary"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        backgroundColor: '#DC2626',
+                        borderColor: '#DC2626',
+                        boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)',
+                      }}
+                    >
+                      <Sparkles size={15} />
+                      <span>Auto-Fix: Jump to Next Conflict-Free Serial Range</span>
+                    </button>
                   </div>
                 )}
               </div>

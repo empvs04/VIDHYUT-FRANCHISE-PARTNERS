@@ -141,15 +141,14 @@ const CardDetailPage = () => {
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto' }}>
       {/* Top Navigation & Status Card */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link to="/cards" className="btn btn-outline btn-sm">
-            <ArrowLeft size={16} />
-            <span>Inventory</span>
+      <div className="page-header-wrap">
+        <div className="page-header-left">
+          <Link to="/cards" className="page-header-back-btn" title="Back to Inventory">
+            <ArrowLeft size={18} />
           </Link>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: '800', fontFamily: 'monospace', letterSpacing: '1px', color: 'var(--text-primary)' }}>
+          <div className="page-header-text">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <h1 className="page-title" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
                 {card.serialNumber}
               </h1>
               <CardStatusBadge status={card.status} />
@@ -168,7 +167,7 @@ const CardDetailPage = () => {
                 {copied ? <Check size={16} /> : <Copy size={16} />}
               </button>
             </div>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+            <p className="page-subtitle">
               Permanent Physical Electric Saver Card Registry Record
             </p>
           </div>
@@ -338,6 +337,15 @@ const CardDetailPage = () => {
                 <span style={{ color: 'var(--text-secondary)' }}>Mobile Number:</span>
                 <span>{owner?.mobileNumber}</span>
               </div>
+
+              {card.previousOwnerId && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Transferred From:</span>
+                  <span style={{ fontWeight: '600', color: '#9333EA' }}>
+                    {card.previousOwnerId.fullName} ({card.previousOwnerId.franchiseId || 'Partner'})
+                  </span>
+                </div>
+              )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Assigned Date:</span>

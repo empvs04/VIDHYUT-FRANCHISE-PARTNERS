@@ -89,7 +89,7 @@ const franchisePartnerSchema = new mongoose.Schema(
     // Government ID & Proof Verification
     govIdType: {
       type: String,
-      enum: ['AADHAAR', 'PAN', 'VOTER_ID', 'DRIVING_LICENSE', 'NONE'],
+      enum: ['AADHAAR', 'PAN', 'VOTER_ID', 'DRIVING_LICENSE', 'PASSPORT', 'NONE'],
       default: 'NONE',
     },
     govIdNumber: {
@@ -110,6 +110,20 @@ const franchisePartnerSchema = new mongoose.Schema(
       message: String,
       maskedId: String,
       entityType: String,
+    },
+    // Address Proof Verification
+    addressProofType: {
+      type: String,
+      default: 'ELECTRICITY_BILL',
+    },
+    addressProofNumber: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    addressProofDocumentUrl: {
+      type: String,
+      default: '',
     },
     // Additional Required Onboarding Documents
     otherDocuments: [

@@ -25,8 +25,14 @@ admin-dashboard/build/
 mobile-app/.expo/
 mobile-app/dist/
 
+# Uploads and temporary media
+uploads/
+backend/uploads/
+*.tmp
+
 # OS / Editor files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+

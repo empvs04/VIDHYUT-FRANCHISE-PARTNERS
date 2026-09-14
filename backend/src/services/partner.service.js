@@ -1,5 +1,6 @@
 import User from '../models/User.model.js';
 import FranchisePartner from '../models/FranchisePartner.model.js';
+import Card from '../models/Card.model.js';
 import { ApiError } from '../utils/apiError.js';
 import { generateFranchiseId } from '../utils/idGenerator.js';
 import { verifyGovernmentDocument } from '../utils/govIdValidator.js';
@@ -22,6 +23,9 @@ export const createFranchisePartner = async (partnerData, creatorUser) => {
     govIdType,
     govIdNumber,
     govIdDocumentUrl,
+    addressProofType,
+    addressProofNumber,
+    addressProofDocumentUrl,
     otherDocuments,
     notes,
     startDate,
@@ -177,6 +181,9 @@ export const createFranchisePartner = async (partnerData, creatorUser) => {
       govIdDocumentUrl: govIdDocumentUrl || '',
       isGovIdVerified,
       verificationDetails,
+      addressProofType: addressProofType || 'ELECTRICITY_BILL',
+      addressProofNumber: addressProofNumber ? addressProofNumber.trim() : '',
+      addressProofDocumentUrl: addressProofDocumentUrl || '',
       otherDocuments: otherDocuments || [],
       notes: notes ? notes.trim() : '',
       startDate: startDate ? new Date(startDate) : new Date(),
@@ -256,3 +263,45 @@ export const getPartnerHierarchy = async (partnerId) => {
     activeChildren: children.filter((c) => c.accountStatus === ACCOUNT_STATUS.ACTIVE).length,
   };
 };
+
+export const deleteFranchisePartner = async (partnerId, adminUserId) => {
+  const partner = await FranchisePartner.findById(partnerId);
+  if (!partner) {
+    throw new ApiError(404, 'Franchise Partner not found.');
+  }
+
+  // 1. Reclaim any active or assigned cards back to Central HQ stock
+  const reclaimedCards = await Card.updateMany(
+    { currentOwnerId: partner._id },
+    {
+      $set: {
+        currentOwnerType: 'HEADQUARTERS',
+        currentOwnerId: null,
+        status: 'AVAILABLE',
+        notes: `Reclaimed to HQ following deletion of partner ${partner.franchiseId} (${partner.fullName})`,
+      },
+    }
+  );
+
+  // 2. Unlink any downline / child partners that had this partner as parent
+  await FranchisePartner.updateMany(
+    { parentPartnerId: partner._id },
+    { $set: { parentPartnerId: null } }
+  );
+
+  // 3. Delete associated User authentication account if exists
+  if (partner.userId) {
+    await User.findByIdAndDelete(partner.userId);
+  }
+
+  // 4. Delete FranchisePartner document from database
+  await FranchisePartner.findByIdAndDelete(partner._id);
+
+  return {
+    deletedPartnerId: partner._id,
+    franchiseId: partner.franchiseId,
+    fullName: partner.fullName,
+    reclaimedCardsCount: reclaimedCards.modifiedCount || 0,
+  };
+};
+

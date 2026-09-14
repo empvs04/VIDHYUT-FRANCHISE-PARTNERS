@@ -20,6 +20,8 @@ import {
   RotateCcw,
   Calendar,
   Network,
+  CreditCard,
+  Home,
 } from 'lucide-react';
 import Tesseract from 'tesseract.js';
 import api from '../services/api';
@@ -57,10 +59,14 @@ const CreatePartnerPage = () => {
     startDate: new Date().toISOString().split('T')[0],
     expiryDate: '',
     notes: '',
-    // Gov ID Fields
+    // Gov ID Fields (Identity Proof)
     govIdType: 'AADHAAR',
     govIdNumber: '',
     govIdDocumentUrl: '',
+    // Address Proof Fields
+    addressProofType: 'ELECTRICITY_BILL',
+    addressProofNumber: '',
+    addressProofDocumentUrl: '',
     // Additional Documents
     hasGST: false,
     gstNumber: '',
@@ -74,13 +80,20 @@ const CreatePartnerPage = () => {
   const [loadingDistricts, setLoadingDistricts] = useState(false);
   const [districtConflictWarning, setDistrictConflictWarning] = useState(null);
 
-  // Document verification & OCR states
+  // Document verification & OCR states (Identity Proof)
   const [docScanStatus, setDocScanStatus] = useState(null);
   const [uploadedDocScan, setUploadedDocScan] = useState(null);
   const [uploadedDocName, setUploadedDocName] = useState('');
   const [uploadedDocPreview, setUploadedDocPreview] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
   const fileInputRef = useRef(null);
+
+  // Address Proof Upload & OCR states
+  const [addressDocName, setAddressDocName] = useState('');
+  const [addressDocScan, setAddressDocScan] = useState(null);
+  const [addressDocPreview, setAddressDocPreview] = useState(null);
+  const [addressScanProgress, setAddressScanProgress] = useState(0);
+  const addressFileInputRef = useRef(null);
 
   // Fetch all Indian States from backend API on mount
   useEffect(() => {
@@ -233,6 +246,132 @@ const CreatePartnerPage = () => {
     resetFileUpload();
   };
 
+  const handleAddressProofTypeChange = (val) => {
+    setFormData((prev) => ({ ...prev, addressProofType: val }));
+    resetAddressFileUpload();
+  };
+
+  const handleAddressProofNumberChange = (val) => {
+    setFormData((prev) => ({ ...prev, addressProofNumber: val }));
+  };
+
+  const handleAddressFileUploadAndScan = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setAddressDocName(file.name);
+    setAddressDocScan({ isScanning: true });
+    setAddressScanProgress(10);
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAddressDocPreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setAddressDocPreview(null);
+    }
+
+    try {
+      let extractedOcrText = '';
+
+      // Run OCR on address proof image
+      if (file.type.startsWith('image/')) {
+        const ocrResult = await Tesseract.recognize(file, 'eng', {
+          logger: (m) => {
+            if (m.status === 'recognizing text' && m.progress) {
+              setAddressScanProgress(Math.round(m.progress * 85));
+            }
+          },
+        });
+        extractedOcrText = ocrResult.data.text || '';
+      }
+
+      setAddressScanProgress(95);
+
+      // Verify with backend document scanner
+      const res = await api.post('/partners/scan-document', {
+        docType: formData.addressProofType,
+        extractedText: extractedOcrText,
+        fileMeta: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+      });
+
+      const scanData = res.data?.data;
+      setAddressScanProgress(100);
+
+      if (scanData?.isAuthentic) {
+        setAddressDocScan({
+          isScanning: false,
+          isAuthentic: true,
+          confidence: scanData.confidence,
+          detectedType: scanData.detectedType,
+          matchedMarkers: scanData.matchedMarkers,
+          extractedSnippet: scanData.extractedSnippet,
+          message: scanData.message,
+        });
+
+        // Auto-fill address proof / consumer number if detected and input empty
+        if (scanData.extractedIdNumbers?.length > 0 && !formData.addressProofNumber) {
+          const detectedNum = scanData.extractedIdNumbers[0];
+          setFormData((prev) => ({ ...prev, addressProofNumber: detectedNum }));
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          addressProofDocumentUrl: `https://storage.vidhyutsaathi.com/docs/address_${Date.now()}_${file.name}`,
+        }));
+
+        showToast(`Address Proof verified: Authentic ${scanData.detectedType} verified!`, 'success');
+      } else {
+        // Document REJECTED - Automatically remove invalid document
+        setAddressDocName('');
+        setAddressDocPreview(null);
+        if (addressFileInputRef.current) {
+          addressFileInputRef.current.value = '';
+        }
+        setAddressDocScan({
+          isScanning: false,
+          isAuthentic: false,
+          confidence: 0,
+          extractedSnippet: scanData?.extractedSnippet,
+          message: scanData?.message || 'Authenticity check failed. Non-Address document image detected.',
+        });
+
+        setFormData((prev) => ({ ...prev, addressProofDocumentUrl: '' }));
+        showToast(`Address Upload Rejected: Invalid Document. Please upload an authentic ${formData.addressProofType.replace('_', ' ')}.`, 'error');
+      }
+    } catch {
+      setAddressDocName('');
+      setAddressDocPreview(null);
+      if (addressFileInputRef.current) {
+        addressFileInputRef.current.value = '';
+      }
+      setAddressDocScan({
+        isScanning: false,
+        isAuthentic: false,
+        message: 'Could not process Address Proof image OCR. Please ensure the image is clear.',
+      });
+      setFormData((prev) => ({ ...prev, addressProofDocumentUrl: '' }));
+      showToast('OCR scan failed on Address Proof image.', 'error');
+    }
+  };
+
+  const resetAddressFileUpload = () => {
+    setAddressDocName('');
+    setAddressDocScan(null);
+    setAddressDocPreview(null);
+    setAddressScanProgress(0);
+    setFormData((prev) => ({ ...prev, addressProofDocumentUrl: '' }));
+    if (addressFileInputRef.current) {
+      addressFileInputRef.current.value = '';
+    }
+  };
+
   // Real Client-Side OCR & Deep Authenticity Inspection
   const handleFileUploadAndScan = async (e) => {
     const file = e.target.files[0];
@@ -309,7 +448,12 @@ const CreatePartnerPage = () => {
 
         showToast(`Document scan passed: Authentic ${scanData.detectedType} verified!`, 'success');
       } else {
-        // Document REJECTED
+        // Document REJECTED - Automatically remove invalid document
+        setUploadedDocName('');
+        setUploadedDocPreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         setUploadedDocScan({
           isScanning: false,
           isAuthentic: false,
@@ -323,6 +467,11 @@ const CreatePartnerPage = () => {
         showToast(`Upload Rejected: Invalid Document. Please upload an authentic ${formData.govIdType} card.`, 'error');
       }
     } catch {
+      setUploadedDocName('');
+      setUploadedDocPreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       setUploadedDocScan({
         isScanning: false,
         isAuthentic: false,
@@ -362,9 +511,15 @@ const CreatePartnerPage = () => {
       return;
     }
 
-    // Check Uploaded Document Authenticity
+    // Check Uploaded ID Document Authenticity
     if (uploadedDocName && uploadedDocScan && !uploadedDocScan.isAuthentic) {
-      showToast(`Cannot proceed: Uploaded file failed ${formData.govIdType} authenticity scan.`, 'error');
+      showToast(`Cannot proceed: Uploaded ID file failed ${formData.govIdType} authenticity scan.`, 'error');
+      return;
+    }
+
+    // Check Uploaded Address Document Authenticity
+    if (addressDocName && addressDocScan && !addressDocScan.isAuthentic) {
+      showToast(`Cannot proceed: Uploaded Address Proof failed ${formData.addressProofType.replace('_', ' ')} authenticity scan.`, 'error');
       return;
     }
 
@@ -379,9 +534,14 @@ const CreatePartnerPage = () => {
         : [],
       otherDocuments: [
         ...(formData.govIdDocumentUrl ? [{
-          name: `${formData.govIdType} Verified Document Proof`,
+          name: `${formData.govIdType} Verified Identity Proof`,
           docType: 'ADDRESS_PROOF',
           fileUrl: formData.govIdDocumentUrl,
+        }] : []),
+        ...(formData.addressProofDocumentUrl ? [{
+          name: `${formData.addressProofType.replace('_', ' ')} Verified Address Proof`,
+          docType: 'ADDRESS_PROOF',
+          fileUrl: formData.addressProofDocumentUrl,
         }] : []),
         ...(formData.gstNumber ? [{
           name: `GST Certificate (${formData.gstNumber})`,
@@ -405,102 +565,128 @@ const CreatePartnerPage = () => {
 
   return (
     <div style={{ maxWidth: '940px', margin: '0 auto' }}>
-      {/* Header & Auto Franchise ID Badge */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link to="/partners" className="btn btn-outline btn-sm">
-            <ArrowLeft size={16} />
-            <span>Back to Directory</span>
+      {/* 1. Page Header */}
+      <div className="page-header-wrap" style={{ marginBottom: '16px' }}>
+        <div className="page-header-left">
+          <Link to="/partners" className="page-header-back-btn" title="Back to Directory">
+            <ArrowLeft size={18} />
           </Link>
-          <div>
-            <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>
-              {isSuperAdmin ? 'Register Franchise Partner' : 'Register Sub-Franchise'}
+          <div className="page-header-text">
+            <h1 className="page-title">
+              {formData.franchiseType === 'SUB_FRANCHISE'
+                ? 'Register Sub-Franchise Partner'
+                : isSuperAdmin
+                ? 'Register Franchise Partner'
+                : 'Register Sub-Franchise Partner'}
             </h1>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              Onboard new partner with territory boundaries & instant optical document verification
+            <p className="page-subtitle">
+              {formData.franchiseType === 'SUB_FRANCHISE'
+                ? `Onboard a new sub-franchise partner ${authPartner ? `under ${authPartner.fullName} (${authPartner.franchiseId})` : 'with authorized territory'}`
+                : 'Onboard new partner with territory boundaries & instant optical document verification'}
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Auto-Generated Franchise ID Box */}
-        <div
-          style={{
-            backgroundColor: '#0F172A',
-            color: 'white',
-            padding: '10px 18px',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '14px',
-            boxShadow: 'var(--shadow-md)',
-          }}
-        >
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.8px' }}>
-              AUTO-GENERATED FRANCHISE ID
-            </div>
-            <div style={{ fontSize: '17px', fontWeight: '800', color: '#38BDF8', letterSpacing: '1px' }}>
-              {previewFranchiseId}
-            </div>
+      {/* 2. Standalone Auto-Generated Franchise ID Card (Full Width) */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+          border: '1px solid #334155',
+          color: 'white',
+          padding: '14px 18px',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          boxShadow: '0 4px 14px -2px rgba(15, 23, 42, 0.25)',
+          marginBottom: '20px',
+          width: '100%',
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '10.5px', color: '#94A3B8', fontWeight: '700', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: '2px' }}>
+            AUTO-GENERATED FRANCHISE ID
           </div>
+          <div style={{ fontSize: '18px', fontWeight: '800', color: '#38BDF8', letterSpacing: '1px', fontFamily: 'monospace' }}>
+            {previewFranchiseId}
+          </div>
+        </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <button
-              type="button"
-              onClick={handleCopyFranchiseId}
-              title="Copy Franchise ID to clipboard"
-              style={{
-                background: copied ? '#16A34A' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '7px 10px',
-                color: 'white',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                fontSize: '12px',
-                fontWeight: '600',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={handleCopyFranchiseId}
+            title="Copy Franchise ID to clipboard"
+            style={{
+              background: copied ? '#16A34A' : 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '8px',
+              padding: '7px 12px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12.5px',
+              fontWeight: '600',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            <span>{copied ? 'Copied' : 'Copy'}</span>
+          </button>
 
-            <div
-              title="Auto-generated by territory format. Non-editable."
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '6px',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#94A3B8',
-              }}
-            >
-              <Lock size={15} />
-            </div>
+          <div
+            title="Auto-generated territory format. Fixed & Secured."
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#94A3B8',
+            }}
+          >
+            <Lock size={14} />
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Section 1: Partner Identity & Login Information */}
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <User size={18} color="#0284c7" />
-            <div>
-              <h2 style={{ fontSize: '15px', fontWeight: '700' }}>1. Partner Identity & Login Information</h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+        <div className="card" style={{ marginBottom: '20px', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                backgroundColor: '#E0F2FE',
+                color: '#0284C7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <User size={19} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                1. Partner Identity & Login Credentials
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
                 Partner uses Mobile Number, Email, or Franchise ID to log into the portal with OTP.
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '18px', marginBottom: '16px' }}>
+          <div className="form-grid-3">
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Full Name <span style={{ color: '#dc2626' }}>*</span>
@@ -547,19 +733,35 @@ const CreatePartnerPage = () => {
         </div>
 
         {/* Section 2: Franchise Type, Hierarchy & Lifecycle */}
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <Network size={18} color="#0284c7" />
-            <div>
-              <h2 style={{ fontSize: '15px', fontWeight: '700' }}>2. Franchise Level, Hierarchy & Validity</h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+        <div className="card" style={{ marginBottom: '20px', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                backgroundColor: '#ECFDF5',
+                color: '#059669',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Network size={19} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                2. Franchise Level, Hierarchy & Validity
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
                 Define franchise authorization level, parent partner relationship, and start/expiry dates.
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px', marginBottom: '16px' }}>
-            <div>
+          <div className="form-grid-2">
+            <div style={{ gridColumn: formData.franchiseType === 'STATE_FRANCHISE' ? '1 / -1' : 'auto' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Franchise Type <span style={{ color: '#dc2626' }}>*</span>
               </label>
@@ -624,18 +826,34 @@ const CreatePartnerPage = () => {
         </div>
 
         {/* Section 3: Territory & Address */}
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <MapPin size={18} color="#0284c7" />
-            <div>
-              <h2 style={{ fontSize: '15px', fontWeight: '700' }}>3. Authorized Territory & Operational Address</h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+        <div className="card" style={{ marginBottom: '20px', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                backgroundColor: '#FEF3C7',
+                color: '#D97706',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <MapPin size={19} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                3. Authorized Territory & Operational Address
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
                 Backend enforces territory boundary checks. Duplicate active district allocations are automatically blocked.
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '18px', marginBottom: '16px' }}>
+          <div className="form-grid-2">
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
                 Authorized State <span style={{ color: '#dc2626' }}>*</span>
@@ -711,173 +929,623 @@ const CreatePartnerPage = () => {
                 required
               />
             </div>
-          </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-              Address Line 1 (Premises / Street) <span style={{ color: '#dc2626' }}>*</span>
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder="e.g. Shop 4B, Business Bay Complex, Link Road"
-              value={formData.addressLine1}
-              onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
-              required
-            />
-          </div>
-        </div>
-
-        {/* Section 4: Government Identification & Optical Verification */}
-        <div className="card" style={{ marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <ShieldCheck size={18} color="#0284c7" />
-            <div>
-              <h2 style={{ fontSize: '15px', fontWeight: '700' }}>4. Government Proof Identification & OCR Authenticity Verification</h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                Real OCR inspection checks official government headers & rejects non-ID / promotional images.
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '18px', marginBottom: '18px' }}>
-            <div>
+            <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                Select Government ID Type <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select className="select" value={formData.govIdType} onChange={(e) => handleIdTypeChange(e.target.value)}>
-                <option value="AADHAAR">Aadhaar Card (12-Digit Verhoeff Checksum)</option>
-                <option value="PAN">PAN Card (10-Digit Income Tax Dept)</option>
-                <option value="VOTER_ID">Voter ID (Election Commission EPIC)</option>
-                <option value="DRIVING_LICENSE">Driving License (State Transport)</option>
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                Government ID Number
+                Address Line 1 (Premises / Street) <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
                 className="input"
-                placeholder={formData.govIdType === 'AADHAAR' ? '12 digits (e.g. 999924567890)' : 'e.g. ABCPE1234F'}
-                value={formData.govIdNumber}
-                onChange={(e) => handleGovIdNumberChange(e.target.value)}
+                placeholder="e.g. Shop 4B, Business Bay Complex, Link Road"
+                value={formData.addressLine1}
+                onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
+                required
               />
-              {docScanStatus && (
-                <div style={{ marginTop: '6px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {docScanStatus.isValid ? (
-                    <span style={{ color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <CheckCircle2 size={13} /> {docScanStatus.message}
-                    </span>
-                  ) : (
-                    <span style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <AlertCircle size={13} /> {docScanStatus.message}
-                    </span>
-                  )}
-                </div>
-              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Government Identification & Optical Verification */}
+        <div className="card" style={{ marginBottom: '20px', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+            <div
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                backgroundColor: '#FAF5FF',
+                color: '#9333EA',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <ShieldCheck size={19} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                4. Government Proof ID & Optical Verification
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.35 }}>
+                Two-way identity & address validation with real-time OCR inspection for certified compliance.
+              </p>
             </div>
           </div>
 
-          {/* Document Upload & OCR Scanner */}
-          <div>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>
-              Upload Government ID Document / Photo Proof
-            </label>
+          {/* 2-Column Grid: LEFT (ID Proof) | RIGHT (Address Proof) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+            {/* ---------------------------------------------------- */}
+            {/* COLUMN 1 (LEFT): ID PROOF                            */}
+            {/* ---------------------------------------------------- */}
             <div
               style={{
-                border: '2px dashed #CBD5E1',
-                borderRadius: 'var(--radius-md)',
-                padding: '24px',
-                textAlign: 'center',
-                backgroundColor: '#F8FAFC',
-                position: 'relative',
+                border: '1px solid #E2E8F0',
+                borderRadius: '10px',
+                padding: '16px',
+                backgroundColor: '#FAFAFA',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
               }}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleFileUploadAndScan}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  opacity: 0,
-                  cursor: 'pointer',
-                  width: '100%',
-                  height: '100%',
-                }}
-              />
-              <UploadCloud size={36} color="#0284c7" style={{ margin: '0 auto 10px' }} />
-              <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>
-                {uploadedDocName || `Click or drag your ${formData.govIdType} card photo here`}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
+                <CreditCard size={17} color="#9333EA" />
+                <span style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  1. Identity Proof (ID Proof)
+                </span>
               </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Supports PNG, JPG, JPEG, PDF. Optical verification runs automatically.
-              </p>
-            </div>
 
-            {/* OCR Progress / Result Display */}
-            {uploadedDocScan && (
-              <div
-                style={{
-                  marginTop: '14px',
-                  padding: '14px',
-                  borderRadius: '8px',
-                  backgroundColor: uploadedDocScan.isAuthentic ? '#F0FDF4' : '#FEF2F2',
-                  border: `1px solid ${uploadedDocScan.isAuthentic ? '#BBF7D0' : '#FECACA'}`,
-                }}
-              >
-                {uploadedDocScan.isScanning ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <RefreshCw size={18} className="animate-spin" color="#0284c7" />
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: '700' }}>
-                        Scanning document OCR ({scanProgress}%)...
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Inspecting document headers & anti-counterfeit markers
-                      </div>
-                    </div>
-                  </div>
-                ) : uploadedDocScan.isAuthentic ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <CheckCircle2 size={20} color="#16A34A" />
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#15803D' }}>
-                        Authentic {uploadedDocScan.detectedType} Verified!
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: '#166534' }}>
-                        {uploadedDocScan.message}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <XCircle size={20} color="#DC2626" />
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#B91C1C' }}>
-                        Document Verification Rejected
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: '#991B1B' }}>
-                        {uploadedDocScan.message}
-                      </div>
-                    </div>
+              {/* ID Proof Type Select */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '5px' }}>
+                  Select ID Proof Type <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  className="select"
+                  value={formData.govIdType}
+                  onChange={(e) => handleIdTypeChange(e.target.value)}
+                  style={{ backgroundColor: '#FFFFFF' }}
+                >
+                  <option value="AADHAAR">Aadhar Card (12-digit Number)</option>
+                  <option value="PAN">PAN Card (10-Digit Income Tax Dept)</option>
+                  <option value="VOTER_ID">Voter ID (Election Commission EPIC)</option>
+                  <option value="DRIVING_LICENSE">Driving License (State Transport)</option>
+                  <option value="PASSPORT">Indian Passport</option>
+                </select>
+              </div>
+
+              {/* ID Number */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '5px' }}>
+                  ID Proof Number <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder={
+                    formData.govIdType === 'AADHAAR'
+                      ? 'Aadhar Card (12-digit Number)'
+                      : formData.govIdType === 'PAN'
+                      ? 'PAN Card (e.g. ABCPE1234F)'
+                      : formData.govIdType === 'VOTER_ID'
+                      ? 'Voter ID (e.g. ABC1234567)'
+                      : formData.govIdType === 'PASSPORT'
+                      ? 'Passport (e.g. A1234567)'
+                      : 'Driving License Number'
+                  }
+                  value={formData.govIdNumber}
+                  onChange={(e) => handleGovIdNumberChange(e.target.value)}
+                  style={{ backgroundColor: '#FFFFFF' }}
+                />
+                {docScanStatus && (
+                  <div style={{ marginTop: '6px', fontSize: '11.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {docScanStatus.isValid ? (
+                      <span style={{ color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={13} /> {docScanStatus.message}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertCircle size={13} /> {docScanStatus.message}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+
+              {/* Upload ID Proof Document / Photo */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '6px' }}>
+                  Upload ID Proof Photo / Document
+                </label>
+
+                {uploadedDocName ? (
+                  <div
+                    style={{
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      backgroundColor: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '6px',
+                          backgroundColor: uploadedDocScan?.isAuthentic ? '#DCFCE7' : '#E0F2FE',
+                          color: uploadedDocScan?.isAuthentic ? '#16A34A' : '#0284C7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <FileText size={18} />
+                      </div>
+                      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {uploadedDocName}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {formData.govIdType} Attached {uploadedDocScan?.isAuthentic && '• Verified'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (fileInputRef.current) fileInputRef.current.click();
+                        }}
+                        className="btn btn-outline btn-sm"
+                        style={{ padding: '4px 8px', fontSize: '11.5px' }}
+                      >
+                        Change
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetFileUpload}
+                        className="btn btn-outline btn-sm"
+                        style={{ padding: '4px 8px', fontSize: '11.5px', color: '#DC2626', borderColor: '#FECACA' }}
+                      >
+                        Remove
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleFileUploadAndScan}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      border: '2px dashed #C084FC',
+                      borderRadius: '14px',
+                      padding: '36px 18px',
+                      textAlign: 'center',
+                      backgroundColor: '#FAF5FF',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      width: '100%',
+                      maxWidth: '340px',
+                      margin: '0 auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: '220px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileUploadAndScan}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 10,
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        backgroundColor: '#F3E8FF',
+                        color: '#9333EA',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '14px',
+                        boxShadow: '0 4px 12px rgba(147, 51, 234, 0.18)',
+                      }}
+                    >
+                      <UploadCloud size={30} />
+                    </div>
+                    <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      Click or drag {formData.govIdType} card photo
+                    </div>
+                    <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4, maxWidth: '240px' }}>
+                      Supports PNG, JPG, JPEG, PDF • OCR Auto-Scan Inspection
+                    </p>
+                  </div>
+                )}
+
+                {/* OCR Progress / Result Display */}
+                {uploadedDocScan && (
+                  <div
+                    style={{
+                      marginTop: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: uploadedDocScan.isAuthentic ? '#F0FDF4' : '#FEF2F2',
+                      border: `1px solid ${uploadedDocScan.isAuthentic ? '#BBF7D0' : '#FECACA'}`,
+                    }}
+                  >
+                    {uploadedDocScan.isScanning ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <RefreshCw size={15} className="animate-spin" color="#9333EA" />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '700' }}>
+                            Scanning OCR ({scanProgress}%)...
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                            Inspecting document headers
+                          </div>
+                        </div>
+                      </div>
+                    ) : uploadedDocScan.isAuthentic ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CheckCircle2 size={16} color="#16A34A" />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '800', color: '#15803D' }}>
+                            Authentic {uploadedDocScan.detectedType} Verified!
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#166534' }}>
+                            {uploadedDocScan.message}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <XCircle size={16} color="#DC2626" />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '800', color: '#B91C1C' }}>
+                            Verification Rejected
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#991B1B' }}>
+                            {uploadedDocScan.message}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ---------------------------------------------------- */}
+            {/* COLUMN 2 (RIGHT): ADDRESS PROOF                      */}
+            {/* ---------------------------------------------------- */}
+            <div
+              style={{
+                border: '1px solid #E2E8F0',
+                borderRadius: '10px',
+                padding: '16px',
+                backgroundColor: '#FAFAFA',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
+                <Home size={17} color="#0284C7" />
+                <span style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                  2. Address Proof (Address Proof)
+                </span>
+              </div>
+
+              {/* Address Proof Type Select */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '5px' }}>
+                  Select Address Proof Type <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  className="select"
+                  value={formData.addressProofType}
+                  onChange={(e) => handleAddressProofTypeChange(e.target.value)}
+                  style={{ backgroundColor: '#FFFFFF' }}
+                >
+                  <option value="ELECTRICITY_BILL">Electricity Bill (Latest 3 Months)</option>
+                  <option value="AADHAAR">Aadhar Card (Address Side)</option>
+                  <option value="RENT_AGREEMENT">Registered Rent Agreement</option>
+                  <option value="VOTER_ID">Voter ID Card</option>
+                  <option value="RATION_CARD">Ration Card</option>
+                  <option value="BANK_PASSBOOK">Bank Passbook / Statement</option>
+                  <option value="WATER_BILL">Water / Gas Utility Bill</option>
+                </select>
+              </div>
+
+              {/* Address Proof Number */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '5px' }}>
+                  Address Proof Number / Consumer No.
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder={
+                    formData.addressProofType === 'ELECTRICITY_BILL'
+                      ? 'Electricity Consumer / CA Number'
+                      : formData.addressProofType === 'RENT_AGREEMENT'
+                      ? 'Agreement Reg. / Document Number'
+                      : formData.addressProofType === 'BANK_PASSBOOK'
+                      ? 'Bank Account / Passbook Number'
+                      : 'Card / Reference / ID Number'
+                  }
+                  value={formData.addressProofNumber}
+                  onChange={(e) => handleAddressProofNumberChange(e.target.value)}
+                  style={{ backgroundColor: '#FFFFFF' }}
+                />
+              </div>
+
+              {/* Upload Address Proof Document / Photo */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '6px' }}>
+                  Upload Address Proof Photo / Document
+                </label>
+
+                {addressDocName ? (
+                  <div
+                    style={{
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      backgroundColor: '#FFFFFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '6px',
+                          backgroundColor: addressDocScan?.isAuthentic ? '#DCFCE7' : '#E0F2FE',
+                          color: addressDocScan?.isAuthentic ? '#16A34A' : '#0284C7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <FileText size={18} />
+                      </div>
+                      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                        <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                          {addressDocName}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {formData.addressProofType.replace('_', ' ')} Attached {addressDocScan?.isAuthentic && '• Verified'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (addressFileInputRef.current) addressFileInputRef.current.click();
+                        }}
+                        className="btn btn-outline btn-sm"
+                        style={{ padding: '4px 8px', fontSize: '11.5px' }}
+                      >
+                        Change
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetAddressFileUpload}
+                        className="btn btn-outline btn-sm"
+                        style={{ padding: '4px 8px', fontSize: '11.5px', color: '#DC2626', borderColor: '#FECACA' }}
+                      >
+                        Remove
+                      </button>
+                      <input
+                        ref={addressFileInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleAddressFileUploadAndScan}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      border: '2px dashed #7DD3FC',
+                      borderRadius: '14px',
+                      padding: '36px 18px',
+                      textAlign: 'center',
+                      backgroundColor: '#F0F9FF',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      width: '100%',
+                      maxWidth: '340px',
+                      margin: '0 auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: '220px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <input
+                      ref={addressFileInputRef}
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleAddressFileUploadAndScan}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        cursor: 'pointer',
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 10,
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        backgroundColor: '#E0F2FE',
+                        color: '#0284C7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '14px',
+                        boxShadow: '0 4px 12px rgba(2, 132, 199, 0.18)',
+                      }}
+                    >
+                      <UploadCloud size={30} />
+                    </div>
+                    <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      Click or drag Address Proof document
+                    </div>
+                    <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4, maxWidth: '240px' }}>
+                      Supports PNG, JPG, JPEG, PDF • OCR Authenticity Auto-Scan
+                    </p>
+                  </div>
+                )}
+
+                {/* Address OCR Progress / Result Display */}
+                {addressDocScan && (
+                  <div
+                    style={{
+                      marginTop: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: addressDocScan.isAuthentic ? '#F0FDF4' : '#FEF2F2',
+                      border: `1px solid ${addressDocScan.isAuthentic ? '#BBF7D0' : '#FECACA'}`,
+                    }}
+                  >
+                    {addressDocScan.isScanning ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <RefreshCw size={15} className="animate-spin" color="#0284C7" />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '700' }}>
+                            Scanning Address OCR ({addressScanProgress}%)...
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                            Checking utility billing / premises address headers
+                          </div>
+                        </div>
+                      </div>
+                    ) : addressDocScan.isAuthentic ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CheckCircle2 size={16} color="#16A34A" />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '800', color: '#15803D' }}>
+                            Authentic {addressDocScan.detectedType} Verified!
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#166534' }}>
+                            {addressDocScan.message}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <XCircle size={16} color="#DC2626" />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: '800', color: '#B91C1C' }}>
+                            Address Verification Rejected
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#991B1B' }}>
+                            {addressDocScan.message}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Submit Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-          <Link to="/partners" className="btn btn-outline">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '12px',
+            marginTop: '24px',
+            width: '100%',
+          }}
+        >
+          <Link
+            to="/partners"
+            className="btn btn-outline"
+            style={{
+              height: '46px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 600,
+              fontSize: '14px',
+              padding: '0 12px',
+              borderRadius: '10px',
+            }}
+          >
             Cancel
           </Link>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? <span>Registering Partner...</span> : <span>Complete Partner Registration</span>}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading}
+            style={{
+              height: '46px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '14px',
+              padding: '0 12px',
+              whiteSpace: 'nowrap',
+              borderRadius: '10px',
+            }}
+          >
+            {loading ? (
+              <span>Registering...</span>
+            ) : (
+              <span>
+                {formData.franchiseType === 'SUB_FRANCHISE'
+                  ? 'Register Sub-Franchise'
+                  : 'Register Partner'}
+              </span>
+            )}
           </button>
         </div>
       </form>
@@ -886,3 +1554,4 @@ const CreatePartnerPage = () => {
 };
 
 export default CreatePartnerPage;
+

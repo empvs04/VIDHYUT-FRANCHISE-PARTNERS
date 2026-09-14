@@ -15,7 +15,15 @@ import {
   Zap,
   X,
   ShieldCheck,
+  FileText,
+  Send,
+  TrendingUp,
+  Search,
+  Shield,
+  Activity,
 } from 'lucide-react';
+
+
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -93,6 +101,16 @@ const Sidebar = ({ isOpen, onClose }) => {
               </li>
               <li>
                 <NavLink
+                  to="/sub-franchises"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Building2 size={18} />
+                  <span>Sub-Franchise Partners</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
                   to="/partners/new"
                   onClick={handleNavClick}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
@@ -101,6 +119,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Add Partner</span>
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/territories"
@@ -121,9 +140,151 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Card Inventory</span>
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/transactions"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <FileText size={18} />
+                  <span>Card Transactions</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/transactions/new"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Send size={18} />
+                  <span>Distribute Cards</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/customers"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Users size={18} />
+                  <span>Customers</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/installations"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Wrench size={18} />
+                  <span>Card Installations</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/location-verifications"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <MapPin size={18} />
+                  <span>GPS Location Audit</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/analytics"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <TrendingUp size={18} />
+                  <span>Analytics & BI</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/reports"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <FileText size={18} />
+                  <span>Executive Reports</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/audit"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Search size={18} />
+                  <span>Global Audit & Trace</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/audit-logs"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Shield size={18} />
+                  <span>Immutable Audit Logs</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/system-health"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Activity size={18} />
+                  <span>System Health</span>
+                </NavLink>
+              </li>
             </>
+
+
           ) : (
             <>
+              <li>
+                <NavLink
+                  to="/customers"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Users size={18} />
+                  <span>My Customers</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/customers/new"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <UserPlus size={18} />
+                  <span>Install Card</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/installations"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Wrench size={18} />
+                  <span>Installations Log</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/location-verifications"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <MapPin size={18} />
+                  <span>GPS Location Logs</span>
+                </NavLink>
+              </li>
               <li>
                 <NavLink
                   to="/cards"
@@ -134,28 +295,43 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>My Card Inventory</span>
                 </NavLink>
               </li>
-              <li>
-                <NavLink
-                  to="/partners"
-                  end
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Building2 size={18} />
-                  <span>Sub-Franchise Network</span>
-                </NavLink>
-              </li>
+
               {partner?.franchiseType !== 'SUB_FRANCHISE' && (
                 <li>
                   <NavLink
-                    to="/partners/new"
+                    to="/transactions/new"
                     onClick={handleNavClick}
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   >
-                    <UserPlus size={18} />
-                    <span>Add Sub-Franchise</span>
+                    <Send size={18} />
+                    <span>Distribute Stock</span>
                   </NavLink>
                 </li>
+              )}
+              {partner?.franchiseType !== 'SUB_FRANCHISE' && (
+                <>
+                  <li>
+                    <NavLink
+                      to="/partners"
+                      end
+                      onClick={handleNavClick}
+                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                      <Building2 size={18} />
+                      <span>Sub-Franchise Network</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink
+                      to="/partners/new"
+                      onClick={handleNavClick}
+                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                      <UserPlus size={18} />
+                      <span>Add Sub-Franchise</span>
+                    </NavLink>
+                  </li>
+                </>
               )}
               {partner?._id && (
                 <li>
@@ -172,17 +348,16 @@ const Sidebar = ({ isOpen, onClose }) => {
             </>
           )}
 
-          <div className="nav-section-title">Future Modules</div>
-          <li className="nav-item disabled">
-            <Wrench size={18} />
-            <span>Customer Installations</span>
-            <span className="nav-badge-soon">Phase 4</span>
-          </li>
-          <li className="nav-item disabled">
-            <BarChart3 size={18} />
-            <span>Financial Settlements</span>
-            <span className="nav-badge-soon">Phase 5</span>
-          </li>
+          {(!partner || partner?.franchiseType !== 'SUB_FRANCHISE') && (
+            <>
+              <div className="nav-section-title">Upcoming Modules</div>
+              <li className="nav-item disabled">
+                <BarChart3 size={18} />
+                <span>Franchise Settlements</span>
+                <span className="nav-badge-soon">Phase 7</span>
+              </li>
+            </>
+          )}
 
           <div className="nav-section-title">Account</div>
           <li>

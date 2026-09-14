@@ -23,13 +23,21 @@ const SettingsPage = () => {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)' }}>
-          System & Admin Settings
-        </h1>
-        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-          Vidhyut Saathi Portal specifications, database health, and active administrator credentials
-        </p>
+      {/* Page Header */}
+      <div className="page-header-wrap">
+        <div className="page-header-left">
+          <div className="page-header-icon-box">
+            <Shield size={20} />
+          </div>
+          <div className="page-header-text">
+            <h1 className="page-title">
+              System & Admin Settings
+            </h1>
+            <p className="page-subtitle">
+              Vidhyut Saathi Portal specifications, database health, and active administrator credentials
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Admin Profile Box */}
