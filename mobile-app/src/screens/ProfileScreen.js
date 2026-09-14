@@ -66,12 +66,12 @@ const ProfileScreen = ({ onBackToDashboard }) => {
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Authorized State</Text>
+            <Text style={styles.detailLabel}>State</Text>
             <Text style={styles.detailValue}>{partner?.state}</Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Authorized District</Text>
+            <Text style={styles.detailLabel}>District</Text>
             <Text style={styles.detailValue}>{partner?.district}</Text>
           </View>
 

@@ -861,7 +861,7 @@ const CreatePartnerPage = () => {
           <div className="form-grid-2">
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                Authorized State <span style={{ color: '#dc2626' }}>*</span>
+                State <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <select
                 className="select"
@@ -880,7 +880,7 @@ const CreatePartnerPage = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                Authorized District <span style={{ color: '#dc2626' }}>*</span>
+                District <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <select
                 className="select"
