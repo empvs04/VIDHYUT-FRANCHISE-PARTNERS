@@ -219,6 +219,7 @@ const DashboardPage = () => {
     const subStats = partnerSummary?.subFranchises;
     const isSub = partner?.franchiseType === 'SUB_FRANCHISE';
     const subPerformance = partnerSummary?.subFranchises?.performance || [];
+    const custMetrics = partnerSummary?.customers;
     const typeMeta = getFranchiseTypeMeta(partner?.franchiseType);
 
     return (
