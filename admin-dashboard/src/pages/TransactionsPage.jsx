@@ -921,12 +921,36 @@ const TransactionsPage = () => {
                         {/* 1. Transaction ID & Type */}
                         <td style={{ padding: '16px 18px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <Link
-                              to={`/transactions/${t._id}`}
-                              style={{ fontWeight: '800', fontFamily: 'monospace', color: '#0284C7', fontSize: '14px', textDecoration: 'none' }}
-                            >
-                              {t.transactionId}
-                            </Link>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Link
+                                to={`/transactions/${t._id}`}
+                                style={{ fontWeight: '800', fontFamily: 'monospace', color: '#0284C7', fontSize: '14px', textDecoration: 'none' }}
+                              >
+                                {t.transactionId}
+                              </Link>
+                              {isSuperAdmin && (
+                                <Link
+                                  to={`/transactions/${t._id}?edit=true`}
+                                  title="Edit this transaction parameters"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '2px 6px',
+                                    borderRadius: '5px',
+                                    backgroundColor: '#F0F9FF',
+                                    border: '1px solid #BAE6FD',
+                                    color: '#0284C7',
+                                    fontSize: '11px',
+                                    fontWeight: '700',
+                                    gap: '3px',
+                                    textDecoration: 'none',
+                                  }}
+                                >
+                                  <Edit3 size={11} /> Edit
+                                </Link>
+                              )}
+                            </div>
                             <div>
                               <TransactionTypeBadge type={t.transactionType} />
                             </div>
@@ -996,27 +1020,39 @@ const TransactionsPage = () => {
 
                         {/* 4. Cards & Commercials */}
                         <td style={{ padding: '16px 18px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontWeight: '800', fontSize: '14.5px', color: '#0F172A' }}>
-                              {t.quantity} Cards
-                            </span>
-                            {t.freeQuantity > 0 && (
-                              <span style={{ fontSize: '11px', fontWeight: '800', color: '#86198F', backgroundColor: '#FDF4FF', border: '1px solid #F0ABFC', padding: '1px 6px', borderRadius: '4px' }}>
-                                🎁 {t.freeQuantity} Free
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
-                            {t.transactionType === 'SALE' ? (
-                              <span>
-                                @ ₹{t.pricePerCard}/card = <strong style={{ color: '#16A34A', fontSize: '13px' }}>₹{(t.totalAmount || 0).toLocaleString('en-IN')}</strong>
-                              </span>
-                            ) : t.transactionType === 'COMPLIMENTARY' ? (
-                              <span style={{ color: '#059669', fontWeight: '700' }}>🎁 100% Free Allotment</span>
-                            ) : (
-                              <span style={{ color: '#64748B', fontWeight: '600' }}>Stock Transfer</span>
-                            )}
-                          </div>
+                          {(() => {
+                            const hasFree = t.freeQuantity !== undefined && t.freeQuantity > 0;
+                            const hasPaid = t.paidQuantity !== undefined && t.paidQuantity > 0;
+                            const calcPaid = hasPaid ? t.paidQuantity : Math.max(0, t.quantity - (t.freeQuantity || 0));
+                            const calcFree = t.freeQuantity || 0;
+                            const totalCards = (hasPaid && hasFree) ? (calcPaid + calcFree) : (t.quantity || (calcPaid + calcFree));
+
+                            return (
+                              <>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontWeight: '800', fontSize: '14.5px', color: '#0F172A' }}>
+                                    {totalCards} Cards
+                                  </span>
+                                  {hasFree && (
+                                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#86198F', backgroundColor: '#FDF4FF', border: '1px solid #F0ABFC', padding: '1px 6px', borderRadius: '4px' }}>
+                                      🎁 {calcFree} Free
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                                  {t.transactionType === 'SALE' ? (
+                                    <span>
+                                      {hasFree ? `${calcPaid} Paid @ ` : '@ '}₹{t.pricePerCard}/card = <strong style={{ color: '#16A34A', fontSize: '13px' }}>₹{(t.totalAmount || 0).toLocaleString('en-IN')}</strong>
+                                    </span>
+                                  ) : t.transactionType === 'COMPLIMENTARY' ? (
+                                    <span style={{ color: '#059669', fontWeight: '700' }}>🎁 100% Free Allotment</span>
+                                  ) : (
+                                    <span style={{ color: '#64748B', fontWeight: '600' }}>Stock Transfer</span>
+                                  )}
+                                </div>
+                              </>
+                            );
+                          })()}
                         </td>
 
                         {/* 5. Status Badge */}

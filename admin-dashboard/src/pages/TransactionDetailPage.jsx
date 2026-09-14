@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   FileText,
   ArrowLeft,
@@ -45,6 +45,7 @@ import { useNotification } from '../context/NotificationContext';
 const TransactionDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isSuperAdmin, partner: currentPartner } = useAuth();
   const { showToast } = useNotification();
 
@@ -95,6 +96,12 @@ const TransactionDetailPage = () => {
   useEffect(() => {
     fetchTransaction();
   }, [id]);
+
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true' && transaction && isSuperAdmin) {
+      openEditModal();
+    }
+  }, [searchParams, transaction, isSuperAdmin]);
 
   const openEditModal = async () => {
     if (!transaction) return;
@@ -546,28 +553,46 @@ const TransactionDetailPage = () => {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Total Quantity:</span>
-              <span style={{ fontWeight: '800', color: '#0284C7' }}>{transaction.quantity} Cards</span>
-            </div>
+            {(() => {
+              const hasFree = transaction.freeQuantity !== undefined && transaction.freeQuantity > 0;
+              const hasPaid = transaction.paidQuantity !== undefined && transaction.paidQuantity > 0;
+              const calcPaid = hasPaid
+                ? transaction.paidQuantity
+                : Math.max(0, transaction.quantity - (transaction.freeQuantity || 0));
+              const calcFree = transaction.freeQuantity || 0;
+              const totalCards = (hasPaid && hasFree)
+                ? (calcPaid + calcFree)
+                : (transaction.quantity || (calcPaid + calcFree));
 
-            {transaction.freeQuantity !== undefined && transaction.freeQuantity > 0 && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Chargeable (Paid) Cards:</span>
-                  <span style={{ fontWeight: '700', color: '#334155' }}>
-                    {transaction.paidQuantity !== undefined ? transaction.paidQuantity : Math.max(0, transaction.quantity - transaction.freeQuantity)} Cards
-                  </span>
-                </div>
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Total Quantity:</span>
+                    <span style={{ fontWeight: '800', color: '#0284C7', fontSize: '14.5px' }}>
+                      {totalCards} Cards
+                    </span>
+                  </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#FDF4FF', padding: '4px 8px', borderRadius: '6px', border: '1px solid #F0ABFC' }}>
-                  <span style={{ color: '#86198F', fontWeight: '700' }}>🎁 Free / Complimentary:</span>
-                  <span style={{ fontWeight: '800', color: '#86198F' }}>
-                    {transaction.freeQuantity} Free Cards (₹0)
-                  </span>
-                </div>
-              </>
-            )}
+                  {hasFree && (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Chargeable (Paid) Cards:</span>
+                        <span style={{ fontWeight: '700', color: '#334155' }}>
+                          {calcPaid} Cards
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#FDF4FF', padding: '5px 8px', borderRadius: '6px', border: '1px solid #F0ABFC' }}>
+                        <span style={{ color: '#86198F', fontWeight: '700' }}>🎁 Free / Complimentary:</span>
+                        <span style={{ fontWeight: '800', color: '#86198F' }}>
+                          {calcFree} Free Cards (₹0)
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text-muted)' }}>Rate Per Card:</span>
@@ -576,7 +601,7 @@ const TransactionDetailPage = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '6px' }}>
               <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>Total Consignment Value:</span>
-              <span style={{ fontWeight: '800', fontSize: '15px', color: '#16A34A' }}>
+              <span style={{ fontWeight: '800', fontSize: '15.5px', color: '#16A34A' }}>
                 ₹{(transaction.totalAmount || 0).toLocaleString('en-IN')}
               </span>
             </div>
@@ -1074,7 +1099,31 @@ const TransactionDetailPage = () => {
                           setEditForm({
                             ...editForm,
                             pricePerCard: rate,
-                            totalAmount: editForm.paidQuantity * rate,
+                            totalAmount: (editForm.paidQuantity || 0) * rate,
+                          });
+                        }}
+                        style={{ fontSize: '14px', fontWeight: '700' }}
+                      />
+                    </div>
+
+                    {/* Paid Cards */}
+                    <div>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
+                        Chargeable (Paid) Cards *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="form-control"
+                        value={editForm.paidQuantity}
+                        onChange={(e) => {
+                          const paid = Math.max(0, parseInt(e.target.value, 10) || 0);
+                          const total = paid + (editForm.freeQuantity || 0);
+                          setEditForm({
+                            ...editForm,
+                            paidQuantity: paid,
+                            customQuantity: total,
+                            totalAmount: paid * (editForm.pricePerCard || 0),
                           });
                         }}
                         style={{ fontSize: '14px', fontWeight: '700' }}
@@ -1089,42 +1138,19 @@ const TransactionDetailPage = () => {
                       <input
                         type="number"
                         min="0"
-                        max={editForm.cardSerialNumbers.length}
                         className="form-control"
                         value={editForm.freeQuantity}
                         onChange={(e) => {
-                          const free = Math.max(0, Math.min(editForm.cardSerialNumbers.length, parseInt(e.target.value, 10) || 0));
-                          const paid = Math.max(0, editForm.cardSerialNumbers.length - free);
+                          const free = Math.max(0, parseInt(e.target.value, 10) || 0);
+                          const total = (editForm.paidQuantity || 0) + free;
                           setEditForm({
                             ...editForm,
                             freeQuantity: free,
-                            paidQuantity: paid,
-                            totalAmount: paid * editForm.pricePerCard,
+                            customQuantity: total,
+                            totalAmount: (editForm.paidQuantity || 0) * (editForm.pricePerCard || 0),
                           });
                         }}
                         style={{ fontSize: '14px', fontWeight: '700', borderColor: '#86EFAC' }}
-                      />
-                    </div>
-
-                    {/* Paid Cards */}
-                    <div>
-                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
-                        Billable (Paid) Cards
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="form-control"
-                        value={editForm.paidQuantity}
-                        onChange={(e) => {
-                          const paid = Math.max(0, parseInt(e.target.value, 10) || 0);
-                          setEditForm({
-                            ...editForm,
-                            paidQuantity: paid,
-                            totalAmount: paid * editForm.pricePerCard,
-                          });
-                        }}
-                        style={{ fontSize: '14px', fontWeight: '700' }}
                       />
                     </div>
 
@@ -1150,9 +1176,9 @@ const TransactionDetailPage = () => {
                   {/* Visual Calculation Strip */}
                   <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', fontSize: '12px', color: '#166534', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                     <span>
-                      📊 <strong>Calculation:</strong> {editForm.cardSerialNumbers.length} Total Cards = <strong>{editForm.freeQuantity} Free</strong> + <strong>{editForm.paidQuantity} Paid</strong> @ ₹{editForm.pricePerCard}/card
+                      📊 <strong>Calculation:</strong> <strong>{((editForm.paidQuantity || 0) + (editForm.freeQuantity || 0))} Total Cards</strong> = <strong>{editForm.paidQuantity || 0} Paid</strong> + <strong>{editForm.freeQuantity || 0} Free</strong> @ ₹{editForm.pricePerCard || 0}/card
                     </span>
-                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#15803D' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '800', color: '#15803D' }}>
                       = ₹{Number(editForm.totalAmount || 0).toLocaleString('en-IN')}
                     </span>
                   </div>

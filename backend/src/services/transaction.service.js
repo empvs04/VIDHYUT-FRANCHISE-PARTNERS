@@ -1014,21 +1014,30 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
     }
   }
 
-  // 3. Pricing, Free Cards, and Calculations
+  // 3. Pricing, Free Cards, and Calculations (Total Quantity = Paid + Free)
   if (typeof pricePerCard === 'number' && pricePerCard >= 0) {
     transaction.pricePerCard = pricePerCard;
   }
   if (typeof freeQuantity === 'number' && freeQuantity >= 0) {
-    transaction.freeQuantity = Math.min(freeQuantity, transaction.quantity);
+    transaction.freeQuantity = freeQuantity;
+  }
+  if (typeof paidQuantity === 'number' && paidQuantity >= 0) {
+    transaction.paidQuantity = paidQuantity;
   }
 
-  const calcPaid = Math.max(0, transaction.quantity - (transaction.freeQuantity || 0));
-  transaction.paidQuantity = typeof paidQuantity === 'number' && paidQuantity >= 0 ? paidQuantity : calcPaid;
+  // Ensure Total Quantity is strictly Paid + Free (e.g. 500 Paid + 30 Free = 530 Total)
+  if (typeof transaction.paidQuantity === 'number' && typeof transaction.freeQuantity === 'number') {
+    if (transaction.paidQuantity + transaction.freeQuantity > 0) {
+      transaction.quantity = transaction.paidQuantity + transaction.freeQuantity;
+    }
+  } else if (typeof transaction.freeQuantity === 'number') {
+    transaction.paidQuantity = Math.max(0, transaction.quantity - transaction.freeQuantity);
+  }
 
   if (typeof totalAmount === 'number' && totalAmount >= 0) {
     transaction.totalAmount = totalAmount;
   } else {
-    transaction.totalAmount = transaction.paidQuantity * (transaction.pricePerCard || 0);
+    transaction.totalAmount = (transaction.paidQuantity || 0) * (transaction.pricePerCard || 0);
   }
 
   // 4. Payment Details
