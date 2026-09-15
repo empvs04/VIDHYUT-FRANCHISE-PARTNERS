@@ -37,6 +37,7 @@ import api from '../services/api';
 import StatCard from '../components/common/StatCard';
 import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
 import Modal from '../components/common/Modal';
+import CardAllotmentCelebrationModal from '../components/common/CardAllotmentCelebrationModal';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import {
