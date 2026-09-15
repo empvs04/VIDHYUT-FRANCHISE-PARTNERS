@@ -97,13 +97,13 @@ body {
 }
 
 .top-header {
-  height: 64px;
+  min-height: 68px;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 8px 24px;
   position: sticky;
   top: 0;
   z-index: 40;
@@ -132,12 +132,14 @@ body {
 
 /* Brand styling */
 .brand-box {
-  height: 64px;
+  height: 90px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
+  justify-content: center;
+  padding: 10px 14px;
+  background-color: #ffffff;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
 }
 
 .brand-icon {
@@ -1485,5 +1487,6 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
 
 

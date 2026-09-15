@@ -8,6 +8,7 @@ const StatCard = ({
   bgLight = '#e0f2fe',
   iconColor = '#0284c7',
   borderLeftColor,
+  borderTopColor,
   onClick,
   isActive = false,
   activeLabel = 'Active Filter',
@@ -31,6 +32,7 @@ const StatCard = ({
       title={isClickable ? `Click to filter by ${title}` : undefined}
       style={{
         ...(borderLeftColor ? { borderLeft: `4px solid ${borderLeftColor}` } : {}),
+        ...(borderTopColor ? { borderTop: `4px solid ${borderTopColor}` } : {}),
         ...style,
       }}
     >

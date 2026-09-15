@@ -33,19 +33,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     if (onClose) onClose();
   };
 
-  const getRoleBadge = () => {
-    if (isSuperAdmin) return 'Super Admin';
-    if (partner?.franchiseType === 'STATE_FRANCHISE') return 'State Partner';
-    if (
-      partner?.franchiseType === 'DISTRICT_FRANCHISE' ||
-      partner?.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ||
-      partner?.franchiseType === 'STANDARD_EXCLUSIVE_DISTRICT' ||
-      partner?.franchiseType === 'PREMIUM_EXCLUSIVE_DISTRICT'
-    )
-      return 'District Partner';
-    if (partner?.franchiseType === 'SUB_FRANCHISE') return 'Sub-Franchise';
-    return 'Partner';
-  };
+
 
   return (
     <>
@@ -56,23 +44,100 @@ const Sidebar = ({ isOpen, onClose }) => {
       />
 
       <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
-        <div className="brand-box" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="brand-icon">
-              <Zap size={18} />
+        <div
+          className="brand-box"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: '12px 16px',
+            height: '84px',
+            backgroundColor: '#FFFFFF',
+            borderBottom: '1px solid var(--border-color)',
+            position: 'relative',
+          }}
+        >
+          <NavLink
+            to="/"
+            onClick={handleNavClick}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '14px',
+              textDecoration: 'none',
+              minWidth: 0,
+              flex: 1,
+            }}
+          >
+            {/* Bigger Premium Logo on Far Left */}
+            <img
+              src="/vidhyut-logo.jpg"
+              alt="Vidhyut Saathi Logo"
+              style={{
+                height: '56px',
+                width: '56px',
+                objectFit: 'contain',
+                borderRadius: '12px',
+                border: '1.5px solid #e2e8f0',
+                flexShrink: 0,
+                boxShadow: '0 3px 10px rgba(0,0,0,0.07)',
+                backgroundColor: '#ffffff',
+                padding: '2px',
+              }}
+            />
+
+            {/* Lucrative Orange "Vidhyut" & Green "Saathi" Text */}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'center' }}>
+              <div
+                style={{
+                  fontSize: '18.5px',
+                  fontWeight: '900',
+                  letterSpacing: '-0.2px',
+                  lineHeight: '1.15',
+                  whiteSpace: 'nowrap',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <span style={{ color: '#ea580c', filter: 'drop-shadow(0 1px 1px rgba(234, 88, 12, 0.2))' }}>
+                  VIDHYUT{' '}
+                </span>
+                <span style={{ color: '#16a34a', filter: 'drop-shadow(0 1px 1px rgba(22, 163, 74, 0.2))' }}>
+                  SAATHI
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
+                <span
+                  style={{
+                    fontSize: '9.5px',
+                    fontWeight: '800',
+                    color: '#a16207',
+                    backgroundColor: '#fefce8',
+                    border: '1px solid #fef08a',
+                    padding: '1px 6px',
+                    borderRadius: '4px',
+                    letterSpacing: '0.8px',
+                    textTransform: 'uppercase',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  ⚡ ENERGY SAVERS
+                </span>
+              </div>
             </div>
-            <div>
-              <div className="brand-title">Vidhyut Saathi</div>
-              <div className="brand-subtitle">{getRoleBadge()}</div>
-            </div>
-          </div>
+          </NavLink>
 
           {/* Close Button on Mobile */}
           <button
             type="button"
             onClick={onClose}
             className="hamburger-btn"
-            style={{ color: 'var(--text-muted)' }}
+            style={{
+              position: 'absolute',
+              right: '10px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)',
+            }}
           >
             <X size={20} />
           </button>

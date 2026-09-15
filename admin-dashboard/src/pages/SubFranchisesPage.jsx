@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Building2,
@@ -30,6 +30,8 @@ import { useAuth } from '../context/AuthContext';
 const SubFranchisesPage = () => {
   const { isSuperAdmin, partner: authPartner } = useAuth();
   const { showToast } = useNotification();
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get('status') || '';
 
   const [subFranchises, setSubFranchises] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -38,13 +40,20 @@ const SubFranchisesPage = () => {
 
   // Filters
   const [search, setSearch] = useState('');
-  const [accountStatus, setAccountStatus] = useState('');
+  const [accountStatus, setAccountStatus] = useState(initialStatus);
   const [stateFilter, setStateFilter] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [parentFilter, setParentFilter] = useState('');
   const [statesList, setStatesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
   const [parentsList, setParentsList] = useState([]);
+
+  useEffect(() => {
+    const urlStatus = searchParams.get('status');
+    if (urlStatus !== null) {
+      setAccountStatus(urlStatus);
+    }
+  }, [searchParams]);
 
   // Modals
   const [statusModalOpen, setStatusModalOpen] = useState(false);

@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -23,6 +25,7 @@ const LoginPage = () => {
   // Super Admin state
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Franchise Partner OTP state
   const [partnerIdentifier, setPartnerIdentifier] = useState('');
@@ -163,34 +166,27 @@ const LoginPage = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Header Branding */}
+        {/* Brand Header */}
         <div
           style={{
-            padding: '32px 24px 20px',
+            padding: '28px 24px 20px',
             textAlign: 'center',
             backgroundColor: '#FFFFFF',
           }}
         >
-          <div
-            style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '12px',
-              backgroundColor: '#0284C7',
-              color: 'white',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '14px',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
-            }}
-          >
-            <Zap size={28} />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+            <img
+              src="/vidhyut-logo.jpg"
+              alt="Vidhyut Saathi"
+              style={{
+                height: '62px',
+                width: 'auto',
+                maxWidth: '220px',
+                objectFit: 'contain',
+              }}
+            />
           </div>
-          <h1 style={{ fontSize: '22px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.3px' }}>
-            Vidhyut Saathi
-          </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500 }}>
             Energy Savers Pvt. Ltd. — Franchise Portal
           </p>
         </div>
@@ -321,14 +317,34 @@ const LoginPage = () => {
                   }}
                 />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   className="input"
-                  style={{ paddingLeft: '38px' }}
+                  style={{ paddingLeft: '38px', paddingRight: '38px' }}
                   placeholder="••••••••••••"
                   value={adminPassword}
                   onChange={(e) => setAdminPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 

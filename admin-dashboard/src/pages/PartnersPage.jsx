@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Users,
@@ -29,6 +29,8 @@ import { useAuth } from '../context/AuthContext';
 
 const PartnersPage = () => {
   const { isSuperAdmin, partner: authPartner } = useAuth();
+  const [searchParams] = useSearchParams();
+  const initialType = searchParams.get('type') || '';
   const [partners, setPartners] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(false);
@@ -36,12 +38,19 @@ const PartnersPage = () => {
 
   // Filter states
   const [search, setSearch] = useState('');
-  const [franchiseType, setFranchiseType] = useState('');
+  const [franchiseType, setFranchiseType] = useState(initialType);
   const [accountStatus, setAccountStatus] = useState('');
   const [stateFilter, setStateFilter] = useState('');
   const [districtFilter, setDistrictFilter] = useState('');
   const [statesList, setStatesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
+
+  useEffect(() => {
+    const urlType = searchParams.get('type');
+    if (urlType) {
+      setFranchiseType(urlType);
+    }
+  }, [searchParams]);
 
   // Fetch states from API
   useEffect(() => {
@@ -617,15 +626,17 @@ const PartnersPage = () => {
               : 'No sub-franchises registered under your network yet.'}
           </div>
         ) : (
-          displayPartners.map((p) => (
+          displayPartners.map((p) => {
+            const partnerBorder = p.franchiseType === 'NON_EXCLUSIVE_DISTRICT' ? '#eab308' : '#16a34a';
+            return (
             <div
               key={p._id}
               className="card"
               style={{
                 padding: '18px',
                 borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #0284c7',
+                border: `1.5px solid ${partnerBorder}`,
+                borderLeft: `4px solid ${partnerBorder}`,
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                 background: '#ffffff',
                 display: 'flex',
@@ -854,7 +865,8 @@ const PartnersPage = () => {
                 )}
               </div>
             </div>
-          ))
+          );
+        })
         )}
 
       </div>
