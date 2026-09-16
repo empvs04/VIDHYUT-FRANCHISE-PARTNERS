@@ -27,6 +27,53 @@ export const getAdminMetrics = async (req, res, next) => {
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+
+    const endOfYesterday = new Date(startOfToday);
+    endOfYesterday.setMilliseconds(-1);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const startOfThisMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), 1, 0, 0, 0, 0);
+
+    const startOfLastMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth() - 1, 1, 0, 0, 0, 0);
+    const endOfLastMonth = new Date(startOfToday.getFullYear(), startOfToday.getMonth(), 0, 23, 59, 59, 999);
+
+    const getFranchiseRevenueAgg = (dateFilter) => {
+      const match = { status: { $ne: TRANSACTION_STATUS.CANCELLED } };
+      if (dateFilter) match.createdAt = dateFilter;
+      return Transaction.aggregate([
+        { $match: match },
+        {
+          $lookup: {
+            from: 'franchisepartners',
+            localField: 'buyerPartnerId',
+            foreignField: '_id',
+            as: 'buyer',
+          },
+        },
+        { $unwind: '$buyer' },
+        {
+          $match: {
+            'buyer.franchiseType': { $ne: FRANCHISE_TYPES.SUB_FRANCHISE },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            revenue: { $sum: '$totalAmount' },
+            cardsTransferred: { $sum: '$quantity' },
+            paidCardsCount: { $sum: '$paidQuantity' },
+            freeCardsCount: { $sum: '$freeQuantity' },
+            transactionCount: { $sum: 1 },
+          },
+        },
+      ]);
+    };
+
     const [
       totalPartners,
       activePartners,
@@ -58,6 +105,10 @@ export const getAdminMetrics = async (req, res, next) => {
       todayPartners,
       todayPartnersCount,
       todayRevenueAgg,
+      yesterdayRevenueAgg,
+      last7DaysRevenueAgg,
+      thisMonthRevenueAgg,
+      lastMonthRevenueAgg,
       todayTransactions,
       recentSubFranchises,
       subFranchiseRevenueAgg,
@@ -223,39 +274,16 @@ export const getAdminMetrics = async (req, res, next) => {
         createdAt: { $gte: startOfToday, $lte: endOfToday },
         franchiseType: { $ne: FRANCHISE_TYPES.SUB_FRANCHISE },
       }),
-      // Today's Total Revenue & Transactions (excluding sub-franchises)
-      Transaction.aggregate([
-        {
-          $match: {
-            createdAt: { $gte: startOfToday, $lte: endOfToday },
-            status: { $ne: TRANSACTION_STATUS.CANCELLED },
-          },
-        },
-        {
-          $lookup: {
-            from: 'franchisepartners',
-            localField: 'buyerPartnerId',
-            foreignField: '_id',
-            as: 'buyer',
-          },
-        },
-        { $unwind: '$buyer' },
-        {
-          $match: {
-            'buyer.franchiseType': { $ne: FRANCHISE_TYPES.SUB_FRANCHISE },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            todayRevenue: { $sum: '$totalAmount' },
-            todayCardsTransferred: { $sum: '$quantity' },
-            paidCardsCount: { $sum: '$paidQuantity' },
-            freeCardsCount: { $sum: '$freeQuantity' },
-            transactionCount: { $sum: 1 },
-          },
-        },
-      ]),
+      // Today's Total Revenue (excluding sub-franchises)
+      getFranchiseRevenueAgg({ $gte: startOfToday, $lte: endOfToday }),
+      // Yesterday's Total Revenue (excluding sub-franchises)
+      getFranchiseRevenueAgg({ $gte: startOfYesterday, $lte: endOfYesterday }),
+      // Last 7 Days Total Revenue (excluding sub-franchises)
+      getFranchiseRevenueAgg({ $gte: sevenDaysAgo, $lte: endOfToday }),
+      // This Month Total Revenue (excluding sub-franchises)
+      getFranchiseRevenueAgg({ $gte: startOfThisMonth, $lte: endOfToday }),
+      // Last Month Total Revenue (excluding sub-franchises)
+      getFranchiseRevenueAgg({ $gte: startOfLastMonth, $lte: endOfLastMonth }),
       Transaction.find({ createdAt: { $gte: startOfToday, $lte: endOfToday }, status: { $ne: TRANSACTION_STATUS.CANCELLED } })
         .sort({ createdAt: -1 })
         .limit(10)
@@ -343,11 +371,20 @@ export const getAdminMetrics = async (req, res, next) => {
     const monthlyCardsTransferred = monthlyRevenueAgg[0]?.monthlyCardsTransferred || 0;
     const totalRevenue = totalRevenueAgg[0]?.totalRevenue || 0;
     const totalCardsTransferred = totalRevenueAgg[0]?.totalCardsTransferred || 0;
-    const todayRevenue = todayRevenueAgg[0]?.todayRevenue || 0;
-    const todayCardsTransferred = todayRevenueAgg[0]?.todayCardsTransferred || 0;
+    const todayRevenue = todayRevenueAgg[0]?.revenue || todayRevenueAgg[0]?.todayRevenue || 0;
+    const todayCardsTransferred = todayRevenueAgg[0]?.cardsTransferred || todayRevenueAgg[0]?.todayCardsTransferred || 0;
     const todayPaidCards = todayRevenueAgg[0]?.paidCardsCount || 0;
     const todayFreeCards = todayRevenueAgg[0]?.freeCardsCount || 0;
     const todayTransactionCount = todayRevenueAgg[0]?.transactionCount || 0;
+
+    const yesterdayRevenue = yesterdayRevenueAgg[0]?.revenue || 0;
+    const yesterdayCardsTransferred = yesterdayRevenueAgg[0]?.cardsTransferred || 0;
+    const last7DaysRevenue = last7DaysRevenueAgg[0]?.revenue || 0;
+    const last7DaysCardsTransferred = last7DaysRevenueAgg[0]?.cardsTransferred || 0;
+    const thisMonthRevenue = thisMonthRevenueAgg[0]?.revenue || 0;
+    const thisMonthCardsTransferred = thisMonthRevenueAgg[0]?.cardsTransferred || 0;
+    const lastMonthRevenue = lastMonthRevenueAgg[0]?.revenue || 0;
+    const lastMonthCardsTransferred = lastMonthRevenueAgg[0]?.cardsTransferred || 0;
     const districtWiseSubFranchisesCount = subFranchiseDistrictsAgg?.length || 0;
 
     const subFranchiseTotalRevenue = subFranchiseRevenueAgg[0]?.totalRevenue || 0;
@@ -701,6 +738,44 @@ export const getAdminMetrics = async (req, res, next) => {
             todayFreeCards,
             todayTransactionCount,
             todayPartnersCount,
+            revenuePeriods: {
+              TODAY: {
+                revenue: todayRevenue,
+                cards: todayCardsTransferred,
+                label: "Today's Revenue",
+                subtitle: `${todayCardsTransferred.toLocaleString('en-IN')} Cards Allotted Today →`,
+              },
+              YESTERDAY: {
+                revenue: yesterdayRevenue,
+                cards: yesterdayCardsTransferred,
+                label: "Yesterday's Revenue",
+                subtitle: `${yesterdayCardsTransferred.toLocaleString('en-IN')} Cards Allotted Yesterday →`,
+              },
+              LAST_7_DAYS: {
+                revenue: last7DaysRevenue,
+                cards: last7DaysCardsTransferred,
+                label: 'Last 7 Days Revenue',
+                subtitle: `${last7DaysCardsTransferred.toLocaleString('en-IN')} Cards Allotted (Last 7 Days) →`,
+              },
+              THIS_MONTH: {
+                revenue: thisMonthRevenue,
+                cards: thisMonthCardsTransferred,
+                label: 'This Month Revenue',
+                subtitle: `${thisMonthCardsTransferred.toLocaleString('en-IN')} Cards Allotted This Month →`,
+              },
+              LAST_MONTH: {
+                revenue: lastMonthRevenue,
+                cards: lastMonthCardsTransferred,
+                label: 'Last Month Revenue',
+                subtitle: `${lastMonthCardsTransferred.toLocaleString('en-IN')} Cards Allotted Last Month →`,
+              },
+              ALL_TIME: {
+                revenue: totalRevenue,
+                cards: totalCardsTransferred,
+                label: 'Total Revenue (All Time)',
+                subtitle: `${totalCardsTransferred.toLocaleString('en-IN')} Cards Allotted to Franchise Partners →`,
+              },
+            },
             companyTotalRevenue,
             companyTotalCardsSold,
             companyTotalBaseCost,

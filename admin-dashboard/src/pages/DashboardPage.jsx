@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   TrendingUp,
   IndianRupee,
+  ChevronDown,
   X,
 } from 'lucide-react';
 import api from '../services/api';
@@ -291,6 +292,9 @@ const DashboardPage = () => {
   const [dashboardAnalyticsRevenue, setDashboardAnalyticsRevenue] = useState(null);
   const [dashboardAnalyticsCards, setDashboardAnalyticsCards] = useState(null);
   const [dashboardAnalyticsLoading, setDashboardAnalyticsLoading] = useState(false);
+
+  // Top Card 4: Total Revenue Filter Period State (Default: This Month)
+  const [revenueCardPeriod, setRevenueCardPeriod] = useState('THIS_MONTH');
 
   // Partner Performance Matrix Filter State
   const [matrixFilterTier, setMatrixFilterTier] = useState('ALL');
@@ -1015,6 +1019,31 @@ const DashboardPage = () => {
   const newlyRegisteredMainPartners = ((todayPartners && todayPartners.length > 0) ? todayPartners : (recentPartners || [])).filter(p => p.franchiseType !== 'SUB_FRANCHISE');
   const isNewlyRegisteredToday = (todayPartners || []).filter(p => p.franchiseType !== 'SUB_FRANCHISE').length > 0;
 
+  // Active revenue calculation for Top Card 4 Dropdown
+  const getRevenueCardData = () => {
+    const periods = metrics?.revenuePeriods;
+    if (periods && periods[revenueCardPeriod]) {
+      return {
+        revenue: periods[revenueCardPeriod].revenue ?? 0,
+        subtitle: periods[revenueCardPeriod].subtitle ?? `${(periods[revenueCardPeriod].cards || 0).toLocaleString('en-IN')} Cards Allotted →`,
+      };
+    }
+    if (revenueCardPeriod === 'TODAY') {
+      return {
+        revenue: metrics?.todayRevenue || 0,
+        subtitle: `${(metrics?.todayCardsTransferred || 0).toLocaleString('en-IN')} Cards Allotted Today →`,
+      };
+    }
+    const defaultRev = metrics?.monthlyRevenue != null ? metrics.monthlyRevenue : (metrics?.companyTotalRevenue || txnStats.totalSalesValue || 0);
+    const defaultCards = metrics?.monthlyCardsTransferred != null ? metrics.monthlyCardsTransferred : (metrics?.companyTotalCardsSold || 0);
+    return {
+      revenue: defaultRev,
+      subtitle: `${defaultCards.toLocaleString('en-IN')} Cards Allotted to Franchise Partners →`,
+    };
+  };
+
+  const activeRevenueCardData = getRevenueCardData();
+
   // -------------------------------------------------------------
   // RENDER: Super Admin Dashboard
   // -------------------------------------------------------------
@@ -1140,13 +1169,61 @@ const DashboardPage = () => {
         />
         <StatCard
           title="TOTAL REVENUE"
-          value={`₹${(metrics?.monthlyRevenue != null ? metrics.monthlyRevenue : (metrics?.companyTotalRevenue || txnStats.totalSalesValue || 0)).toLocaleString('en-IN')}`}
+          headerRight={
+            <div
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                borderRadius: '5px',
+                backgroundColor: '#e0f2fe',
+                border: '1px solid #bae6fd',
+                color: '#0284c7',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              title="Click to change revenue time period"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ChevronDown size={13} style={{ pointerEvents: 'none' }} />
+              <select
+                value={revenueCardPeriod}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setRevenueCardPeriod(e.target.value);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  opacity: 0,
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                }}
+              >
+                <option value="THIS_MONTH">This Month</option>
+                <option value="TODAY">Today</option>
+                <option value="YESTERDAY">Yesterday</option>
+                <option value="LAST_7_DAYS">Last 7 Days</option>
+                <option value="LAST_MONTH">Last Month</option>
+                <option value="ALL_TIME">All Time</option>
+              </select>
+            </div>
+          }
+          value={`₹${(activeRevenueCardData.revenue || 0).toLocaleString('en-IN')}`}
           icon={IndianRupee}
           bgLight="#f0f9ff"
           iconColor="#0284c7"
           borderTopColor="#0284c7"
           onClick={() => navigate('/transactions')}
-          subtitle={`${(metrics?.monthlyCardsTransferred != null ? metrics.monthlyCardsTransferred : (metrics?.companyTotalCardsSold || 0)).toLocaleString('en-IN')} Cards Allotted to Franchise Partners →`}
+          subtitle={activeRevenueCardData.subtitle}
         />
       </div>
 
@@ -2289,8 +2366,9 @@ const DashboardPage = () => {
             borderBottom: '2.5px solid #16a34a',
             backgroundColor: '#ffffff',
             boxShadow: '0 4px 18px rgba(0, 0, 0, 0.05)',
-            height: '240px',
-            maxHeight: '240px',
+            height: '260px',
+            maxHeight: '260px',
+            minHeight: '260px',
             boxSizing: 'border-box',
           }}
         >
@@ -2355,6 +2433,29 @@ const DashboardPage = () => {
             </Link>
           </div>
 
+          {/* Sub-Franchise Channel Meta Strip (Symmetrical to Right Strip) */}
+          <div
+            style={{
+              padding: '6px 14px',
+              backgroundColor: '#f8fafc',
+              borderBottom: '1px solid #f1f5f9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '11px',
+              color: '#475569',
+              fontWeight: '600',
+              flexShrink: 0,
+            }}
+          >
+            <div>
+              Total Partners: <strong style={{ color: '#0f172a' }}>{recentSubFranchises.length} Registered</strong>
+            </div>
+            <div>
+              Channel: <strong style={{ color: '#854d0e' }}>Created by Franchise Partners</strong>
+            </div>
+          </div>
+
           {/* Sub-Franchises List Container with fixed scrollable height */}
           <div
             style={{
@@ -2376,8 +2477,8 @@ const DashboardPage = () => {
                   key={sub._id}
                   onClick={() => setSelectedPartnerModal(sub)}
                   style={{
-                    padding: '8px 10px',
-                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '9px',
                     backgroundColor: '#ffffff',
                     border: `1.5px solid ${partnerBorder}`,
                     display: 'flex',
@@ -2385,9 +2486,12 @@ const DashboardPage = () => {
                     justifyContent: 'space-between',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
-                    gap: '8px',
+                    gap: '10px',
                     flexShrink: 0,
                     boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                    minHeight: '60px',
+                    height: '60px',
+                    boxSizing: 'border-box',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = partnerBorder === '#eab308' ? '#fefce8' : '#f0fdf4';
@@ -2402,19 +2506,19 @@ const DashboardPage = () => {
                     e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0, flex: 1 }}>
                     <div
                       style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '6px',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '7px',
                         backgroundColor: '#ca8a04',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: '800',
-                        fontSize: '12.5px',
+                        fontSize: '13px',
                         boxShadow: '0 2px 5px rgba(202, 138, 4, 0.25)',
                         flexShrink: 0,
                       }}
@@ -2422,13 +2526,13 @@ const DashboardPage = () => {
                       {sub.fullName?.charAt(0)?.toUpperCase() || 'S'}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: '800', fontSize: '12.5px', color: '#0f172a' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                        <span style={{ fontWeight: '800', fontSize: '12.5px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {sub.fullName}
                         </span>
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '9.5px',
                             fontWeight: '700',
                             backgroundColor: '#fef9c3',
                             color: '#854d0e',
@@ -2436,12 +2540,13 @@ const DashboardPage = () => {
                             borderRadius: '4px',
                             border: '1px solid #fde047',
                             fontFamily: 'monospace',
+                            flexShrink: 0,
                           }}
                         >
                           {sub.franchiseId}
                         </span>
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         <span>📍 {sub.district || sub.city || 'District'}, {sub.state}</span>
                         {sub.parentPartnerId && (
                           <span style={{ color: '#ca8a04', fontWeight: '700' }}>
@@ -2452,7 +2557,7 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px', flexShrink: 0 }}>
                     <StatusBadge status={sub.accountStatus} />
                     <span style={{ fontSize: '9.5px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '2px' }}>
                       <Clock size={9} />
@@ -2491,8 +2596,9 @@ const DashboardPage = () => {
             borderBottom: '2.5px solid #16a34a',
             backgroundColor: '#ffffff',
             boxShadow: '0 4px 18px rgba(0, 0, 0, 0.05)',
-            height: '240px',
-            maxHeight: '240px',
+            height: '260px',
+            maxHeight: '260px',
+            minHeight: '260px',
             boxSizing: 'border-box',
           }}
         >
@@ -2599,8 +2705,8 @@ const DashboardPage = () => {
                   key={sub.subFranchiseId}
                   onClick={() => setSelectedSubProfitModal(sub)}
                   style={{
-                    padding: '8px 10px',
-                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    borderRadius: '9px',
                     backgroundColor: '#ffffff',
                     border: `1.5px solid ${partnerBorder}`,
                     display: 'flex',
@@ -2608,9 +2714,12 @@ const DashboardPage = () => {
                     justifyContent: 'space-between',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
-                    gap: '8px',
+                    gap: '10px',
                     flexShrink: 0,
                     boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                    minHeight: '60px',
+                    height: '60px',
+                    boxSizing: 'border-box',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = partnerBorder === '#eab308' ? '#fefce8' : '#f0fdf4';
@@ -2625,19 +2734,19 @@ const DashboardPage = () => {
                     e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0, flex: 1 }}>
                     <div
                       style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '6px',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '7px',
                         backgroundColor: '#16a34a',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: '800',
-                        fontSize: '12.5px',
+                        fontSize: '13px',
                         boxShadow: '0 2px 5px rgba(22, 163, 74, 0.25)',
                         flexShrink: 0,
                       }}
@@ -2645,13 +2754,13 @@ const DashboardPage = () => {
                       {sub.fullName?.charAt(0)?.toUpperCase() || 'S'}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: '800', fontSize: '12.5px', color: '#0f172a' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                        <span style={{ fontWeight: '800', fontSize: '12.5px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {sub.fullName}
                         </span>
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '9.5px',
                             fontWeight: '700',
                             backgroundColor: '#f0fdf4',
                             color: '#15803d',
@@ -2659,16 +2768,17 @@ const DashboardPage = () => {
                             borderRadius: '4px',
                             border: '1px solid #bbf7d0',
                             fontFamily: 'monospace',
+                            flexShrink: 0,
                           }}
                         >
                           {sub.franchiseId}
                         </span>
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         <span>📍 {sub.district ? `${sub.district}, ` : ''}{sub.state}</span>
                         {sub.hasInstallations ? (
                           <span style={{ color: '#15803d', fontWeight: '700' }}>
-                            • {sub.totalInstalledCards} Cards Installed @ ₹{sub.avgSellPrice.toLocaleString('en-IN')}/card (Buy @ ₹{sub.avgBuyPrice.toLocaleString('en-IN')})
+                            • {sub.totalInstalledCards} Installed @ ₹{sub.avgSellPrice.toLocaleString('en-IN')}
                           </span>
                         ) : (
                           <span style={{ color: '#64748b', fontWeight: '600' }}>
@@ -2679,26 +2789,19 @@ const DashboardPage = () => {
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontWeight: '900', fontSize: '13.5px', color: sub.hasInstallations ? '#15803d' : '#64748b' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px', flexShrink: 0 }}>
+                    <div style={{ fontWeight: '900', fontSize: '13.5px', color: sub.hasInstallations ? '#15803d' : '#64748b', lineHeight: '1.2' }}>
                       ₹{sub.totalRevenueGenerated.toLocaleString('en-IN')}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginTop: '1px' }}>
-                      {sub.hasInstallations ? (
-                        <>
-                          <span style={{ fontSize: '9px', fontWeight: '800', color: '#15803d', backgroundColor: '#dcfce7', padding: '1px 4px', borderRadius: '3px', border: '1px solid #bbf7d0' }}>
-                            +₹{sub.profitPerCard.toLocaleString('en-IN')}/card
-                          </span>
-                          <span style={{ fontSize: '9.5px', color: '#64748b', fontWeight: '600' }}>
-                            Profit: ₹{sub.netProfit.toLocaleString('en-IN')}
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ fontSize: '9px', fontWeight: '700', color: '#94a3b8', backgroundColor: '#f1f5f9', padding: '1px 5px', borderRadius: '3px' }}>
-                          Awaiting Installation
-                        </span>
-                      )}
-                    </div>
+                    {sub.hasInstallations ? (
+                      <span style={{ fontSize: '9px', fontWeight: '800', color: '#15803d', backgroundColor: '#dcfce7', padding: '1px 5px', borderRadius: '3px', border: '1px solid #bbf7d0' }}>
+                        +₹{sub.profitPerCard.toLocaleString('en-IN')}/card
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '9px', fontWeight: '700', color: '#94a3b8', backgroundColor: '#f1f5f9', padding: '1px 5px', borderRadius: '3px' }}>
+                        Awaiting Installation
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -2707,7 +2810,7 @@ const DashboardPage = () => {
               <div style={{ textAlign: 'center', padding: '16px 12px', color: '#94a3b8', margin: 'auto' }}>
                 <IndianRupee size={24} style={{ margin: '0 auto 6px', color: '#16a34a', opacity: 0.6 }} />
                 <div style={{ fontWeight: '600', fontSize: '12px', color: '#64748b' }}>
-                  No Sub-Franchise revenue recorded yet
+                  No Sub-Franchise revenue generated yet
                 </div>
               </div>
             )}
@@ -3126,108 +3229,272 @@ const DashboardPage = () => {
                 {/* TAB 1: REVENUE & PROFIT TRAJECTORY */}
                 {dashboardAnalyticsTab === 'REVENUE' && (
                   <div>
-                    {/* Metric Summary Strip */}
+                    {/* Metric Summary Strip with Exact Identical Internal Slot Alignment & Pinned Top-Right Icons */}
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-                        gap: '12px',
-                        marginBottom: '20px',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gap: '16px',
+                        marginBottom: '22px',
                       }}
                     >
+                      {/* CARD 1: Total Ecosystem Revenue */}
                       <div
                         style={{
                           backgroundColor: '#f0fdf4',
                           border: '1.5px solid #86efac',
-                          borderRadius: '10px',
-                          padding: '12px 14px',
+                          borderRadius: '14px',
+                          padding: '14px 16px',
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          height: '160px',
+                          boxSizing: 'border-box',
+                          boxShadow: '0 2px 8px rgba(22, 163, 74, 0.05)',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#16a34a', textTransform: 'uppercase' }}>
-                            Total Ecosystem Revenue
+                        {/* Top: Title & Badge with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '28px', display: 'flex', alignItems: 'flex-start', paddingRight: '42px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.4px', lineHeight: '1.25' }}>
+                              Total Ecosystem Revenue
+                            </span>
                           </div>
-                          <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '8px' }}>
-                            {dashboardAnalyticsRange.replace(/_/g, ' ')}
-                          </span>
+                          <div style={{ height: '20px', display: 'flex', alignItems: 'center', marginTop: '3px' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: '#dcfce7', color: '#15803d', padding: '2px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'inline-block' }}>
+                              {dashboardAnalyticsRange.replace(/_/g, ' ')}
+                            </span>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: '#15803d', marginTop: '3px' }}>
-                          ₹{periodData.totalRevenue.toLocaleString('en-IN')}
+
+                        {/* Bottom: Currency Amount & Subtitle with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '30px', display: 'flex', alignItems: 'center' }}>
+                            <div style={{ fontSize: '26px', fontWeight: '900', color: '#15803d', lineHeight: '1', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                              ₹{periodData.totalRevenue.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <div style={{ height: '32px', display: 'flex', alignItems: 'flex-start', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11.5px', color: '#166534', fontWeight: '600', lineHeight: '1.3' }}>
+                              All card distributions & installations
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>
-                          All card distributions & installations
+
+                        {/* Pinned Top-Right Icon */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '14px',
+                            right: '14px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            backgroundColor: '#dcfce7',
+                            color: '#15803d',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 5px rgba(22, 163, 74, 0.15)',
+                          }}
+                        >
+                          <TrendingUp size={18} />
                         </div>
                       </div>
 
+                      {/* CARD 2: Company Gross Margin */}
                       <div
                         style={{
                           backgroundColor: '#fefce8',
                           border: '1.5px solid #fde047',
-                          borderRadius: '10px',
-                          padding: '12px 14px',
+                          borderRadius: '14px',
+                          padding: '14px 16px',
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          height: '160px',
+                          boxSizing: 'border-box',
+                          boxShadow: '0 2px 8px rgba(202, 138, 4, 0.05)',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#854d0e', textTransform: 'uppercase' }}>
-                            Company Gross Margin
+                        {/* Top: Title & Badge with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '28px', display: 'flex', alignItems: 'flex-start', paddingRight: '42px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#854d0e', textTransform: 'uppercase', letterSpacing: '0.4px', lineHeight: '1.25' }}>
+                              Company Gross Margin
+                            </span>
                           </div>
-                          <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#fef9c3', color: '#854d0e', padding: '1px 6px', borderRadius: '8px' }}>
-                            {dashboardAnalyticsRange.replace(/_/g, ' ')}
-                          </span>
+                          <div style={{ height: '20px', display: 'flex', alignItems: 'center', marginTop: '3px' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: '#fef9c3', color: '#854d0e', padding: '2px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'inline-block' }}>
+                              {dashboardAnalyticsRange.replace(/_/g, ' ')}
+                            </span>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: '#a16207', marginTop: '3px' }}>
-                          ₹{periodData.companyProfit.toLocaleString('en-IN')}
+
+                        {/* Bottom: Currency Amount & Subtitle with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '30px', display: 'flex', alignItems: 'center' }}>
+                            <div style={{ fontSize: '26px', fontWeight: '900', color: '#a16207', lineHeight: '1', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                              ₹{periodData.companyProfit.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <div style={{ height: '32px', display: 'flex', alignItems: 'flex-start', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11.5px', color: '#854d0e', fontWeight: '600', lineHeight: '1.3' }}>
+                              Net profit above ₹1,000 base card cost
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#854d0e', marginTop: '2px' }}>
-                          Net profit above ₹1,000 base card cost
+
+                        {/* Pinned Top-Right Icon */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '14px',
+                            right: '14px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            backgroundColor: '#fef9c3',
+                            color: '#854d0e',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 5px rgba(202, 138, 4, 0.15)',
+                          }}
+                        >
+                          <Crown size={18} />
                         </div>
                       </div>
 
+                      {/* CARD 3: Franchise Partner Earnings */}
                       <div
                         style={{
                           backgroundColor: '#eff6ff',
                           border: '1.5px solid #bfdbfe',
-                          borderRadius: '10px',
-                          padding: '12px 14px',
+                          borderRadius: '14px',
+                          padding: '14px 16px',
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          height: '160px',
+                          boxSizing: 'border-box',
+                          boxShadow: '0 2px 8px rgba(29, 78, 216, 0.05)',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#1d4ed8', textTransform: 'uppercase' }}>
-                            Franchise Partner Earnings
+                        {/* Top: Title & Badge with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '28px', display: 'flex', alignItems: 'flex-start', paddingRight: '42px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.4px', lineHeight: '1.25' }}>
+                              Franchise Partner Earnings
+                            </span>
                           </div>
-                          <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '1px 6px', borderRadius: '8px' }}>
-                            {dashboardAnalyticsRange.replace(/_/g, ' ')}
-                          </span>
+                          <div style={{ height: '20px', display: 'flex', alignItems: 'center', marginTop: '3px' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '2px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'inline-block' }}>
+                              {dashboardAnalyticsRange.replace(/_/g, ' ')}
+                            </span>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: '#1e40af', marginTop: '3px' }}>
-                          ₹{periodData.partnerProfit.toLocaleString('en-IN')}
+
+                        {/* Bottom: Currency Amount & Subtitle with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '30px', display: 'flex', alignItems: 'center' }}>
+                            <div style={{ fontSize: '26px', fontWeight: '900', color: '#1e40af', lineHeight: '1', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                              ₹{periodData.partnerProfit.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <div style={{ height: '32px', display: 'flex', alignItems: 'flex-start', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11.5px', color: '#1e40af', fontWeight: '600', lineHeight: '1.3' }}>
+                              Earned from sub-franchise allotments
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '2px' }}>
-                          Earned from sub-franchise allotments
+
+                        {/* Pinned Top-Right Icon */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '14px',
+                            right: '14px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            backgroundColor: '#dbeafe',
+                            color: '#1d4ed8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 5px rgba(29, 78, 216, 0.15)',
+                          }}
+                        >
+                          <Users size={18} />
                         </div>
                       </div>
 
+                      {/* CARD 4: Sub-Franchise Live Profits */}
                       <div
                         style={{
                           backgroundColor: '#faf5ff',
                           border: '1.5px solid #e9d5ff',
-                          borderRadius: '10px',
-                          padding: '12px 14px',
+                          borderRadius: '14px',
+                          padding: '14px 16px',
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          height: '160px',
+                          boxSizing: 'border-box',
+                          boxShadow: '0 2px 8px rgba(126, 34, 206, 0.05)',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#7e22ce', textTransform: 'uppercase' }}>
-                            Sub-Franchise Live Profits
+                        {/* Top: Title & Badge with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '28px', display: 'flex', alignItems: 'flex-start', paddingRight: '42px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', color: '#7e22ce', textTransform: 'uppercase', letterSpacing: '0.4px', lineHeight: '1.25' }}>
+                              Sub-Franchise Live Profits
+                            </span>
                           </div>
-                          <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#f3e8ff', color: '#7e22ce', padding: '1px 6px', borderRadius: '8px' }}>
-                            {dashboardAnalyticsRange.replace(/_/g, ' ')}
-                          </span>
+                          <div style={{ height: '20px', display: 'flex', alignItems: 'center', marginTop: '3px' }}>
+                            <span style={{ fontSize: '9px', fontWeight: '800', backgroundColor: '#f3e8ff', color: '#7e22ce', padding: '2px 7px', borderRadius: '5px', textTransform: 'uppercase', letterSpacing: '0.3px', display: 'inline-block' }}>
+                              {dashboardAnalyticsRange.replace(/_/g, ' ')}
+                            </span>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '20px', fontWeight: '900', color: '#6b21a8', marginTop: '3px' }}>
-                          ₹{periodData.subProfit.toLocaleString('en-IN')}
+
+                        {/* Bottom: Currency Amount & Subtitle with fixed slot heights */}
+                        <div>
+                          <div style={{ height: '30px', display: 'flex', alignItems: 'center' }}>
+                            <div style={{ fontSize: '26px', fontWeight: '900', color: '#6b21a8', lineHeight: '1', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                              ₹{periodData.subProfit.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                          <div style={{ height: '32px', display: 'flex', alignItems: 'flex-start', marginTop: '4px' }}>
+                            <div style={{ fontSize: '11.5px', color: '#6b21a8', fontWeight: '600', lineHeight: '1.3' }}>
+                              Earned from completed installations
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#6b21a8', marginTop: '2px' }}>
-                          Earned from completed installations
+
+                        {/* Pinned Top-Right Icon */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '14px',
+                            right: '14px',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            backgroundColor: '#f3e8ff',
+                            color: '#7e22ce',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 5px rgba(126, 34, 206, 0.15)',
+                          }}
+                        >
+                          <Building2 size={18} />
                         </div>
                       </div>
                     </div>

@@ -12,18 +12,15 @@ import {
   UserCircle,
   BarChart3,
   LogOut,
-  Zap,
   X,
-  ShieldCheck,
   FileText,
   Send,
   TrendingUp,
   Search,
   Shield,
   Activity,
+  Sparkles,
 } from 'lucide-react';
-
-
 import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -33,7 +30,13 @@ const Sidebar = ({ isOpen, onClose }) => {
     if (onClose) onClose();
   };
 
+  const displayName = isSuperAdmin
+    ? (user?.name || user?.username || 'Super Admin')
+    : (partner?.fullName || user?.name || 'Franchise Partner');
 
+  const displaySubtitle = isSuperAdmin
+    ? 'System Administrator'
+    : (partner?.franchiseId || (partner?.franchiseType ? partner.franchiseType.replace(/_/g, ' ') : 'Partner Portal'));
 
   return (
     <>
@@ -44,6 +47,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       />
 
       <aside className={`sidebar ${isOpen ? 'mobile-open' : ''}`}>
+        {/* Brand Box / Official Logo Header */}
         <div
           className="brand-box"
           style={{
@@ -52,9 +56,10 @@ const Sidebar = ({ isOpen, onClose }) => {
             justifyContent: 'flex-start',
             padding: '12px 16px',
             height: '84px',
-            backgroundColor: '#FFFFFF',
-            borderBottom: '1px solid var(--border-color)',
+            backgroundColor: '#ffffff',
+            borderBottom: '1px solid #f1f5f9',
             position: 'relative',
+            boxSizing: 'border-box',
           }}
         >
           <NavLink
@@ -63,39 +68,52 @@ const Sidebar = ({ isOpen, onClose }) => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '14px',
+              gap: '12px',
               textDecoration: 'none',
               minWidth: 0,
               flex: 1,
             }}
           >
-            {/* Bigger Premium Logo on Far Left */}
-            <img
-              src="/vidhyut-logo.jpg"
-              alt="Vidhyut Saathi Logo"
+            {/* High Definition Official Logo */}
+            <div
               style={{
-                height: '56px',
-                width: '56px',
-                objectFit: 'contain',
+                position: 'relative',
+                width: '54px',
+                height: '54px',
                 borderRadius: '12px',
-                border: '1.5px solid #e2e8f0',
-                flexShrink: 0,
-                boxShadow: '0 3px 10px rgba(0,0,0,0.07)',
-                backgroundColor: '#ffffff',
                 padding: '2px',
+                backgroundColor: '#ffffff',
+                border: '1.5px solid #e2e8f0',
+                boxShadow: '0 3px 10px rgba(0, 0, 0, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
-            />
+            >
+              <img
+                src="/vidhyut-logo.jpg"
+                alt="Vidhyut Saathi Logo"
+                style={{
+                  height: '100%',
+                  width: '100%',
+                  objectFit: 'contain',
+                  borderRadius: '10px',
+                }}
+              />
+            </div>
 
-            {/* Lucrative Orange "Vidhyut" & Green "Saathi" Text */}
+            {/* Brand Title: VIDHYUT SAATHI */}
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'center' }}>
               <div
                 style={{
-                  fontSize: '18.5px',
+                  fontSize: '18px',
                   fontWeight: '900',
                   letterSpacing: '-0.2px',
                   lineHeight: '1.15',
                   whiteSpace: 'nowrap',
                   textTransform: 'uppercase',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                 }}
               >
                 <span style={{ color: '#ea580c', filter: 'drop-shadow(0 1px 1px rgba(234, 88, 12, 0.2))' }}>
@@ -108,7 +126,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px' }}>
                 <span
                   style={{
-                    fontSize: '9.5px',
+                    fontSize: '9px',
                     fontWeight: '800',
                     color: '#a16207',
                     backgroundColor: '#fefce8',
@@ -143,8 +161,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           </button>
         </div>
 
+        {/* Scrollable Navigation Menu */}
         <ul className="nav-menu">
-          <div className="nav-section-title">Navigation</div>
+          <div className="nav-section-title">Core Navigation</div>
           <li>
             <NavLink
               to="/"
@@ -153,12 +172,13 @@ const Sidebar = ({ isOpen, onClose }) => {
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <LayoutDashboard size={18} />
-              <span>{isSuperAdmin ? 'Admin Dashboard' : 'Partner Dashboard'}</span>
+              <span>{isSuperAdmin ? 'Super Admin Dashboard' : 'Partner Dashboard'}</span>
             </NavLink>
           </li>
 
           {isSuperAdmin ? (
             <>
+              <div className="nav-section-title">Franchise Network</div>
               <li>
                 <NavLink
                   to="/partners"
@@ -190,7 +210,6 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Add Partner</span>
                 </NavLink>
               </li>
-
               <li>
                 <NavLink
                   to="/territories"
@@ -201,6 +220,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Territory Coverage</span>
                 </NavLink>
               </li>
+
+              <div className="nav-section-title">Card Distribution</div>
               <li>
                 <NavLink
                   to="/cards"
@@ -231,6 +252,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Distribute Cards</span>
                 </NavLink>
               </li>
+
+              <div className="nav-section-title">Operations & Field</div>
               <li>
                 <NavLink
                   to="/customers"
@@ -261,6 +284,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>GPS Location Audit</span>
                 </NavLink>
               </li>
+
+              <div className="nav-section-title">Intelligence & Audit</div>
               <li>
                 <NavLink
                   to="/analytics"
@@ -312,10 +337,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                 </NavLink>
               </li>
             </>
-
-
           ) : (
             <>
+              <div className="nav-section-title">Field Operations</div>
               <li>
                 <NavLink
                   to="/customers"
@@ -356,6 +380,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>GPS Location Logs</span>
                 </NavLink>
               </li>
+
+              <div className="nav-section-title">Inventory & Stock</div>
               <li>
                 <NavLink
                   to="/cards"
@@ -421,7 +447,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           {(!partner || partner?.franchiseType !== 'SUB_FRANCHISE') && (
             <>
-              <div className="nav-section-title">Upcoming Modules</div>
+              <div className="nav-section-title">Upcoming</div>
               <li className="nav-item disabled">
                 <BarChart3 size={18} />
                 <span>Franchise Settlements</span>
@@ -438,19 +464,117 @@ const Sidebar = ({ isOpen, onClose }) => {
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <Settings size={18} />
-              <span>Settings</span>
+              <span>Settings & Preferences</span>
             </NavLink>
           </li>
         </ul>
 
-        <div style={{ padding: '16px 12px', borderTop: '1px solid var(--border-color)' }}>
+        {/* Sidebar Footer: User Status Card & Logout */}
+        <div
+          style={{
+            padding: '12px',
+            borderTop: '1px solid #f1f5f9',
+            backgroundColor: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          {/* Mini User Profile Strip */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 10px',
+              backgroundColor: '#f8fafc',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0',
+            }}
+          >
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                backgroundColor: isSuperAdmin ? '#0284c7' : '#16a34a',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '800',
+                fontSize: '13px',
+                flexShrink: 0,
+                boxShadow: isSuperAdmin ? '0 2px 6px rgba(2, 132, 199, 0.3)' : '0 2px 6px rgba(22, 163, 74, 0.3)',
+              }}
+            >
+              {isSuperAdmin ? <Sparkles size={16} /> : <UserCircle size={17} />}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div
+                style={{
+                  fontSize: '12.5px',
+                  fontWeight: '800',
+                  color: '#0f172a',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  lineHeight: '1.2',
+                }}
+                title={displayName}
+              >
+                {displayName}
+              </div>
+              <div
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: '600',
+                  color: isSuperAdmin ? '#0284c7' : '#16a34a',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  marginTop: '1px',
+                }}
+              >
+                {displaySubtitle}
+              </div>
+            </div>
+            <span
+              style={{
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: '#22c55e',
+                boxShadow: '0 0 0 2px #dcfce7',
+                flexShrink: 0,
+              }}
+              title="Online & Connected"
+            />
+          </div>
+
+          {/* High-End Red Accent Logout Button */}
           <button
             onClick={logout}
-            className="btn btn-outline"
-            style={{ width: '100%', justifyContent: 'flex-start', color: '#dc2626' }}
+            className="sidebar-logout-btn"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '8px 12px',
+              borderRadius: '9px',
+              fontSize: '12.5px',
+              fontWeight: '700',
+              border: '1px solid #fee2e2',
+              backgroundColor: '#fff5f5',
+              color: '#dc2626',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
           >
-            <LogOut size={16} />
-            <span>Logout</span>
+            <LogOut size={15} />
+            <span>Sign Out</span>
           </button>
         </div>
       </aside>
