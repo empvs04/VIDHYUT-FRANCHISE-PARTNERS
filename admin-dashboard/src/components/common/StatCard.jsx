@@ -36,10 +36,10 @@ const StatCard = ({
       onMouseEnter={(e) => {
         const hoverColor = borderHoverColor || (
           borderColor === '#FDE68A' ? '#FACC15' :
-          borderColor === '#A7F3D0' ? '#34D399' :
-          borderColor === '#FED7AA' ? '#FB923C' :
-          borderColor === '#BAE6FD' ? '#60A5FA' :
-          '#94A3B8'
+            borderColor === '#A7F3D0' ? '#34D399' :
+              borderColor === '#FED7AA' ? '#FB923C' :
+                borderColor === '#BAE6FD' ? '#60A5FA' :
+                  '#94A3B8'
         );
         e.currentTarget.style.borderColor = hoverColor;
         e.currentTarget.style.boxShadow = `0 6px 18px -2px rgba(15, 23, 42, 0.08), 0 0 12px ${hoverColor}35`;

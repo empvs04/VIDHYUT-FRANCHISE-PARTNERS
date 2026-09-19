@@ -1069,6 +1069,18 @@ export const getPartnerSummary = async (req, res, next) => {
       return sum + (margin * qty);
     }, 0);
 
+    // Map each sub-franchise's real buy price from transactions
+    const subBuyPriceMap = new Map();
+    partnerSellTxns.forEach(t => {
+      const buyerId = t.buyerPartnerId?._id?.toString() || t.buyerPartnerId?.toString();
+      if (buyerId) {
+        const rate = t.pricePerCard || (t.paidQuantity > 0 ? Math.round(t.totalAmount / t.paidQuantity) : (t.quantity > 0 ? Math.round(t.totalAmount / t.quantity) : 0));
+        if (rate > 0) {
+          subBuyPriceMap.set(buyerId, rate);
+        }
+      }
+    });
+
     // Retail Card Sales & Profit performed BY SUB-FRANCHISE PARTNERS (when viewed by parent partner)
     const subRetailCards = subFranchiseInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
     const subRetailRevenue = subFranchiseInstalls.reduce((sum, i) => {
@@ -1077,9 +1089,14 @@ export const getPartnerSummary = async (req, res, next) => {
     }, 0);
     const subRetailProfit = subFranchiseInstalls.reduce((sum, i) => {
       const count = i.installedCardCount || 1;
-      const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
-      const buyCost = 2400; // Sub-franchise acquisition cost from district partner
-      const margin = Math.max(0, sellRate - buyCost);
+      const subId = i.partnerId?._id?.toString() || i.partnerId?.toString();
+      const subBuyPrice = subBuyPriceMap.get(subId) || 2400;
+      const customerRate = (i.pricePerCard && i.pricePerCard > subBuyPrice)
+        ? i.pricePerCard
+        : (i.totalAmount && Math.round(i.totalAmount / count) > subBuyPrice
+            ? Math.round(i.totalAmount / count)
+            : (subBuyPrice > avgBuyPrice ? subBuyPrice + (subBuyPrice - avgBuyPrice) : 3500));
+      const margin = Math.max(0, customerRate - subBuyPrice);
       return sum + (margin * count);
     }, 0);
 
@@ -1203,9 +1220,14 @@ export const getPartnerSummary = async (req, res, next) => {
       const cards = filtered.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
       const profit = filtered.reduce((sum, i) => {
         const count = i.installedCardCount || 1;
-        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
-        const buyCost = 2400;
-        const margin = Math.max(0, sellRate - buyCost);
+        const subId = i.partnerId?._id?.toString() || i.partnerId?.toString();
+        const subBuyPrice = subBuyPriceMap.get(subId) || 2400;
+        const customerRate = (i.pricePerCard && i.pricePerCard > subBuyPrice)
+          ? i.pricePerCard
+          : (i.totalAmount && Math.round(i.totalAmount / count) > subBuyPrice
+              ? Math.round(i.totalAmount / count)
+              : (subBuyPrice > avgBuyPrice ? subBuyPrice + (subBuyPrice - avgBuyPrice) : 3500));
+        const margin = Math.max(0, customerRate - subBuyPrice);
         return sum + (margin * count);
       }, 0);
       return {

@@ -831,8 +831,10 @@ const DashboardPage = () => {
                 title="My Total Stock"
                 value={cardStats.assigned || custMetrics?.totalCardsAllotted || custMetrics?.currentCardInventory || 0}
                 icon={Package}
-                bgLight="#f0f9ff"
-                iconColor="#0284c7"
+                bgLight="linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)"
+                iconColor="#B45309"
+                borderColor="#FDE68A"
+                borderHoverColor="#EAB308"
                 onClick={() => navigate('/my-pending-cards')}
                 subtitle="Total received stock →"
               />
@@ -842,8 +844,10 @@ const DashboardPage = () => {
                 title="My Installed Cards"
                 value={custMetrics?.installedCardsCount ?? custMetrics?.totalInstallations ?? cardStats.installed ?? 0}
                 icon={Zap}
-                bgLight="#f0fdf4"
-                iconColor="#16a34a"
+                bgLight="linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)"
+                iconColor="#047857"
+                borderColor="#A7F3D0"
+                borderHoverColor="#10B981"
                 onClick={() => navigate('/my-installed-cards')}
                 subtitle="Residential / Comm / Ind →"
               />
@@ -859,8 +863,10 @@ const DashboardPage = () => {
                   )
                 }
                 icon={Clock}
-                bgLight="#f8fafc"
-                iconColor="#64748b"
+                bgLight="linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)"
+                iconColor="#C2410C"
+                borderColor="#FED7AA"
+                borderHoverColor="#F97316"
                 onClick={() => navigate('/my-pending-cards')}
                 subtitle="In-hand pending stock →"
               />
@@ -870,8 +876,10 @@ const DashboardPage = () => {
                 title="My Transfer History"
                 value={`${partnerBatchesCount || cardStats.batchesCount || (cardStats.assigned > 0 ? 1 : 0) || 0} ${(partnerBatchesCount || cardStats.batchesCount || (cardStats.assigned > 0 ? 1 : 0) || 0) === 1 ? 'Batch' : 'Batches'}`}
                 icon={ArrowLeftRight}
-                bgLight="#f0f9ff"
-                iconColor="#0284c7"
+                bgLight="linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
+                iconColor="#0284C7"
+                borderColor="#BAE6FD"
+                borderHoverColor="#0284C7"
                 onClick={() => navigate('/my-pending-cards')}
                 subtitle="Allotments & history →"
               />
@@ -1017,40 +1025,42 @@ const DashboardPage = () => {
             </div>
 
             {/* ROW 1.5: Sub-Franchise Customer Commercial Performance (2 Cards: Total Revenue & Total Profit) */}
-            <div className="dashboard-commercial-2grid" style={{ marginBottom: '4px' }}>
-              {/* Left Card: Total Revenue */}
+            <div className="dashboard-commercial-2grid" style={{ marginBottom: '10px' }}>
+              {/* Left Card: Sub-Franchise Revenue */}
               <div
                 onClick={() => {
                   setFranchiseModalTab('INSTALLATIONS');
                   setFranchiseModalOpen(true);
                 }}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid #BAE6FD',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  minHeight: '108px',
+                  transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  minHeight: '136px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.borderColor = '#087DB5';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(8, 125, 181, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = '#BAE6FD';
+                  e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
                 }}
               >
                 {/* Header Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b' }}>
-                      Total Revenue
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
+                      Sub-Franchise Revenue
                     </span>
 
                     {/* Interactive Period Filter */}
@@ -1059,14 +1069,14 @@ const DashboardPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '2px 6px',
+                        gap: '5px',
+                        background: '#F0F9FF',
+                        border: '1px solid #BAE6FD',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
                       }}
                     >
-                      <Calendar size={11} color="#64748b" />
+                      <Calendar size={12} color="#087DB5" />
                       <select
                         value={subRevenuePeriod}
                         onChange={(e) => {
@@ -1077,8 +1087,8 @@ const DashboardPage = () => {
                           border: 'none',
                           background: 'transparent',
                           fontSize: '11px',
-                          fontWeight: '600',
-                          color: '#475569',
+                          fontWeight: '700',
+                          color: '#0369A1',
                           cursor: 'pointer',
                           outline: 'none',
                           padding: 0,
@@ -1094,18 +1104,19 @@ const DashboardPage = () => {
 
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#f0f9ff',
-                      color: '#0284c7',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)',
+                      border: '1px solid #BAE6FD',
+                      color: '#087DB5',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <IndianRupee size={16} />
+                    <IndianRupee size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
@@ -1124,11 +1135,11 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px', margin: '4px 0 2px' }}>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(revenueVal).toLocaleString('en-IN')}
                       </div>
 
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '600', color: '#087DB5', background: 'rgba(240, 249, 255, 0.85)', padding: '4px 10px', borderRadius: '6px', width: 'fit-content' }}>
                         <span>
                           {cardsSoldVal > 0
                             ? `✓ ${periodLabels[subRevenuePeriod]}: ${cardsSoldVal} cards installed • Customer sales revenue →`
@@ -1140,39 +1151,41 @@ const DashboardPage = () => {
                 })()}
               </div>
 
-              {/* Right Card: Total Profit */}
+              {/* Right Card: Sub-Franchise Profit */}
               <div
                 onClick={() => {
                   setFranchiseModalTab('INSTALLATIONS');
                   setFranchiseModalOpen(true);
                 }}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid #A7F3D0',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  minHeight: '108px',
+                  transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  minHeight: '136px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.borderColor = '#16A34A';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(22, 163, 74, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = '#A7F3D0';
+                  e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
                 }}
               >
                 {/* Header Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b' }}>
-                      Total Profit
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
+                      Sub-Franchise Profit
                     </span>
 
                     {/* Interactive Period Filter */}
@@ -1181,14 +1194,14 @@ const DashboardPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '2px 6px',
+                        gap: '5px',
+                        background: '#ECFDF5',
+                        border: '1px solid #A7F3D0',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
                       }}
                     >
-                      <Calendar size={11} color="#64748b" />
+                      <Calendar size={12} color="#16A34A" />
                       <select
                         value={subProfitPeriod}
                         onChange={(e) => {
@@ -1199,8 +1212,8 @@ const DashboardPage = () => {
                           border: 'none',
                           background: 'transparent',
                           fontSize: '11px',
-                          fontWeight: '600',
-                          color: '#475569',
+                          fontWeight: '700',
+                          color: '#15803D',
                           cursor: 'pointer',
                           outline: 'none',
                           padding: 0,
@@ -1216,18 +1229,19 @@ const DashboardPage = () => {
 
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#f0fdf4',
-                      color: '#16a34a',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #DCFCE7 0%, #A7F3D0 100%)',
+                      border: '1px solid #A7F3D0',
+                      color: '#16A34A',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <TrendingUp size={16} />
+                    <TrendingUp size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
@@ -1248,14 +1262,14 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '24px', fontWeight: '800', color: '#16a34a', letterSpacing: '-0.3px', margin: '4px 0 2px' }}>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(profitVal).toLocaleString('en-IN')}
                       </div>
 
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: 'rgba(236, 253, 245, 0.85)', padding: '4px 10px', borderRadius: '6px', width: 'fit-content' }}>
                         <span>
                           {profitVal > 0
-                            ? `✓ ${periodLabels[subProfitPeriod]}: Net margin (${marginPercent}%) • ${cardsSoldVal} cards installed →`
+                            ? `✓ ${periodLabels[subProfitPeriod]}: Margin earned (${marginPercent}%) • ${cardsSoldVal} cards →`
                             : `No profit in ${periodLabels[subProfitPeriod]?.toLowerCase()} (₹0) →`}
                         </span>
                       </div>
@@ -2047,9 +2061,10 @@ const DashboardPage = () => {
                 title="My Total Stock"
                 value={cardStats.totalAllotted || cardStats.total || partnerSummary?.financials?.totalBoughtCards || cardStats.assigned || 0}
                 icon={Package}
-                bgLight="#EFF6FF"
-                iconColor="#2563EB"
-                borderLeftColor="#2563EB"
+                bgLight="linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)"
+                iconColor="#B45309"
+                borderColor="#FDE68A"
+                borderHoverColor="#EAB308"
                 onClick={() => navigate('/my-pending-cards')}
                 subtitle="Total received stock →"
               />
@@ -2059,9 +2074,10 @@ const DashboardPage = () => {
                 title="My Installed Cards"
                 value={custMetrics?.installedCardsCount ?? custMetrics?.totalInstallations ?? cardStats.installed ?? 0}
                 icon={Zap}
-                bgLight="#ECFDF5"
-                iconColor="#10B981"
-                borderLeftColor="#10B981"
+                bgLight="linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)"
+                iconColor="#047857"
+                borderColor="#A7F3D0"
+                borderHoverColor="#10B981"
                 onClick={() => navigate('/my-installed-cards')}
                 subtitle="Residential / Comm / Ind →"
               />
@@ -2081,9 +2097,10 @@ const DashboardPage = () => {
                   )
                 }
                 icon={Clock}
-                bgLight="#FEF3C7"
-                iconColor="#D97706"
-                borderLeftColor="#F59E0B"
+                bgLight="linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)"
+                iconColor="#C2410C"
+                borderColor="#FED7AA"
+                borderHoverColor="#F97316"
                 onClick={() => navigate('/my-pending-cards')}
                 subtitle="In-hand pending stock →"
               />
@@ -2093,9 +2110,10 @@ const DashboardPage = () => {
                 title="My Transfer History"
                 value={`${partnerBatchesCount || cardStats.batchesCount || (cardStats.assigned > 0 ? 1 : 0) || 0} ${(partnerBatchesCount || cardStats.batchesCount || (cardStats.assigned > 0 ? 1 : 0) || 0) === 1 ? 'Batch' : 'Batches'}`}
                 icon={ArrowLeftRight}
-                bgLight="#F5F3FF"
-                iconColor="#7C3AED"
-                borderLeftColor="#8B5CF6"
+                bgLight="linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
+                iconColor="#0284C7"
+                borderColor="#BAE6FD"
+                borderHoverColor="#0284C7"
                 onClick={() => navigate('/my-pending-cards')}
                 subtitle="HQ allotments & history →"
               />
@@ -2242,7 +2260,7 @@ const DashboardPage = () => {
             </div>
 
             {/* ROW 1.5: Active Franchise Partner Direct Customer Commercial Performance (2 Cards on Desktop, 1 Col on Mobile) */}
-            <div className="dashboard-commercial-2grid" style={{ marginBottom: '4px' }}>
+            <div className="dashboard-commercial-2grid" style={{ marginBottom: '10px' }}>
               {/* Left Card: Franchise Revenue */}
               <div
                 onClick={() => {
@@ -2250,31 +2268,33 @@ const DashboardPage = () => {
                   setFranchiseModalOpen(true);
                 }}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '14px',
-                  padding: '16px 18px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid #BAE6FD',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  minHeight: '124px',
+                  transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  minHeight: '136px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.borderColor = '#087DB5';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(8, 125, 181, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = '#BAE6FD';
+                  e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
                 }}
               >
                 {/* Header Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
                       Franchise Revenue
                     </span>
 
@@ -2284,14 +2304,14 @@ const DashboardPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '2px 6px',
+                        gap: '5px',
+                        background: '#F0F9FF',
+                        border: '1px solid #BAE6FD',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
                       }}
                     >
-                      <Calendar size={11} color="#64748b" />
+                      <Calendar size={12} color="#087DB5" />
                       <select
                         value={partnerRevenuePeriod}
                         onChange={(e) => {
@@ -2302,8 +2322,8 @@ const DashboardPage = () => {
                           border: 'none',
                           background: 'transparent',
                           fontSize: '11px',
-                          fontWeight: '600',
-                          color: '#475569',
+                          fontWeight: '700',
+                          color: '#0369A1',
                           cursor: 'pointer',
                           outline: 'none',
                           padding: 0,
@@ -2319,18 +2339,19 @@ const DashboardPage = () => {
 
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#f0f9ff',
-                      color: '#0284c7',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)',
+                      border: '1px solid #BAE6FD',
+                      color: '#087DB5',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <IndianRupee size={16} />
+                    <IndianRupee size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
@@ -2349,11 +2370,11 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px', margin: '4px 0 2px' }}>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(revenueVal).toLocaleString('en-IN')}
                       </div>
 
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '600', color: '#087DB5', background: 'rgba(240, 249, 255, 0.85)', padding: '4px 10px', borderRadius: '6px', width: 'fit-content' }}>
                         <span>
                           {cardsSoldVal > 0
                             ? `✓ ${periodLabels[partnerRevenuePeriod]}: ${cardsSoldVal} cards sold • Real DB revenue →`
@@ -2372,31 +2393,33 @@ const DashboardPage = () => {
                   setFranchiseModalOpen(true);
                 }}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '14px',
-                  padding: '16px 18px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid #A7F3D0',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  minHeight: '124px',
+                  transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  minHeight: '136px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.borderColor = '#16A34A';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(22, 163, 74, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = '#A7F3D0';
+                  e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
                 }}
               >
                 {/* Header Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
                       Franchise Profit
                     </span>
 
@@ -2406,14 +2429,14 @@ const DashboardPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '2px 6px',
+                        gap: '5px',
+                        background: '#ECFDF5',
+                        border: '1px solid #A7F3D0',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
                       }}
                     >
-                      <Calendar size={11} color="#64748b" />
+                      <Calendar size={12} color="#16A34A" />
                       <select
                         value={partnerProfitPeriod}
                         onChange={(e) => {
@@ -2424,8 +2447,8 @@ const DashboardPage = () => {
                           border: 'none',
                           background: 'transparent',
                           fontSize: '11px',
-                          fontWeight: '600',
-                          color: '#475569',
+                          fontWeight: '700',
+                          color: '#15803D',
                           cursor: 'pointer',
                           outline: 'none',
                           padding: 0,
@@ -2441,18 +2464,19 @@ const DashboardPage = () => {
 
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#f0fdf4',
-                      color: '#16a34a',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #DCFCE7 0%, #A7F3D0 100%)',
+                      border: '1px solid #A7F3D0',
+                      color: '#16A34A',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <TrendingUp size={16} />
+                    <TrendingUp size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
@@ -2472,11 +2496,11 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '24px', fontWeight: '800', color: '#16a34a', letterSpacing: '-0.3px', margin: '4px 0 2px' }}>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(profitVal).toLocaleString('en-IN')}
                       </div>
 
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: 'rgba(236, 253, 245, 0.85)', padding: '4px 10px', borderRadius: '6px', width: 'fit-content' }}>
                         <span>
                           {profitVal > 0
                             ? `✓ ${periodLabels[partnerProfitPeriod]}: Margin earned (${marginPercent}%) • ${cardsSoldVal} cards →`
@@ -2496,9 +2520,10 @@ const DashboardPage = () => {
                 title="Sub-Franchise Total Stock"
                 value={subTotalStock}
                 icon={Package}
-                bgLight="#EFF6FF"
-                iconColor="#2563EB"
-                borderLeftColor="#2563EB"
+                bgLight="linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)"
+                iconColor="#B45309"
+                borderColor="#FDE68A"
+                borderHoverColor="#EAB308"
                 onClick={() => navigate('/my-sub-franchises')}
                 subtitle="Network total stock →"
               />
@@ -2508,9 +2533,10 @@ const DashboardPage = () => {
                 title="Sub-Franchise Installed Cards"
                 value={subInstalledCards}
                 icon={Zap}
-                bgLight="#ECFDF5"
-                iconColor="#10B981"
-                borderLeftColor="#10B981"
+                bgLight="linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)"
+                iconColor="#047857"
+                borderColor="#A7F3D0"
+                borderHoverColor="#10B981"
                 onClick={() => navigate('/sub-franchise-installed-cards')}
                 subtitle="Field customer installations →"
               />
@@ -2520,9 +2546,10 @@ const DashboardPage = () => {
                 title="Sub-Franchise Pending Cards"
                 value={subPendingCards}
                 icon={Clock}
-                bgLight="#FEF3C7"
-                iconColor="#D97706"
-                borderLeftColor="#F59E0B"
+                bgLight="linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)"
+                iconColor="#C2410C"
+                borderColor="#FED7AA"
+                borderHoverColor="#F97316"
                 onClick={() => navigate('/sub-franchise-installed-cards')}
                 subtitle="In sub-franchise custody →"
               />
@@ -2532,9 +2559,10 @@ const DashboardPage = () => {
                 title="Sub-Franchise Transfer History"
                 value={`${subTransfersCount} Batches`}
                 icon={ArrowLeftRight}
-                bgLight="#F5F3FF"
-                iconColor="#7C3AED"
-                borderLeftColor="#8B5CF6"
+                bgLight="linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
+                iconColor="#0284C7"
+                borderColor="#BAE6FD"
+                borderHoverColor="#0284C7"
                 onClick={() => navigate('/transactions')}
                 subtitle="Transfers to sub-franchises →"
               />
@@ -2681,39 +2709,41 @@ const DashboardPage = () => {
             </div>
 
             {/* ROW 2.5: Sub-Franchise Network Commercial Performance (What Sub-Franchises Sold to Customers & Their Profits) */}
-            <div className="dashboard-commercial-2grid">
-              {/* Left Card: Sub-Franchise Network Retail Revenue (Top Border: Amber / Gold) */}
+            <div className="dashboard-commercial-2grid" style={{ marginBottom: '10px' }}>
+              {/* Left Card: Sub-Franchise Network Retail Revenue */}
               <div
                 onClick={() => {
                   setSubCommercialModalTab('RETAIL_SALES');
                   setSubCommercialModalOpen(true);
                 }}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '14px',
-                  padding: '16px 18px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid #BAE6FD',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  minHeight: '124px',
+                  transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  minHeight: '136px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.borderColor = '#087DB5';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(8, 125, 181, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = '#BAE6FD';
+                  e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
                 }}
               >
                 {/* Header Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
                       Sub-Franchise Revenue
                     </span>
 
@@ -2723,14 +2753,14 @@ const DashboardPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '2px 6px',
+                        gap: '5px',
+                        background: '#F0F9FF',
+                        border: '1px solid #BAE6FD',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
                       }}
                     >
-                      <Calendar size={11} color="#64748b" />
+                      <Calendar size={12} color="#087DB5" />
                       <select
                         value={subRevenuePeriod}
                         onChange={(e) => {
@@ -2741,8 +2771,8 @@ const DashboardPage = () => {
                           border: 'none',
                           background: 'transparent',
                           fontSize: '11px',
-                          fontWeight: '600',
-                          color: '#475569',
+                          fontWeight: '700',
+                          color: '#0369A1',
                           cursor: 'pointer',
                           outline: 'none',
                           padding: 0,
@@ -2758,18 +2788,19 @@ const DashboardPage = () => {
 
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#f0f9ff',
-                      color: '#0284c7',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%)',
+                      border: '1px solid #BAE6FD',
+                      color: '#087DB5',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <IndianRupee size={16} />
+                    <IndianRupee size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
@@ -2788,11 +2819,11 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px', margin: '4px 0 2px' }}>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(revenueVal).toLocaleString('en-IN')}
                       </div>
 
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '600', color: '#087DB5', background: 'rgba(240, 249, 255, 0.85)', padding: '4px 10px', borderRadius: '6px', width: 'fit-content' }}>
                         <span>
                           {cardsSoldVal > 0
                             ? `✓ ${periodLabels[subRevenuePeriod]}: ${cardsSoldVal} customer cards sold by sub-franchises →`
@@ -2811,31 +2842,33 @@ const DashboardPage = () => {
                   setSubCommercialModalOpen(true);
                 }}
                 style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '14px',
-                  padding: '16px 18px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1.5px solid #A7F3D0',
+                  borderRadius: '16px',
+                  padding: '18px 20px',
+                  boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                  minHeight: '124px',
+                  transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+                  minHeight: '136px',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(22, 163, 74, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.borderColor = '#16A34A';
+                  e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(22, 163, 74, 0.2)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.borderColor = '#A7F3D0';
+                  e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
                 }}
               >
                 {/* Header Row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', color: '#64748b' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
                       Sub-Franchise Profit
                     </span>
 
@@ -2845,14 +2878,14 @@ const DashboardPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '6px',
-                        padding: '2px 6px',
+                        gap: '5px',
+                        background: '#ECFDF5',
+                        border: '1px solid #A7F3D0',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
                       }}
                     >
-                      <Calendar size={11} color="#64748b" />
+                      <Calendar size={12} color="#16A34A" />
                       <select
                         value={subProfitPeriod}
                         onChange={(e) => {
@@ -2863,8 +2896,8 @@ const DashboardPage = () => {
                           border: 'none',
                           background: 'transparent',
                           fontSize: '11px',
-                          fontWeight: '600',
-                          color: '#475569',
+                          fontWeight: '700',
+                          color: '#15803D',
                           cursor: 'pointer',
                           outline: 'none',
                           padding: 0,
@@ -2880,18 +2913,19 @@ const DashboardPage = () => {
 
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      backgroundColor: '#f0fdf4',
-                      color: '#16a34a',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #DCFCE7 0%, #A7F3D0 100%)',
+                      border: '1px solid #A7F3D0',
+                      color: '#16A34A',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <TrendingUp size={16} />
+                    <TrendingUp size={20} strokeWidth={2.5} />
                   </div>
                 </div>
 
@@ -2905,17 +2939,17 @@ const DashboardPage = () => {
                   const periodLabels = {
                     ALL_TIME: 'All Time',
                     TODAY: 'Today',
-                    LAST_7_DAYS: 'Last 7 Days',
+                    LAST_7_DAYS: 'Last Week (7 Days)',
                     THIS_MONTH: 'This Month',
                   };
 
                   return (
                     <>
-                      <div style={{ fontSize: '24px', fontWeight: '800', color: '#16a34a', letterSpacing: '-0.3px', margin: '4px 0 2px' }}>
+                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(profitVal).toLocaleString('en-IN')}
                       </div>
 
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: 'rgba(236, 253, 245, 0.85)', padding: '4px 10px', borderRadius: '6px', width: 'fit-content' }}>
                         <span>
                           {profitVal > 0
                             ? `✓ ${periodLabels[subProfitPeriod]}: Sub-franchise profit (${marginPercent}%) • ${cardsSoldVal} cards →`
