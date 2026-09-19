@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -497,6 +497,194 @@ const DashboardPage = () => {
   const [matrixFilterTier, setMatrixFilterTier] = useState('ALL');
   const [matrixSortKey, setMatrixSortKey] = useState('revenue');
   const [matrixSearch, setMatrixSearch] = useState('');
+
+  // Company Net Profit & Commercial Section 3 Cards Filter Period States
+  const [companyCardsMonth, setCompanyCardsMonth] = useState('ALL_TIME');
+  const [companyRevenuePeriod, setCompanyRevenuePeriod] = useState('ALL_TIME');
+  const [companyProfitPeriod, setCompanyProfitPeriod] = useState('ALL_TIME');
+
+  // Extract all company transactions across all partners
+  const allCompanyTxns = useMemo(() => {
+    const list = [];
+    if (Array.isArray(companyProfits)) {
+      companyProfits.forEach((p) => {
+        if (Array.isArray(p.transactions)) {
+          p.transactions.forEach((t) => {
+            list.push({
+              ...t,
+              partnerName: p.fullName,
+              franchiseId: p.franchiseId,
+            });
+          });
+        }
+      });
+    }
+    return list;
+  }, [companyProfits]);
+
+  // Available Months for Card 1 (dynamically extracted + standard months)
+  const companyCardsMonthOptions = useMemo(() => {
+    const options = [
+      { value: 'ALL_TIME', label: 'All Months' },
+      { value: 'THIS_MONTH', label: 'This Month' },
+      { value: 'LAST_MONTH', label: 'Last Month' },
+    ];
+    const monthMap = new Map();
+    allCompanyTxns.forEach((t) => {
+      if (t.date) {
+        const d = new Date(t.date);
+        if (!isNaN(d.getTime())) {
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const monthName = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+          if (!monthMap.has(key)) {
+            monthMap.set(key, monthName);
+          }
+        }
+      }
+    });
+    const sortedKeys = Array.from(monthMap.keys()).sort().reverse();
+    sortedKeys.forEach((k) => {
+      options.push({ value: k, label: monthMap.get(k) });
+    });
+    return options;
+  }, [allCompanyTxns]);
+
+  const isDateInPeriod = (dateStr, period) => {
+    if (!dateStr || period === 'ALL_TIME') return true;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    if (period === 'TODAY') {
+      return d >= startOfToday && d <= endOfToday;
+    }
+    if (period === 'YESTERDAY') {
+      const startOfYesterday = new Date(startOfToday);
+      startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+      const endOfYesterday = new Date(startOfToday);
+      endOfYesterday.setMilliseconds(-1);
+      return d >= startOfYesterday && d <= endOfYesterday;
+    }
+    if (period === 'LAST_7_DAYS') {
+      const sevenDaysAgo = new Date(startOfToday);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return d >= sevenDaysAgo && d <= endOfToday;
+    }
+    if (period === 'THIS_MONTH') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      return d >= startOfMonth && d <= endOfToday;
+    }
+    if (period === 'LAST_MONTH') {
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      return d >= startOfLastMonth && d <= endOfLastMonth;
+    }
+    if (period.includes('-')) {
+      const [year, month] = period.split('-').map(Number);
+      return d.getFullYear() === year && d.getMonth() + 1 === month;
+    }
+    return true;
+  };
+
+  const displayCardsDistributed = useMemo(() => {
+    if (companyCardsMonth === 'ALL_TIME') {
+      return metrics?.companyTotalCardsSold || allCompanyTxns.reduce((s, t) => s + (t.paidQuantity || t.quantity || 0), 0);
+    }
+    const filtered = allCompanyTxns.filter((t) => isDateInPeriod(t.date, companyCardsMonth));
+    if (filtered.length > 0) {
+      return filtered.reduce((s, t) => s + (t.paidQuantity || t.quantity || 0), 0);
+    }
+    if (companyCardsMonth === 'THIS_MONTH' && metrics?.revenuePeriods?.THIS_MONTH) {
+      return metrics.revenuePeriods.THIS_MONTH.cards || 0;
+    }
+    if (companyCardsMonth === 'LAST_MONTH' && metrics?.revenuePeriods?.LAST_MONTH) {
+      return metrics.revenuePeriods.LAST_MONTH.cards || 0;
+    }
+    return 0;
+  }, [companyCardsMonth, allCompanyTxns, metrics]);
+
+  const cardsSubtitle = useMemo(() => {
+    if (companyCardsMonth === 'ALL_TIME') return 'Paid Card Outflow (All Months)';
+    if (companyCardsMonth === 'THIS_MONTH') return 'Paid Card Outflow • This Month';
+    if (companyCardsMonth === 'LAST_MONTH') return 'Paid Card Outflow • Last Month';
+    const found = companyCardsMonthOptions.find((o) => o.value === companyCardsMonth);
+    return `Paid Card Outflow • ${found ? found.label : companyCardsMonth}`;
+  }, [companyCardsMonth, companyCardsMonthOptions]);
+
+  const displayCompanyRevenue = useMemo(() => {
+    if (companyRevenuePeriod === 'ALL_TIME') {
+      return metrics?.companyTotalRevenue || allCompanyTxns.reduce((s, t) => s + (t.totalAmount || 0), 0);
+    }
+    const filtered = allCompanyTxns.filter((t) => isDateInPeriod(t.date, companyRevenuePeriod));
+    if (filtered.length > 0) {
+      return filtered.reduce((s, t) => s + (t.totalAmount || 0), 0);
+    }
+    if (metrics?.revenuePeriods?.[companyRevenuePeriod]) {
+      return metrics.revenuePeriods[companyRevenuePeriod].revenue || 0;
+    }
+    return 0;
+  }, [companyRevenuePeriod, allCompanyTxns, metrics]);
+
+  const revenueSubtitle = useMemo(() => {
+    const periodMap = {
+      ALL_TIME: 'From Franchise Partners (All Time)',
+      TODAY: 'From Franchise Partners • Today',
+      YESTERDAY: 'From Franchise Partners • Yesterday',
+      LAST_7_DAYS: 'From Franchise Partners • Last 7 Days',
+      THIS_MONTH: 'From Franchise Partners • This Month',
+      LAST_MONTH: 'From Franchise Partners • Last Month',
+    };
+    return periodMap[companyRevenuePeriod] || 'From Franchise Partners';
+  }, [companyRevenuePeriod]);
+
+  const { displayCompanyProfit, profitSubtitle } = useMemo(() => {
+    if (companyProfitPeriod === 'ALL_TIME') {
+      const profit = metrics?.companyTotalNetProfit != null 
+        ? metrics.companyTotalNetProfit 
+        : allCompanyTxns.reduce((s, t) => s + (t.netProfit || 0), 0);
+      const margin = metrics?.companyOverallMarginPercent || 32;
+      return {
+        displayCompanyProfit: profit,
+        displayCompanyMargin: margin,
+        profitSubtitle: `+${margin}% Net Return (All Time)`,
+      };
+    }
+
+    const filtered = allCompanyTxns.filter((t) => isDateInPeriod(t.date, companyProfitPeriod));
+    let profit = 0;
+    let cost = 0;
+
+    if (filtered.length > 0) {
+      profit = filtered.reduce((s, t) => s + (t.netProfit || 0), 0);
+      cost = filtered.reduce((s, t) => s + (t.companyCost || ((t.paidQuantity || t.quantity || 0) * 1000)), 0);
+    } else if (metrics?.revenuePeriods?.[companyProfitPeriod]) {
+      const pData = metrics.revenuePeriods[companyProfitPeriod];
+      const rev = pData.revenue || 0;
+      const cards = pData.cards || 0;
+      cost = cards * 1000;
+      profit = rev - cost;
+    }
+
+    const margin = cost > 0 ? Math.round((profit / cost) * 100) : 0;
+    const periodLabelMap = {
+      TODAY: 'Today',
+      YESTERDAY: 'Yesterday',
+      LAST_7_DAYS: 'Last 7 Days',
+      THIS_MONTH: 'This Month',
+      LAST_MONTH: 'Last Month',
+    };
+    const pLabel = periodLabelMap[companyProfitPeriod] || companyProfitPeriod;
+    const subtitle = profit > 0 ? `+${margin}% Net Return • ${pLabel}` : `0% Net Return • ${pLabel}`;
+
+    return {
+      displayCompanyProfit: profit,
+      displayCompanyMargin: margin,
+      profitSubtitle: subtitle,
+    };
+  }, [companyProfitPeriod, allCompanyTxns, metrics]);
 
   const fetchDashboardAnalytics = async (range = 'ALL_TIME') => {
     try {
@@ -6326,33 +6514,167 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* 3 Metric Summary Cards Row */}
+        {/* 3 Metric Summary Cards Row with Period & Month Dropdowns */}
         <div
           style={{
             padding: '12px 18px',
             backgroundColor: '#F8FAFC',
             borderBottom: '1px solid #E2E8F0',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: '12px',
           }}
         >
-          <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', borderLeft: '3.5px solid #3B82F6' }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#2563EB', textTransform: 'uppercase' }}>Cards Distributed</div>
-            <div style={{ fontSize: '16px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>{(metrics?.companyTotalCardsSold || 0).toLocaleString('en-IN')} Cards</div>
-            <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px' }}>Paid Card Outflow</div>
+          {/* Card 1: Cards Distributed with Month Dropdown */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              borderLeft: '3.5px solid #3B82F6',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '86px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                Cards Distributed
+              </div>
+              <select
+                value={companyCardsMonth}
+                onChange={(e) => setCompanyCardsMonth(e.target.value)}
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: '700',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: '#F8FAFC',
+                  color: '#1E293B',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  height: '24px',
+                  maxWidth: '125px',
+                }}
+              >
+                {companyCardsMonthOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: '#0F172A', marginTop: '3px' }}>
+              {displayCardsDistributed.toLocaleString('en-IN')} Cards
+            </div>
+            <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px' }}>
+              {cardsSubtitle}
+            </div>
           </div>
 
-          <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', borderLeft: '3.5px solid #F59E0B' }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#D97706', textTransform: 'uppercase' }}>Total Revenue Received</div>
-            <div style={{ fontSize: '16px', fontWeight: '900', color: '#B45309', marginTop: '2px' }}>₹{(metrics?.companyTotalRevenue || 0).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px' }}>From Franchise Partners</div>
+          {/* Card 2: Total Revenue Received with Day/Week/Month/All Time Dropdown */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              borderLeft: '3.5px solid #F59E0B',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '86px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                Total Revenue Received
+              </div>
+              <select
+                value={companyRevenuePeriod}
+                onChange={(e) => setCompanyRevenuePeriod(e.target.value)}
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: '700',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: '#F8FAFC',
+                  color: '#1E293B',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  height: '24px',
+                  maxWidth: '125px',
+                }}
+              >
+                <option value="ALL_TIME">All Time</option>
+                <option value="TODAY">Today (Per Day)</option>
+                <option value="YESTERDAY">Yesterday</option>
+                <option value="LAST_7_DAYS">Last 7 Days (Week)</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="LAST_MONTH">Last Month</option>
+              </select>
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: '#B45309', marginTop: '3px' }}>
+              ₹{displayCompanyRevenue.toLocaleString('en-IN')}
+            </div>
+            <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px' }}>
+              {revenueSubtitle}
+            </div>
           </div>
 
-          <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', borderLeft: '3.5px solid #10B981' }}>
-            <div style={{ fontSize: '10px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase' }}>Company Total Net Profit</div>
-            <div style={{ fontSize: '16px', fontWeight: '900', color: '#15803D', marginTop: '2px' }}>₹{(metrics?.companyTotalNetProfit || 0).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: '10.5px', color: '#16A34A', fontWeight: '700', marginTop: '1px' }}>+{metrics?.companyOverallMarginPercent || 0}% Net Return</div>
+          {/* Card 3: Company Total Net Profit with Day/Week/Month/All Time Dropdown */}
+          <div
+            style={{
+              backgroundColor: '#FFFFFF',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: '1px solid #E2E8F0',
+              borderLeft: '3.5px solid #10B981',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '86px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                Company Total Net Profit
+              </div>
+              <select
+                value={companyProfitPeriod}
+                onChange={(e) => setCompanyProfitPeriod(e.target.value)}
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: '700',
+                  padding: '2px 6px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: '#F8FAFC',
+                  color: '#1E293B',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  height: '24px',
+                  maxWidth: '125px',
+                }}
+              >
+                <option value="ALL_TIME">All Time</option>
+                <option value="TODAY">Today (Per Day)</option>
+                <option value="YESTERDAY">Yesterday</option>
+                <option value="LAST_7_DAYS">Last 7 Days (Week)</option>
+                <option value="THIS_MONTH">This Month</option>
+                <option value="LAST_MONTH">Last Month</option>
+              </select>
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: '#15803D', marginTop: '3px' }}>
+              ₹{displayCompanyProfit.toLocaleString('en-IN')}
+            </div>
+            <div style={{ fontSize: '10.5px', color: '#16A34A', fontWeight: '700', marginTop: '1px' }}>
+              {profitSubtitle}
+            </div>
           </div>
         </div>
 
