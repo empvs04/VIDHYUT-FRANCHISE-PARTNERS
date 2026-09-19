@@ -5413,16 +5413,6 @@ const DashboardPage = () => {
 
   const activeRevenueCardData = getRevenueCardData();
 
-  const formatActivationTime = (dateString) => {
-    if (!dateString) return 'Never logged in';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-    } catch {
-      return 'Active today';
-    }
-  };
-
   // -------------------------------------------------------------
   // RENDER: Super Admin Dashboard
   // -------------------------------------------------------------
@@ -5810,10 +5800,40 @@ const DashboardPage = () => {
                       >
                         {meta.icon} {meta.label.replace(' Partner', '')}
                       </span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#059669', fontWeight: '700' }} title="Latest Partner Activity">
-                        <span className="live-pulse-indicator" style={{ width: '5px', height: '5px' }} />
-                        <span>{formatActivationTime(p.lastActiveAt || p.lastLoginAt || p.userId?.lastLoginAt)}</span>
-                      </div>
+                      {(() => {
+                        const activeDate = p.lastActiveAt || p.lastLoginAt || p.userId?.lastLoginAt;
+                        if (!activeDate) {
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#94A3B8', fontWeight: '600' }} title="No login session recorded yet">
+                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#CBD5E1', display: 'inline-block' }} />
+                              <span>First Login Pending</span>
+                            </div>
+                          );
+                        }
+                        const dateObj = new Date(activeDate);
+                        const isRecent = !isNaN(dateObj.getTime()) && (Date.now() - dateObj.getTime() < 30 * 60 * 1000);
+                        const formatted = formatActivationTime(activeDate);
+                        return (
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '10px',
+                              color: isRecent ? '#059669' : '#0284C7',
+                              fontWeight: '700',
+                            }}
+                            title={`Latest Active Session: ${!isNaN(dateObj.getTime()) ? dateObj.toLocaleString('en-IN') : activeDate}`}
+                          >
+                            {isRecent ? (
+                              <span className="live-pulse-indicator" style={{ width: '5px', height: '5px' }} />
+                            ) : (
+                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#38BDF8', display: 'inline-block' }} />
+                            )}
+                            <span>{formatted}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );

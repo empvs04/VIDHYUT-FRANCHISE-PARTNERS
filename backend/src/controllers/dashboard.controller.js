@@ -179,7 +179,8 @@ export const getAdminMetrics = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .limit(10)
         .populate('parentPartnerId', 'fullName franchiseId')
-        .select('franchiseId fullName mobileNumber email state district city franchiseType accountStatus createdAt parentPartnerId'),
+        .populate('userId', 'role status lastLoginAt')
+        .select('franchiseId fullName mobileNumber email state district city franchiseType accountStatus createdAt lastLoginAt lastActiveAt parentPartnerId userId'),
       // Aggregate distinct active districts
       FranchisePartner.aggregate([
         {
