@@ -5450,7 +5450,7 @@ const DashboardPage = () => {
             <BarChart3 size={22} />
           </div>
           <div className="page-header-text">
-            <h1 className="page-title" style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A' }}>
+            <h1 className="page-title" style={{ fontSize: '20px', fontWeight: '700', color: '#1E293B' }}>
               Super Admin Command Center
             </h1>
           </div>
@@ -5499,7 +5499,7 @@ const DashboardPage = () => {
               <Clock size={17} />
             </div>
             <div>
-              <div style={{ fontSize: '13.5px', color: '#92400E', fontWeight: '800' }}>
+              <div style={{ fontSize: '13.5px', color: '#92400E', fontWeight: '700' }}>
                 {txnStats.pending} Consignment(s) Awaiting Confirmation
               </div>
               <div style={{ fontSize: '12px', color: '#B45309', marginTop: '1px' }}>
@@ -5688,7 +5688,7 @@ const DashboardPage = () => {
                 <Users size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.2px' }}>
+                <h3 style={{ fontSize: '13.5px', fontWeight: '700', color: '#1E293B', margin: 0, letterSpacing: '-0.1px' }}>
                   TODAY'S ACTIVE TEAM
                 </h3>
                 <span style={{ fontSize: '11px', color: '#64748B' }}>
@@ -5700,7 +5700,7 @@ const DashboardPage = () => {
             <span
               style={{
                 fontSize: '11px',
-                fontWeight: '800',
+                fontWeight: '700',
                 padding: '3px 10px',
                 borderRadius: '20px',
                 backgroundColor: isNewlyRegisteredToday ? '#ECFDF5' : '#EFF6FF',
@@ -5774,7 +5774,7 @@ const DashboardPage = () => {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontWeight: '800',
+                          fontWeight: '700',
                           fontSize: '12px',
                           flexShrink: 0,
                         }}
@@ -5783,13 +5783,13 @@ const DashboardPage = () => {
                       </div>
                       <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: '800', fontSize: '13px', color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span style={{ fontWeight: '600', fontSize: '13px', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {p.fullName}
                           </span>
                           <span
                             style={{
                               fontSize: '9.5px',
-                              fontWeight: '700',
+                              fontWeight: '600',
                               fontFamily: 'monospace',
                               color: '#2563EB',
                               backgroundColor: '#EFF6FF',
@@ -5803,7 +5803,7 @@ const DashboardPage = () => {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748B', marginTop: '1px' }}>
                           <MapPin size={11} color="#2563EB" />
-                          <span style={{ fontWeight: '600', color: '#334155' }}>
+                          <span style={{ fontWeight: '500', color: '#475569' }}>
                             {p.district || p.city || 'District'}, {p.state}
                           </span>
                         </div>
@@ -5814,7 +5814,7 @@ const DashboardPage = () => {
                       <span
                         style={{
                           fontSize: '9.5px',
-                          fontWeight: '700',
+                          fontWeight: '600',
                           padding: '1px 6px',
                           borderRadius: '6px',
                           background: meta.badgeBg || '#F1F5F9',
@@ -5829,7 +5829,7 @@ const DashboardPage = () => {
                         const activeDate = p.lastActiveAt || p.lastLoginAt || p.userId?.lastLoginAt;
                         if (!activeDate) {
                           return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#94A3B8', fontWeight: '600' }} title="No login session recorded yet">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#94A3B8', fontWeight: '500' }} title="No login session recorded yet">
                               <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#CBD5E1', display: 'inline-block' }} />
                               <span>First Login Pending</span>
                             </div>
@@ -5846,7 +5846,7 @@ const DashboardPage = () => {
                               gap: '4px',
                               fontSize: '10px',
                               color: isRecent ? '#059669' : '#0284C7',
-                              fontWeight: '700',
+                              fontWeight: '600',
                             }}
                             title={`Latest Active Session: ${!isNaN(dateObj.getTime()) ? dateObj.toLocaleString('en-IN') : activeDate}`}
                           >
@@ -5882,7 +5882,7 @@ const DashboardPage = () => {
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: '#E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
                   <UserPlus size={14} />
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>
                   No Active Team Activity Recorded Today
                 </div>
                 <Link to="/partners/new" className="btn btn-sm btn-primary" style={{ marginTop: '2px', fontSize: '11px', padding: '3px 8px', backgroundColor: '#2563EB' }}>
@@ -5940,7 +5940,7 @@ const DashboardPage = () => {
                 <Award size={18} />
               </div>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.2px' }}>
+                <h3 style={{ fontSize: '13.5px', fontWeight: '700', color: '#1E293B', margin: 0, letterSpacing: '-0.1px' }}>
                   TODAY'S LIVE LEADERBOARD
                 </h3>
                 <span style={{ fontSize: '11px', color: '#64748B' }}>

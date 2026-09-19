@@ -90,9 +90,9 @@ const StatCard = ({
                 margin: 0,
                 minHeight: '22px',
                 fontSize: '11px',
-                fontWeight: '800',
+                fontWeight: '600',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                letterSpacing: '0.4px',
                 color: '#64748B',
                 lineHeight: 1.25,
                 wordBreak: 'normal',
@@ -115,7 +115,7 @@ const StatCard = ({
                 style={{
                   display: 'inline-block',
                   fontSize: '9.5px',
-                  fontWeight: '800',
+                  fontWeight: '600',
                   padding: '1.5px 6px',
                   borderRadius: '4px',
                   backgroundColor: bgLight || '#EFF6FF',
@@ -154,12 +154,12 @@ const StatCard = ({
       <div
         className="stat-value"
         style={{
-          lineHeight: '1.1',
+          lineHeight: '1.15',
           marginBottom: '4px',
-          fontSize: '25px',
-          fontWeight: '900',
+          fontSize: '24px',
+          fontWeight: '700',
           letterSpacing: '-0.3px',
-          color: '#0F172A',
+          color: '#1E293B',
         }}
       >
         {loading ? '...' : (value ?? 0)}
@@ -171,7 +171,7 @@ const StatCard = ({
           className="stat-subtitle"
           style={{
             color: isActive ? (iconColor || '#087DB5') : '#64748B',
-            fontWeight: isActive ? '700' : '600',
+            fontWeight: isActive ? '600' : '500',
             fontSize: '11px',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
