@@ -1060,7 +1060,7 @@ const DashboardPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
-                      Sub-Franchise Revenue
+                      My Revenue
                     </span>
 
                     {/* Interactive Period Filter */}
@@ -1185,7 +1185,7 @@ const DashboardPage = () => {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#64748B' }}>
-                      Sub-Franchise Profit
+                      My Profit
                     </span>
 
                     {/* Interactive Period Filter */}
@@ -4396,7 +4396,7 @@ const DashboardPage = () => {
                     }}
                   >
                     <div style={{ fontSize: '10.5px', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      {isSub ? 'Sub-Franchise Revenue' : 'Franchise Revenue'}
+                      {isSub ? 'My Revenue' : 'Franchise Revenue'}
                     </div>
                     <div style={{ fontSize: '20px', fontWeight: '900', color: '#B45309', margin: '3px 0 1px', letterSpacing: '-0.3px' }}>
                       ₹{Number(fin.realizedRevenue ?? fin.totalRevenue ?? 0).toLocaleString('en-IN')}
@@ -4422,7 +4422,7 @@ const DashboardPage = () => {
                     }}
                   >
                     <div style={{ fontSize: '10.5px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      {isSub ? 'Sub-Franchise Profit' : 'Franchise Profit'}
+                      {isSub ? 'My Profit' : 'Franchise Profit'}
                     </div>
                     <div style={{ fontSize: '20px', fontWeight: '900', color: '#15803D', margin: '3px 0 1px', letterSpacing: '-0.3px' }}>
                       ₹{Number(fin.realizedProfit ?? fin.netProfit ?? 0).toLocaleString('en-IN')}
