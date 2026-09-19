@@ -1,17 +1,17 @@
 :root {
   --sidebar-width: 250px;
-  --bg-main: #f5f9fc;
+  --bg-main: #f4f6fb;
   --bg-card: #ffffff;
   --bg-sidebar: #ffffff;
-  --bg-sidebar-active: #eff6ff;
+  --bg-sidebar-active: #f0f9ff;
 
-  --color-primary: #087db5;
-  --color-primary-hover: #075985;
-  --color-primary-light: #eff6ff;
+  --color-primary: #0284c7;
+  --color-primary-hover: #0369a1;
+  --color-primary-light: #e0f2fe;
   --color-primary-dark: #075985;
 
   --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --text-secondary: #475569;
   --text-muted: #94a3b8;
   --text-white: #ffffff;
 
@@ -19,21 +19,21 @@
   --border-focus: #38bdf8;
 
   --badge-active-bg: #dcfce7;
-  --badge-active-text: #16a34a;
+  --badge-active-text: #15803d;
   --badge-inactive-bg: #f1f5f9;
   --badge-inactive-text: #64748b;
-  --badge-state-bg: #eff6ff;
-  --badge-state-text: #075985;
-  --badge-district-bg: #f0f9ff;
-  --badge-district-text: #087db5;
+  --badge-state-bg: #fef3c7;
+  --badge-state-text: #b45309;
+  --badge-district-bg: #e0e7ff;
+  --badge-district-text: #4338ca;
 
   --danger-bg: #fee2e2;
-  --danger-text: #dc2626;
-  --danger-btn: #dc2626;
+  --danger-text: #b91c1c;
+  --danger-btn: #ef4444;
 
-  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.03);
-  --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.02);
-  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 14px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.03);
+  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.09), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -120,15 +120,15 @@ body {
   flex-direction: column;
   min-height: 100vh;
   width: calc(100% - var(--sidebar-width));
-  background: radial-gradient(circle at 10% 0%, rgba(8, 125, 181, 0.04) 0%, transparent 40%),
-              radial-gradient(circle at 90% 0%, rgba(7, 89, 133, 0.03) 0%, transparent 35%),
-              #f5f9fc;
+  background: radial-gradient(circle at 10% 0%, rgba(2, 132, 199, 0.06) 0%, transparent 40%),
+              radial-gradient(circle at 90% 0%, rgba(22, 163, 74, 0.05) 0%, transparent 35%),
+              #f4f6fb;
   transition: margin-left 0.25s ease, width 0.25s ease;
 }
 
 .top-header {
-  min-height: 64px;
-  background-color: rgba(255, 255, 255, 0.96);
+  min-height: 68px;
+  background-color: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid #e2e8f0;
@@ -139,7 +139,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 40;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
 }
 
 .hamburger-btn {
@@ -178,7 +178,7 @@ body {
 .brand-icon {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #087db5 0%, #075985 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -228,11 +228,11 @@ body {
 
 .nav-section-title {
   font-family: 'Outfit', 'Urbanist', sans-serif;
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   color: #94a3b8;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.9px;
   padding: 14px 10px 5px;
   user-select: none;
 }
@@ -261,28 +261,28 @@ body {
 }
 
 .nav-item:hover {
-  background-color: #f0f9ff;
-  color: #087db5;
+  background-color: #f1f5f9;
+  color: #0284c7;
   transform: translateX(3px);
 }
 
 .nav-item:hover svg {
-  color: #087db5;
-  transform: scale(1.06);
+  color: #0284c7;
+  transform: scale(1.08);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #087db5 0%, #075985 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #ffffff !important;
   font-weight: 700;
   letter-spacing: 0.25px;
-  box-shadow: 0 4px 12px -2px rgba(8, 125, 181, 0.35);
+  box-shadow: 0 4px 12px -2px rgba(2, 132, 199, 0.38);
   transform: none;
 }
 
 .nav-item.active svg {
   color: #ffffff !important;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
   transform: none;
 }
 

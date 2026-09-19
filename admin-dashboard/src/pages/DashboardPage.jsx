@@ -77,12 +77,12 @@ const getFranchiseTypeMeta = (type) => {
       return {
         label: 'Premium Exclusive District Franchise',
         icon: '👑',
-        badgeBg: '#eff6ff',
-        badgeBorder: '#bfdbfe',
-        badgeColor: '#075985',
+        badgeBg: '#f0fdf4',
+        badgeBorder: '#bbf7d0',
+        badgeColor: '#15803d',
         glow: 'none',
-        borderColor: '#087db5',
-        borderHover: '#075985',
+        borderColor: '#16a34a',
+        borderHover: '#15803d',
       };
     case 'STANDARD_EXCLUSIVE_DISTRICT':
       return {
@@ -92,19 +92,19 @@ const getFranchiseTypeMeta = (type) => {
         badgeBorder: '#bae6fd',
         badgeColor: '#0369a1',
         glow: 'none',
-        borderColor: '#087db5',
-        borderHover: '#075985',
+        borderColor: '#0284c7',
+        borderHover: '#0369a1',
       };
     case 'NON_EXCLUSIVE_DISTRICT':
       return {
         label: 'Non-Exclusive District Franchise',
         icon: '📍',
         badgeBg: '#f8fafc',
-        badgeBorder: '#e2e8f0',
-        badgeColor: '#475569',
+        badgeBorder: '#cbd5e1',
+        badgeColor: '#334155',
         glow: 'none',
-        borderColor: '#94a3b8',
-        borderHover: '#64748b',
+        borderColor: '#64748b',
+        borderHover: '#475569',
       };
     case 'STATE_FRANCHISE':
       return {
@@ -112,10 +112,10 @@ const getFranchiseTypeMeta = (type) => {
         icon: '🌐',
         badgeBg: '#eff6ff',
         badgeBorder: '#bfdbfe',
-        badgeColor: '#075985',
+        badgeColor: '#1d4ed8',
         glow: 'none',
-        borderColor: '#087db5',
-        borderHover: '#075985',
+        borderColor: '#2563eb',
+        borderHover: '#1d4ed8',
       };
     case 'SUB_FRANCHISE':
       return {
@@ -125,20 +125,20 @@ const getFranchiseTypeMeta = (type) => {
         badgeBorder: '#e2e8f0',
         badgeColor: '#475569',
         glow: 'none',
-        borderColor: '#cbd5e1',
-        borderHover: '#94a3b8',
+        borderColor: '#64748b',
+        borderHover: '#475569',
       };
     case 'DISTRICT_FRANCHISE':
     default:
       return {
         label: 'District Franchise Partner',
         icon: '🏢',
-        badgeBg: '#eff6ff',
-        badgeBorder: '#bfdbfe',
-        badgeColor: '#087db5',
+        badgeBg: '#f0f9ff',
+        badgeBorder: '#bae6fd',
+        badgeColor: '#0369a1',
         glow: 'none',
-        borderColor: '#087db5',
-        borderHover: '#075985',
+        borderColor: '#0284c7',
+        borderHover: '#0369a1',
       };
   }
 };
@@ -5515,16 +5515,15 @@ const DashboardPage = () => {
       )}
 
       {/* Real DB Stat Cards Grid */}
-      {/* Real DB Stat Cards Grid */}
       <div className="stat-grid" style={{ marginBottom: '20px' }}>
         <StatCard
           title="PREMIUM EXCLUSIVE DISTRICT FRANCHISE"
           value={metrics?.premiumExclusiveDistrictPartners ?? 0}
           icon={Crown}
-          bgLight="#EFF6FF"
-          iconColor="#087DB5"
-          borderLeftColor="#087DB5"
-          borderColor="#BFDBFE"
+          bgLight="#FEF9C3"
+          iconColor="#CA8A04"
+          borderLeftColor="#EAB308"
+          borderColor="#FDE047"
           onClick={() => navigate('/partners?type=PREMIUM_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activePremiumExclusiveDistrictPartners || 0} Active District Partners →`}
         />
@@ -5532,10 +5531,10 @@ const DashboardPage = () => {
           title="STANDARD EXCLUSIVE DISTRICT FRANCHISE"
           value={metrics?.standardExclusiveDistrictPartners ?? 0}
           icon={ShieldCheck}
-          bgLight="#F0F9FF"
-          iconColor="#0284C7"
-          borderLeftColor="#0284C7"
-          borderColor="#BAE6FD"
+          bgLight="#ECFDF5"
+          iconColor="#059669"
+          borderLeftColor="#10B981"
+          borderColor="#A7F3D0"
           onClick={() => navigate('/partners?type=STANDARD_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activeStandardExclusiveDistrictPartners || 0} Active District Partners →`}
         />
@@ -5543,10 +5542,10 @@ const DashboardPage = () => {
           title="NON-EXCLUSIVE DISTRICT FRANCHISE"
           value={metrics?.nonExclusiveDistrictPartners ?? 0}
           icon={MapPin}
-          bgLight="#F8FAFC"
-          iconColor="#475569"
-          borderLeftColor="#64748B"
-          borderColor="#E2E8F0"
+          bgLight="#FFF7ED"
+          iconColor="#EA580C"
+          borderLeftColor="#F97316"
+          borderColor="#FED7AA"
           onClick={() => navigate('/partners?type=NON_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activeNonExclusiveDistrictPartners || 0} Active District Partners →`}
         />
@@ -5603,8 +5602,8 @@ const DashboardPage = () => {
           value={`₹${(activeRevenueCardData.revenue || 0).toLocaleString('en-IN')}`}
           icon={IndianRupee}
           bgLight="#EFF6FF"
-          iconColor="#075985"
-          borderLeftColor="#075985"
+          iconColor="#2563EB"
+          borderLeftColor="#3B82F6"
           borderColor="#BFDBFE"
           onClick={() => navigate('/transactions')}
           subtitle={activeRevenueCardData.subtitle}
@@ -5630,7 +5629,7 @@ const DashboardPage = () => {
             backgroundColor: '#FFFFFF',
             borderRadius: '14px',
             border: '1px solid #E2E8F0',
-            borderLeft: '4px solid #087DB5',
+            borderLeft: '4px solid #10B981',
             boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             display: 'flex',
             flexDirection: 'column',
@@ -5656,8 +5655,8 @@ const DashboardPage = () => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  backgroundColor: '#EFF6FF',
-                  color: '#087DB5',
+                  backgroundColor: '#ECFDF5',
+                  color: '#059669',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -5683,7 +5682,7 @@ const DashboardPage = () => {
                 padding: '2px 8px',
                 borderRadius: '8px',
                 backgroundColor: isNewlyRegisteredToday ? '#ECFDF5' : '#EFF6FF',
-                color: isNewlyRegisteredToday ? '#16A34A' : '#087DB5',
+                color: isNewlyRegisteredToday ? '#059669' : '#2563EB',
                 border: `1px solid ${isNewlyRegisteredToday ? '#A7F3D0' : '#BFDBFE'}`,
                 whiteSpace: 'nowrap',
               }}
@@ -5724,8 +5723,8 @@ const DashboardPage = () => {
                       flexShrink: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#087DB5';
-                      e.currentTarget.style.backgroundColor = '#EFF6FF';
+                      e.currentTarget.style.borderColor = '#10B981';
+                      e.currentTarget.style.backgroundColor = '#F0FDF4';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = '#E2E8F0';
@@ -5743,7 +5742,7 @@ const DashboardPage = () => {
                             fontSize: '10px',
                             fontWeight: '700',
                             fontFamily: 'monospace',
-                            color: '#087DB5',
+                            color: '#2563EB',
                             backgroundColor: '#EFF6FF',
                             padding: '1px 5px',
                             borderRadius: '4px',
@@ -5771,13 +5770,13 @@ const DashboardPage = () => {
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#64748B' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={11} color="#087DB5" />
+                        <MapPin size={11} color="#2563EB" />
                         <span style={{ fontWeight: '600', color: '#334155' }}>
                           {p.district || p.city || 'District'}, {p.state}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', color: '#16A34A', fontWeight: '700' }} title="Latest Partner Activity">
-                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', color: '#059669', fontWeight: '700' }} title="Latest Partner Activity">
+                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
                         <span>{formatActivationTime(p.lastActiveAt || p.lastLoginAt || p.userId?.lastLoginAt)}</span>
                       </div>
                     </div>
@@ -5806,7 +5805,7 @@ const DashboardPage = () => {
                 <div style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>
                   No Active Team Activity Recorded Today
                 </div>
-                <Link to="/partners/new" className="btn btn-sm btn-primary" style={{ marginTop: '2px', fontSize: '11px', padding: '3px 8px', backgroundColor: '#087DB5' }}>
+                <Link to="/partners/new" className="btn btn-sm btn-primary" style={{ marginTop: '2px', fontSize: '11px', padding: '3px 8px', backgroundColor: '#2563EB' }}>
                   + Register Partner
                 </Link>
               </div>
@@ -5822,7 +5821,7 @@ const DashboardPage = () => {
             backgroundColor: '#FFFFFF',
             borderRadius: '14px',
             border: '1px solid #E2E8F0',
-            borderLeft: '4px solid #075985',
+            borderLeft: '4px solid #8B5CF6',
             boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             display: 'flex',
             flexDirection: 'column',
@@ -5848,8 +5847,8 @@ const DashboardPage = () => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  backgroundColor: '#EFF6FF',
-                  color: '#075985',
+                  backgroundColor: '#F5F3FF',
+                  color: '#8B5CF6',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -5873,7 +5872,7 @@ const DashboardPage = () => {
               style={{
                 fontSize: '11.5px',
                 fontWeight: '700',
-                color: '#087DB5',
+                color: '#8B5CF6',
                 textDecoration: 'none',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -5911,7 +5910,7 @@ const DashboardPage = () => {
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#087DB5' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#8B5CF6' }}>
                 {(metrics?.todayCardsTransferred || 0).toLocaleString('en-IN')} Cards Allotted
               </div>
               <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px' }}>
@@ -5950,8 +5949,8 @@ const DashboardPage = () => {
                     flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#087DB5';
-                    e.currentTarget.style.backgroundColor = '#EFF6FF';
+                    e.currentTarget.style.borderColor = '#8B5CF6';
+                    e.currentTarget.style.backgroundColor = '#F5F3FF';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = '#E2E8F0';
@@ -5971,7 +5970,7 @@ const DashboardPage = () => {
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: '800', fontSize: '12.5px', color: '#16A34A' }}>
+                    <div style={{ fontWeight: '800', fontSize: '12.5px', color: '#059669' }}>
                       ₹{(t.totalAmount || 0).toLocaleString('en-IN')}
                     </div>
                     <span
@@ -5981,7 +5980,7 @@ const DashboardPage = () => {
                         padding: '1px 4px',
                         borderRadius: '4px',
                         backgroundColor: t.status === 'CONFIRMED' ? '#ECFDF5' : '#FEF3C7',
-                        color: t.status === 'CONFIRMED' ? '#16A34A' : '#D97706',
+                        color: t.status === 'CONFIRMED' ? '#059669' : '#D97706',
                         textTransform: 'uppercase',
                       }}
                     >
@@ -6009,7 +6008,7 @@ const DashboardPage = () => {
                 <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#64748B' }}>
                   No live card distributions recorded yet today.
                 </div>
-                <Link to="/transactions/new" className="btn btn-sm btn-primary" style={{ marginTop: '1px', fontSize: '11px', padding: '2px 7px', backgroundColor: '#087DB5' }}>
+                <Link to="/transactions/new" className="btn btn-sm btn-primary" style={{ marginTop: '1px', fontSize: '11px', padding: '2px 7px', backgroundColor: '#2563EB' }}>
                   + Distribute Stock to Partner
                 </Link>
               </div>
@@ -6052,8 +6051,8 @@ const DashboardPage = () => {
                 width: '36px',
                 height: '36px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                color: '#087DB5',
+                backgroundColor: '#F1F5F9',
+                color: '#334155',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -6071,11 +6070,11 @@ const DashboardPage = () => {
                   style={{
                     fontSize: '11px',
                     fontWeight: '600',
-                    backgroundColor: '#EFF6FF',
-                    color: '#087DB5',
+                    backgroundColor: '#F8FAFC',
+                    color: '#475569',
                     padding: '1px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid #E2E8F0',
                   }}
                 >
                   Live Net Earnings
@@ -6181,8 +6180,8 @@ const DashboardPage = () => {
                     gap: '10px',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#EFF6FF';
-                    e.currentTarget.style.borderColor = '#087DB5';
+                    e.currentTarget.style.backgroundColor = '#F8FAFC';
+                    e.currentTarget.style.borderColor = '#CBD5E1';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -6199,11 +6198,11 @@ const DashboardPage = () => {
                           fontSize: '10px',
                           fontWeight: '600',
                           fontFamily: 'monospace',
-                          color: '#087DB5',
-                          backgroundColor: '#EFF6FF',
+                          color: '#475569',
+                          backgroundColor: '#F1F5F9',
                           padding: '1px 5px',
                           borderRadius: '4px',
-                          border: '1px solid #BFDBFE',
+                          border: '1px solid #E2E8F0',
                         }}
                       >
                         {item.franchiseId}
@@ -6233,7 +6232,7 @@ const DashboardPage = () => {
                       style={{
                         fontSize: '10px',
                         fontWeight: '700',
-                        color: '#16A34A',
+                        color: '#15803D',
                         backgroundColor: '#F0FDF4',
                         padding: '1px 5px',
                         borderRadius: '4px',
@@ -6304,7 +6303,7 @@ const DashboardPage = () => {
                   height: '30px',
                   borderRadius: '6px',
                   backgroundColor: '#EFF6FF',
-                  color: '#087DB5',
+                  color: '#2563EB',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -6329,7 +6328,7 @@ const DashboardPage = () => {
                   fontSize: '11px',
                   fontWeight: '700',
                   backgroundColor: '#EFF6FF',
-                  color: '#075985',
+                  color: '#1D4ED8',
                   padding: '2px 8px',
                   borderRadius: '6px',
                   border: '1px solid #BFDBFE',
@@ -6373,7 +6372,7 @@ const DashboardPage = () => {
                       flexShrink: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#EFF6FF';
+                      e.currentTarget.style.backgroundColor = '#F8FAFC';
                       e.currentTarget.style.borderColor = '#BFDBFE';
                     }}
                     onMouseLeave={(e) => {
@@ -6388,7 +6387,7 @@ const DashboardPage = () => {
                           height: '26px',
                           borderRadius: '6px',
                           backgroundColor: '#EFF6FF',
-                          color: '#087DB5',
+                          color: '#2563EB',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -6409,7 +6408,7 @@ const DashboardPage = () => {
                               fontSize: '10px',
                               fontWeight: '600',
                               backgroundColor: '#EFF6FF',
-                              color: '#087DB5',
+                              color: '#2563EB',
                               padding: '1px 5px',
                               borderRadius: '4px',
                               border: '1px solid #BFDBFE',
@@ -6421,13 +6420,13 @@ const DashboardPage = () => {
                         </div>
                         <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                           <span>📍 {p.district ? `${p.district}, ` : ''}{p.state}</span>
-                          <span style={{ color: '#087DB5', fontWeight: '600' }}>• {p.totalCardsSold} Cards Sold @ ₹{p.avgSellingPrice.toLocaleString('en-IN')}/card</span>
+                          <span style={{ color: '#2563EB', fontWeight: '600' }}>• {p.totalCardsSold} Cards Sold @ ₹{p.avgSellingPrice.toLocaleString('en-IN')}/card</span>
                         </div>
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontWeight: '800', fontSize: '13px', color: '#075985' }}>
+                      <div style={{ fontWeight: '800', fontSize: '13px', color: '#1D4ED8' }}>
                         ₹{p.totalRevenue.toLocaleString('en-IN')}
                       </div>
                       <span
@@ -6496,7 +6495,7 @@ const DashboardPage = () => {
                   height: '30px',
                   borderRadius: '6px',
                   backgroundColor: '#ECFDF5',
-                  color: '#16A34A',
+                  color: '#059669',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -6521,7 +6520,7 @@ const DashboardPage = () => {
                   fontSize: '11px',
                   fontWeight: '700',
                   backgroundColor: '#ECFDF5',
-                  color: '#16A34A',
+                  color: '#047857',
                   padding: '2px 8px',
                   borderRadius: '6px',
                   border: '1px solid #A7F3D0',
@@ -6565,8 +6564,8 @@ const DashboardPage = () => {
                       flexShrink: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#F0FDF4';
-                      e.currentTarget.style.borderColor = '#16A34A';
+                      e.currentTarget.style.backgroundColor = '#F8FAFC';
+                      e.currentTarget.style.borderColor = '#A7F3D0';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -6580,7 +6579,7 @@ const DashboardPage = () => {
                           height: '26px',
                           borderRadius: '6px',
                           backgroundColor: '#ECFDF5',
-                          color: '#16A34A',
+                          color: '#059669',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -6601,7 +6600,7 @@ const DashboardPage = () => {
                               fontSize: '10px',
                               fontWeight: '600',
                               backgroundColor: '#ECFDF5',
-                              color: '#16A34A',
+                              color: '#047857',
                               padding: '1px 5px',
                               borderRadius: '4px',
                               border: '1px solid #A7F3D0',
@@ -6618,7 +6617,7 @@ const DashboardPage = () => {
                     </div>
 
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontWeight: '800', fontSize: '13px', color: '#16A34A' }}>
+                      <div style={{ fontWeight: '800', fontSize: '13px', color: '#059669' }}>
                         ₹{p.netProfit.toLocaleString('en-IN')}
                       </div>
                       <span
@@ -6628,7 +6627,7 @@ const DashboardPage = () => {
                           padding: '1px 5px',
                           borderRadius: '4px',
                           backgroundColor: '#ECFDF5',
-                          color: '#16A34A',
+                          color: '#047857',
                           border: '1px solid #A7F3D0',
                           display: 'inline-block',
                           marginTop: '1px',
@@ -6660,10 +6659,10 @@ const DashboardPage = () => {
           title="TOTAL NO. OF SUB FRANCHISE"
           value={metrics?.subFranchises ?? 0}
           icon={Users}
-          bgLight="#EFF6FF"
-          iconColor="#087DB5"
-          borderLeftColor="#087DB5"
-          borderColor="#BFDBFE"
+          bgLight="#FEF9C3"
+          iconColor="#CA8A04"
+          borderLeftColor="#EAB308"
+          borderColor="#FDE047"
           onClick={() => navigate('/sub-franchises')}
           subtitle={`${metrics?.activeSubFranchises || 0} Active • ${metrics?.nonActiveSubFranchises || 0} Inactive →`}
         />
@@ -6672,8 +6671,8 @@ const DashboardPage = () => {
           value={metrics?.activeSubFranchises ?? 0}
           icon={UserCheck}
           bgLight="#ECFDF5"
-          iconColor="#16A34A"
-          borderLeftColor="#16A34A"
+          iconColor="#059669"
+          borderLeftColor="#10B981"
           borderColor="#A7F3D0"
           onClick={() => navigate('/sub-franchises?status=ACTIVE')}
           subtitle="Operational Field Partners →"
@@ -6682,10 +6681,10 @@ const DashboardPage = () => {
           title="NON ACTIVE SUB FRANCHISE"
           value={metrics?.nonActiveSubFranchises ?? ((metrics?.subFranchises || 0) - (metrics?.activeSubFranchises || 0))}
           icon={UserX}
-          bgLight="#F8FAFC"
-          iconColor="#64748B"
-          borderLeftColor="#94A3B8"
-          borderColor="#E2E8F0"
+          bgLight="#FFF7ED"
+          iconColor="#EA580C"
+          borderLeftColor="#F97316"
+          borderColor="#FED7AA"
           onClick={() => navigate('/sub-franchises?status=INACTIVE')}
           subtitle="Inactive / Pending Activation →"
         />
@@ -6693,9 +6692,9 @@ const DashboardPage = () => {
           title="DISTRICT WISE SUB FRANCHISE"
           value={metrics?.districtWiseSubFranchisesCount ?? 0}
           icon={MapPin}
-          bgLight="#F0F9FF"
-          iconColor="#075985"
-          borderLeftColor="#087DB5"
+          bgLight="#EFF6FF"
+          iconColor="#2563EB"
+          borderLeftColor="#3B82F6"
           borderColor="#BFDBFE"
           onClick={() => navigate('/territories')}
           subtitle="Districts with Sub-Franchises →"
@@ -6751,8 +6750,8 @@ const DashboardPage = () => {
                   width: '30px',
                   height: '30px',
                   borderRadius: '6px',
-                  backgroundColor: '#EFF6FF',
-                  color: '#087DB5',
+                  backgroundColor: '#FEF3C7',
+                  color: '#D97706',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -6824,8 +6823,8 @@ const DashboardPage = () => {
                       flexShrink: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#EFF6FF';
-                      e.currentTarget.style.borderColor = '#BFDBFE';
+                      e.currentTarget.style.backgroundColor = '#F8FAFC';
+                      e.currentTarget.style.borderColor = '#FDE68A';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -6838,8 +6837,8 @@ const DashboardPage = () => {
                           width: '26px',
                           height: '26px',
                           borderRadius: '6px',
-                          backgroundColor: '#EFF6FF',
-                          color: '#087DB5',
+                          backgroundColor: '#FEF3C7',
+                          color: '#D97706',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -6859,11 +6858,11 @@ const DashboardPage = () => {
                             style={{
                               fontSize: '9.5px',
                               fontWeight: '600',
-                              backgroundColor: '#EFF6FF',
-                              color: '#087DB5',
+                              backgroundColor: '#FEF3C7',
+                              color: '#B45309',
                               padding: '1px 5px',
                               borderRadius: '4px',
-                              border: '1px solid #BFDBFE',
+                              border: '1px solid #FDE68A',
                               fontFamily: 'monospace',
                               flexShrink: 0,
                             }}
@@ -6874,7 +6873,7 @@ const DashboardPage = () => {
                         <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           <span>📍 {sub.district || sub.city || 'District'}, {sub.state}</span>
                           {sub.parentPartnerId && (
-                            <span style={{ color: '#087DB5', fontWeight: '600' }}>
+                            <span style={{ color: '#D97706', fontWeight: '600' }}>
                               • By: {sub.parentPartnerId.fullName}
                             </span>
                           )}
@@ -6903,7 +6902,7 @@ const DashboardPage = () => {
                                   fontSize: '9.5px',
                                   fontWeight: '800',
                                   backgroundColor: '#ECFDF5',
-                                  color: '#16A34A',
+                                  color: '#059669',
                                   padding: '1px 6px',
                                   borderRadius: '10px',
                                   border: '1px solid #A7F3D0',
@@ -6912,10 +6911,10 @@ const DashboardPage = () => {
                                   gap: '4px',
                                 }}
                               >
-                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
+                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
                                 ACTIVE
                               </span>
-                              <span style={{ fontSize: '9px', color: '#16A34A', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                              <span style={{ fontSize: '9px', color: '#059669', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '2px' }}>
                                 <Clock size={9} />
                                 {parsedActive.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
                               </span>
@@ -6936,7 +6935,7 @@ const DashboardPage = () => {
                                   gap: '4px',
                                 }}
                               >
-                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: sub.accountStatus === 'SUSPENDED' ? '#DC2626' : '#94A3B8', display: 'inline-block' }} />
+                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: sub.accountStatus === 'SUSPENDED' ? '#EF4444' : '#94A3B8', display: 'inline-block' }} />
                                 {sub.accountStatus === 'SUSPENDED' ? 'SUSPENDED' : (sub.accountStatus || 'ACTIVE')}
                               </span>
                               <span style={{ fontSize: '9px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '2px', fontWeight: '500' }}>
@@ -7007,7 +7006,7 @@ const DashboardPage = () => {
                   height: '30px',
                   borderRadius: '6px',
                   backgroundColor: '#EFF6FF',
-                  color: '#087DB5',
+                  color: '#2563EB',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -7032,7 +7031,7 @@ const DashboardPage = () => {
                   fontSize: '11px',
                   fontWeight: '700',
                   backgroundColor: '#EFF6FF',
-                  color: '#075985',
+                  color: '#1D4ED8',
                   padding: '2px 8px',
                   borderRadius: '6px',
                   border: '1px solid #BFDBFE',
@@ -7076,7 +7075,7 @@ const DashboardPage = () => {
                       flexShrink: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#EFF6FF';
+                      e.currentTarget.style.backgroundColor = '#F8FAFC';
                       e.currentTarget.style.borderColor = '#BFDBFE';
                     }}
                     onMouseLeave={(e) => {
@@ -7091,7 +7090,7 @@ const DashboardPage = () => {
                           height: '26px',
                           borderRadius: '6px',
                           backgroundColor: '#EFF6FF',
-                          color: '#087DB5',
+                          color: '#2563EB',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -7112,7 +7111,7 @@ const DashboardPage = () => {
                               fontSize: '9.5px',
                               fontWeight: '600',
                               backgroundColor: '#EFF6FF',
-                              color: '#087DB5',
+                              color: '#2563EB',
                               padding: '1px 5px',
                               borderRadius: '4px',
                               border: '1px solid #BFDBFE',
@@ -7126,7 +7125,7 @@ const DashboardPage = () => {
                         <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           <span>📍 {sub.district ? `${sub.district}, ` : ''}{sub.state}</span>
                           {sub.hasInstallations ? (
-                            <span style={{ color: '#087DB5', fontWeight: '600' }}>
+                            <span style={{ color: '#2563EB', fontWeight: '600' }}>
                               • {sub.totalInstalledCards} Installed @ ₹{sub.avgSellPrice.toLocaleString('en-IN')}
                             </span>
                           ) : (
@@ -7139,11 +7138,11 @@ const DashboardPage = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px', flexShrink: 0 }}>
-                      <div style={{ fontWeight: '800', fontSize: '13px', color: sub.hasInstallations ? '#075985' : '#64748B', lineHeight: '1.2' }}>
+                      <div style={{ fontWeight: '800', fontSize: '13px', color: sub.hasInstallations ? '#1D4ED8' : '#64748B', lineHeight: '1.2' }}>
                         ₹{sub.totalRevenueGenerated.toLocaleString('en-IN')}
                       </div>
                       {sub.hasInstallations ? (
-                        <span style={{ fontSize: '9px', fontWeight: '700', color: '#075985', backgroundColor: '#EFF6FF', padding: '1px 5px', borderRadius: '3px', border: '1px solid #BFDBFE' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '700', color: '#1D4ED8', backgroundColor: '#EFF6FF', padding: '1px 5px', borderRadius: '3px', border: '1px solid #BFDBFE' }}>
                           +₹{sub.profitPerCard.toLocaleString('en-IN')}/card
                         </span>
                       ) : (
@@ -7202,7 +7201,7 @@ const DashboardPage = () => {
                 height: '30px',
                 borderRadius: '6px',
                 backgroundColor: '#ECFDF5',
-                color: '#16A34A',
+                color: '#059669',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -7230,7 +7229,7 @@ const DashboardPage = () => {
                 fontSize: '11px',
                 fontWeight: '700',
                 backgroundColor: '#ECFDF5',
-                color: '#16A34A',
+                color: '#047857',
                 padding: '2px 8px',
                 borderRadius: '6px',
                 border: '1px solid #A7F3D0',
@@ -7263,8 +7262,8 @@ const DashboardPage = () => {
                     flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#F0FDF4';
-                    e.currentTarget.style.borderColor = '#16A34A';
+                    e.currentTarget.style.backgroundColor = '#F8FAFC';
+                    e.currentTarget.style.borderColor = '#A7F3D0';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -7278,7 +7277,7 @@ const DashboardPage = () => {
                         height: '28px',
                         borderRadius: '6px',
                         backgroundColor: '#ECFDF5',
-                        color: '#16A34A',
+                        color: '#059669',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -7300,7 +7299,7 @@ const DashboardPage = () => {
                             fontSize: '9.5px',
                             fontWeight: '600',
                             fontFamily: 'monospace',
-                            color: '#16A34A',
+                            color: '#047857',
                             backgroundColor: '#ECFDF5',
                             padding: '1px 5px',
                             borderRadius: '4px',
@@ -7319,7 +7318,7 @@ const DashboardPage = () => {
                       <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                         <span>📍 {item.district ? `${item.district}, ` : ''}{item.state}</span>
                         {item.hasInstallations ? (
-                          <span style={{ color: '#16A34A', fontWeight: '600' }}>
+                          <span style={{ color: '#059669', fontWeight: '600' }}>
                             • {item.totalInstalledCards} Installed (Buy: ₹{item.avgBuyPrice.toLocaleString('en-IN')} ➔ Sell: ₹{item.avgSellPrice.toLocaleString('en-IN')})
                           </span>
                         ) : (
@@ -7332,14 +7331,14 @@ const DashboardPage = () => {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
-                    <div style={{ fontWeight: '800', fontSize: '13.5px', color: item.hasInstallations ? '#16A34A' : '#64748B' }}>
+                    <div style={{ fontWeight: '800', fontSize: '13.5px', color: item.hasInstallations ? '#059669' : '#64748B' }}>
                       ₹{item.netProfit.toLocaleString('en-IN')}
                     </div>
                     <span
                       style={{
                         fontSize: '9.5px',
                         fontWeight: '700',
-                        color: item.hasInstallations ? '#16A34A' : '#64748B',
+                        color: item.hasInstallations ? '#047857' : '#64748B',
                         backgroundColor: item.hasInstallations ? '#ECFDF5' : '#F8FAFC',
                         border: `1px solid ${item.hasInstallations ? '#A7F3D0' : '#E2E8F0'}`,
                         padding: '1px 5px',
@@ -7397,12 +7396,12 @@ const DashboardPage = () => {
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                backgroundColor: '#087DB5',
+                backgroundColor: '#16a34a',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(8, 125, 181, 0.25)',
+                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)',
                 flexShrink: 0,
               }}
             >
@@ -7417,11 +7416,11 @@ const DashboardPage = () => {
                   style={{
                     fontSize: '11px',
                     fontWeight: '800',
-                    backgroundColor: '#EFF6FF',
-                    color: '#075985',
+                    backgroundColor: '#dcfce7',
+                    color: '#15803d',
                     padding: '2px 8px',
                     borderRadius: '10px',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid #86efac',
                   }}
                 >
                   Live Multi-Graph Intelligence
@@ -7455,9 +7454,9 @@ const DashboardPage = () => {
                     borderRadius: '6px',
                     fontSize: '11.5px',
                     fontWeight: isActive ? '800' : '600',
-                    border: isActive ? '1.5px solid #087DB5' : '1px solid #e2e8f0',
-                    backgroundColor: isActive ? '#EFF6FF' : '#ffffff',
-                    color: isActive ? '#087DB5' : '#64748b',
+                    border: isActive ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
+                    backgroundColor: isActive ? '#dcfce7' : '#ffffff',
+                    color: isActive ? '#15803d' : '#64748b',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -7515,12 +7514,12 @@ const DashboardPage = () => {
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: isTabActive ? '#ffffff' : 'transparent',
-                  color: isTabActive ? '#087DB5' : '#64748b',
+                  color: isTabActive ? '#15803d' : '#64748b',
                   fontWeight: isTabActive ? '800' : '600',
                   fontSize: '12.5px',
                   cursor: 'pointer',
                   boxShadow: isTabActive ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
-                  borderBottom: isTabActive ? '2px solid #087DB5' : '2px solid transparent',
+                  borderBottom: isTabActive ? '2px solid #16a34a' : '2px solid transparent',
                   transition: 'all 0.15s ease',
                   whiteSpace: 'nowrap',
                   display: 'flex',
