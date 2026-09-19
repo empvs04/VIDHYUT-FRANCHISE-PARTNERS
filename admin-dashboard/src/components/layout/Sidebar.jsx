@@ -599,7 +599,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                backgroundColor: isSuperAdmin ? '#0284c7' : '#16a34a',
+                backgroundColor: isSuperAdmin ? '#087db5' : '#16a34a',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
@@ -607,7 +607,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 fontWeight: '800',
                 fontSize: '13px',
                 flexShrink: 0,
-                boxShadow: isSuperAdmin ? '0 2px 6px rgba(2, 132, 199, 0.3)' : '0 2px 6px rgba(22, 163, 74, 0.3)',
+                boxShadow: isSuperAdmin ? '0 2px 6px rgba(8, 125, 181, 0.25)' : '0 2px 6px rgba(22, 163, 74, 0.25)',
               }}
             >
               {isSuperAdmin ? <Sparkles size={16} /> : <UserCircle size={17} />}
@@ -631,7 +631,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 style={{
                   fontSize: '10.5px',
                   fontWeight: '600',
-                  color: isSuperAdmin ? '#0284c7' : '#16a34a',
+                  color: isSuperAdmin ? '#087db5' : '#16a34a',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -646,7 +646,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 width: '7px',
                 height: '7px',
                 borderRadius: '50%',
-                backgroundColor: '#22c55e',
+                backgroundColor: '#16a34a',
                 boxShadow: '0 0 0 2px #dcfce7',
                 flexShrink: 0,
               }}

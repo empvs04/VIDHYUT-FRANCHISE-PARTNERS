@@ -30,7 +30,7 @@ const Header = ({ onToggleSidebar }) => {
                 gap: '5px',
                 fontSize: '11px',
                 fontWeight: '700',
-                color: '#15803d',
+                color: '#16a34a',
                 backgroundColor: '#f0fdf4',
                 border: '1px solid #dcfce7',
                 padding: '2px 8px',
@@ -53,9 +53,9 @@ const Header = ({ onToggleSidebar }) => {
                   gap: '5px',
                   fontSize: '11.5px',
                   fontWeight: '600',
-                  color: '#0369a1',
-                  backgroundColor: '#f0f9ff',
-                  border: '1px solid #e0f2fe',
+                  color: '#075985',
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
                   padding: '2px 8px',
                   borderRadius: '6px',
                   whiteSpace: 'nowrap',
@@ -88,11 +88,11 @@ const Header = ({ onToggleSidebar }) => {
                 fontSize: '13.5px',
                 fontWeight: '800',
                 letterSpacing: '0.3px',
-                color: '#1e293b',
+                color: '#0f172a',
                 textTransform: 'uppercase',
               }}
             >
-              VIDHYUT SAATHI <span style={{ color: '#0284c7', fontWeight: '700' }}>ENERGY SAVERS</span>
+              VIDHYUT SAATHI <span style={{ color: '#087db5', fontWeight: '700' }}>ENERGY SAVERS</span>
             </span>
           </div>
         </div>
@@ -117,15 +117,15 @@ const Header = ({ onToggleSidebar }) => {
             width: '34px',
             height: '34px',
             borderRadius: '50%',
-            backgroundColor: isSuperAdmin ? 'var(--color-primary-light)' : '#e0f2fe',
-            color: '#0284c7',
+            backgroundColor: '#eff6ff',
+            color: '#087db5',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: '700',
             fontSize: '14px',
             flexShrink: 0,
-            border: '1.5px solid #cbd5e1',
+            border: '1.5px solid #bfdbfe',
           }}
           title={partner?.fullName || user?.fullName}
         >
