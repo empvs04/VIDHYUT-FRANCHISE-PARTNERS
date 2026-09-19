@@ -24,6 +24,7 @@ import {
   Zap,
   UserCheck,
   Award,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -167,7 +168,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Scrollable Navigation Menu */}
         <ul className="nav-menu">
-          <div className="nav-section-title">Core Navigation</div>
+          <div className="nav-section-title">MAIN</div>
           <li>
             <NavLink
               to="/"
@@ -182,7 +183,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
           {isSuperAdmin ? (
             <>
-              <div className="nav-section-title">Franchise Network</div>
+              <div className="nav-section-title">FRANCHISE NETWORK</div>
               <li>
                 <NavLink
                   to="/partners"
@@ -192,6 +193,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Users size={18} />
                   <span>Franchise Partners</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -202,6 +204,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Building2 size={18} />
                   <span>Sub-Franchise Partners</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -222,6 +225,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <MapPin size={18} />
                   <span>Territory Coverage</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -232,10 +236,11 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Award size={18} />
                   <span>Rewards & Recognitions</span>
+                  <span className="nav-badge-pill">NEW</span>
                 </NavLink>
               </li>
 
-              <div className="nav-section-title">Card Distribution</div>
+              <div className="nav-section-title">CARD DISTRIBUTION</div>
               <li>
                 <NavLink
                   to="/cards"
@@ -244,6 +249,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <CreditCard size={18} />
                   <span>Card Inventory</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -254,6 +260,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <FileText size={18} />
                   <span>Card Transactions</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -267,7 +274,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 </NavLink>
               </li>
 
-              <div className="nav-section-title">Operations & Field</div>
+              <div className="nav-section-title">OPERATIONS & FIELD</div>
               <li>
                 <NavLink
                   to="/customers"
@@ -276,6 +283,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Users size={18} />
                   <span>Customers</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -286,6 +294,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Wrench size={18} />
                   <span>Card Installations</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -296,72 +305,11 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <MapPin size={18} />
                   <span>GPS Location Audit</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
 
-              <div className="nav-section-title">Franchise Partner Views</div>
-              <li>
-                <NavLink
-                  to="/my-customers"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Users size={18} />
-                  <span>My Customer</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/my-installed-cards"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Zap size={18} />
-                  <span>My Installed Cards</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/my-pending-cards"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Clock size={18} />
-                  <span>My Pending Cards</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/my-sub-franchises"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Building2 size={18} />
-                  <span>My Sub Franchise Partners</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/sub-franchise-installed-cards"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <Wrench size={18} />
-                  <span>My Sub Franchise Installed Cards</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/sub-franchise-customers"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <UserCheck size={18} />
-                  <span>Sub Franchise Customers</span>
-                </NavLink>
-              </li>
-
-              <div className="nav-section-title">Intelligence & Audit</div>
+              <div className="nav-section-title">INTELLIGENCE & AUDIT</div>
               <li>
                 <NavLink
                   to="/analytics"
@@ -370,6 +318,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <TrendingUp size={18} />
                   <span>Analytics & BI</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -380,6 +329,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <FileText size={18} />
                   <span>Executive Reports</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -390,6 +340,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Search size={18} />
                   <span>Global Audit & Trace</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -400,6 +351,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Shield size={18} />
                   <span>Immutable Audit Logs</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -410,13 +362,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Activity size={18} />
                   <span>System Health</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
             </>
           ) : (
             <>
               {/* FRANCHISE OPERATIONS */}
-              <div className="nav-section-title">Franchise Operations</div>
+              <div className="nav-section-title">FRANCHISE OPERATIONS</div>
               <li>
                 <NavLink
                   to="/my-customers"
