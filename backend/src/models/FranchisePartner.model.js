@@ -163,6 +163,16 @@ const franchisePartnerSchema = new mongoose.Schema(
       default: ACCOUNT_STATUS.ACTIVE,
       index: true,
     },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     notes: {
       type: String,
       trim: true,

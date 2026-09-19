@@ -60,10 +60,30 @@ export const getCustomers = async (queryParams, user, partner) => {
   // 1. RBAC Scoping & Multi-Tier Hierarchy
   if (user.role === USER_ROLES.SUPER_ADMIN) {
     if (partnerId && mongoose.Types.ObjectId.isValid(partnerId)) {
-      filter.$or = [
-        { createdByPartnerId: partnerId },
-        { parentPartnerId: partnerId },
-      ];
+      const subPartnerIds = await FranchisePartner.find({
+        parentPartnerId: partnerId,
+      }).distinct('_id');
+      if (source === 'MY_CUSTOMERS') {
+        filter.createdByPartnerId = partnerId;
+      } else if (source === 'SUB_FRANCHISE_CUSTOMERS') {
+        filter.createdByPartnerId = { $in: subPartnerIds };
+      } else {
+        filter.$or = [
+          { createdByPartnerId: partnerId },
+          { createdByPartnerId: { $in: subPartnerIds } },
+          { parentPartnerId: partnerId },
+        ];
+      }
+    } else if (source === 'SUB_FRANCHISE_CUSTOMERS') {
+      const subPartnerIds = await FranchisePartner.find({
+        franchiseType: 'SUB_FRANCHISE',
+      }).distinct('_id');
+      filter.createdByPartnerId = { $in: subPartnerIds };
+    } else if (source === 'MY_CUSTOMERS') {
+      const mainPartnerIds = await FranchisePartner.find({
+        franchiseType: { $ne: 'SUB_FRANCHISE' },
+      }).distinct('_id');
+      filter.createdByPartnerId = { $in: mainPartnerIds };
     }
   } else {
     // Partner scope:

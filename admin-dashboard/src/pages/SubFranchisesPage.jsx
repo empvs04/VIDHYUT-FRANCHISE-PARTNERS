@@ -22,7 +22,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import api from '../services/api';
-import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
+import { StatusBadge, FranchiseTypeBadge, PartnerActivationBadge } from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -499,7 +499,7 @@ const SubFranchisesPage = () => {
                 <th style={{ padding: '14px 18px' }}>Parent Franchise Partner</th>
                 <th style={{ padding: '14px 18px' }}>Territory (State / District)</th>
                 <th style={{ padding: '14px 18px' }}>Contact Info</th>
-                <th style={{ padding: '14px 18px' }}>Status</th>
+                <th style={{ padding: '14px 18px' }}>Latest Activation</th>
                 <th style={{ padding: '14px 18px' }}>Created Date</th>
                 <th style={{ padding: '14px 18px', textAlign: 'right' }}>Actions</th>
               </tr>
@@ -576,9 +576,13 @@ const SubFranchisesPage = () => {
                       )}
                     </td>
 
-                    {/* Status */}
+                    {/* Status / Activation */}
                     <td style={{ padding: '14px 18px' }}>
-                      <StatusBadge status={partner.accountStatus} />
+                      <PartnerActivationBadge
+                        status={partner.accountStatus}
+                        lastLoginAt={partner.lastLoginAt || partner.userId?.lastLoginAt}
+                        lastActiveAt={partner.lastActiveAt}
+                      />
                     </td>
 
                     {/* Created Date */}
@@ -619,7 +623,7 @@ const SubFranchisesPage = () => {
                               style={{ padding: '4px 8px' }}
                               title="Change Status"
                             >
-                              <Power size={13} />
+                              <Power size={13} color={partner.accountStatus === 'ACTIVE' ? '#16a34a' : '#dc2626'} />
                             </button>
                             <button
                               type="button"
@@ -628,7 +632,7 @@ const SubFranchisesPage = () => {
                                 setDeleteModalOpen(true);
                               }}
                               className="btn btn-sm btn-secondary"
-                              style={{ padding: '4px 8px', borderColor: '#fca5a5', color: '#dc2626' }}
+                              style={{ padding: '4px 8px', color: '#dc2626', borderColor: '#fca5a5' }}
                               title="Delete Sub-Franchise"
                             >
                               <Trash2 size={13} />
@@ -645,82 +649,89 @@ const SubFranchisesPage = () => {
         </div>
       </div>
 
-      {/* Mobile Responsive Cards View (Sub-Franchises) */}
-      <div className="mobile-cards-only" style={{ flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-        {subFranchises.length === 0 ? (
-
-          <div className="card" style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)' }}>
-            {loading ? 'Searching sub-franchises...' : 'No sub-franchise partners found.'}
-          </div>
-        ) : (
-          subFranchises.map((partner) => (
-            <div
-              key={partner._id}
-              className="card"
-              style={{
-                padding: '18px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #059669',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                background: '#ffffff',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-              }}
-            >
-              {/* Header: Avatar, Name, ID & Status */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '10px',
-                      background: '#ecfdf5',
-                      color: '#059669',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 800,
-                      fontSize: '15px',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {partner.fullName?.charAt(0)?.toUpperCase() || 'S'}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#0f172a', lineHeight: 1.25 }}>
-                      {partner.fullName}
-                    </div>
+      {/* Mobile Responsive Cards */}
+        <div className="mobile-cards-only" style={{ display: 'none', flexDirection: 'column', gap: '12px' }}>
+          {loading ? (
+            <div className="card" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+              <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+              Loading sub-franchises...
+            </div>
+          ) : subFranchises.length === 0 ? (
+            <div className="card" style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+              No sub-franchises found matching criteria.
+            </div>
+          ) : (
+            subFranchises.map((partner) => (
+              <div
+                key={partner._id}
+                className="card"
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #10b981',
+                  borderLeft: '4px solid #10b981',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                {/* Header: Name & Status */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                     <div
-                      onClick={() => handleCopyId(partner.franchiseId)}
-                      title="Click to copy ID"
                       style={{
-                        display: 'inline-flex',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        background: '#ecfdf5',
+                        color: '#059669',
+                        display: 'flex',
                         alignItems: 'center',
-                        gap: '5px',
-                        background: '#f1f5f9',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        marginTop: '4px',
-                        cursor: 'pointer',
+                        justifyContent: 'center',
+                        fontWeight: 800,
+                        fontSize: '15px',
+                        flexShrink: 0,
                       }}
                     >
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', fontFamily: 'monospace' }}>
-                        {partner.franchiseId}
-                      </span>
-                      {copiedId === partner.franchiseId ? (
-                        <Check size={12} color="#16a34a" />
-                      ) : (
-                        <Copy size={12} color="#94a3b8" />
-                      )}
+                      {partner.fullName?.charAt(0)?.toUpperCase() || 'S'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '15.5px', fontWeight: 800, color: '#0f172a', lineHeight: 1.25 }}>
+                        {partner.fullName}
+                      </div>
+                      <div
+                        onClick={() => handleCopyId(partner.franchiseId)}
+                        title="Click to copy ID"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: '#f1f5f9',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          marginTop: '4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0284c7', fontFamily: 'monospace' }}>
+                          {partner.franchiseId}
+                        </span>
+                        {copiedId === partner.franchiseId ? (
+                          <Check size={12} color="#16a34a" />
+                        ) : (
+                          <Copy size={12} color="#94a3b8" />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <StatusBadge status={partner.accountStatus} />
-              </div>
+                  <PartnerActivationBadge
+                    status={partner.accountStatus}
+                    lastLoginAt={partner.lastLoginAt || partner.userId?.lastLoginAt}
+                    lastActiveAt={partner.lastActiveAt}
+                    compact
+                  />
+                </div>
 
               {/* Parent Partner & Territory Tag */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

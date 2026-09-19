@@ -181,8 +181,13 @@ export const partnerVerifyOTP = async (req, res, next) => {
     // Verify OTP against registered mobile
     await verifyOTP(partner.mobileNumber, otp);
 
-    user.lastLoginAt = new Date();
+    const now = new Date();
+    user.lastLoginAt = now;
     await user.save();
+
+    partner.lastLoginAt = now;
+    partner.lastActiveAt = now;
+    await partner.save();
 
     const token = generateToken({
       userId: user._id,

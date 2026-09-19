@@ -1,6 +1,37 @@
 import React from 'react';
 
-export const StatusBadge = ({ status }) => {
+export const formatActivationTime = (dateInput) => {
+  if (!dateInput) return 'Never logged in';
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return 'Never logged in';
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  if (diffMin < 2) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (isToday) {
+    return `Today, ${date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+  }
+  if (isYesterday) {
+    return `Yesterday, ${date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+  }
+  return date.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+export const StatusBadge = ({ status, lastLoginAt, lastActiveAt, showActivation = false }) => {
   let badgeClass = 'badge-inactive';
   let dotColor = '#64748B';
   let label = status || 'Unknown';
@@ -20,20 +51,28 @@ export const StatusBadge = ({ status }) => {
     label = 'Pending Approval';
   }
 
+  const activeDate = lastActiveAt || lastLoginAt;
+  const timeFormatted = activeDate ? formatActivationTime(activeDate) : null;
+  const isRecent = activeDate && (Date.now() - new Date(activeDate).getTime() < 15 * 60 * 1000);
+
   const getStyle = () => {
     switch (status) {
       case 'ACTIVE':
-        return { backgroundColor: '#DCFCE7', color: '#15803D' };
+        return { backgroundColor: isRecent ? '#DCFCE7' : '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0' };
       case 'SUSPENDED':
-        return { backgroundColor: '#FEE2E2', color: '#B91C1C' };
+        return { backgroundColor: '#FEE2E2', color: '#B91C1C', border: '1px solid #FECACA' };
       case 'EXPIRED':
-        return { backgroundColor: '#FEF3C7', color: '#B45309' };
+        return { backgroundColor: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A' };
       case 'PENDING_APPROVAL':
-        return { backgroundColor: '#E0F2FE', color: '#0369A1' };
+        return { backgroundColor: '#E0F2FE', color: '#0369A1', border: '1px solid #BAE6FD' };
       default:
-        return { backgroundColor: '#F1F5F9', color: '#475569' };
+        return { backgroundColor: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' };
     }
   };
+
+  const displayText = status === 'ACTIVE' && (showActivation || timeFormatted) && timeFormatted && timeFormatted !== 'Never logged in'
+    ? `Active • ${timeFormatted}`
+    : label;
 
   return (
     <span
@@ -47,7 +86,9 @@ export const StatusBadge = ({ status }) => {
         borderRadius: '12px',
         fontSize: '11.5px',
         fontWeight: '700',
+        whiteSpace: 'nowrap',
       }}
+      title={activeDate ? `Latest Activation / Session: ${new Date(activeDate).toLocaleString('en-IN')}` : undefined}
     >
       <span
         style={{
@@ -56,25 +97,136 @@ export const StatusBadge = ({ status }) => {
           borderRadius: '50%',
           backgroundColor: dotColor,
           display: 'inline-block',
+          boxShadow: isRecent ? '0 0 6px rgba(22, 163, 74, 0.6)' : 'none',
         }}
       />
-      {label}
+      {displayText}
     </span>
   );
 };
 
+export const PartnerActivationBadge = ({ status = 'ACTIVE', lastLoginAt, lastActiveAt, createdAt, compact = false }) => {
+  const activeDate = lastActiveAt || lastLoginAt;
+  const parsedActive = activeDate ? new Date(activeDate) : null;
+  const isValidActive = parsedActive && !isNaN(parsedActive.getTime());
+
+  const parsedCreated = createdAt ? new Date(createdAt) : null;
+  const isValidCreated = parsedCreated && !isNaN(parsedCreated.getTime());
+
+  const now = new Date();
+  const isToday = isValidActive && (parsedActive.toDateString() === now.toDateString());
+  const isRecent = isValidActive && (now.getTime() - parsedActive.getTime() < 15 * 60 * 1000);
+
+  if (status !== 'ACTIVE') {
+    return <StatusBadge status={status} />;
+  }
+
+  if (isToday) {
+    return (
+      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            padding: compact ? '2px 7px' : '3px 9px',
+            borderRadius: '12px',
+            fontSize: '11px',
+            fontWeight: '800',
+            backgroundColor: isRecent ? '#DCFCE7' : '#F0FDF4',
+            color: '#15803D',
+            border: isRecent ? '1px solid #86EFAC' : '1px solid #BBF7D0',
+            whiteSpace: 'nowrap',
+          }}
+          title={`Active today: ${parsedActive.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`}
+        >
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: isRecent ? '#16A34A' : '#22C55E',
+              display: 'inline-block',
+              boxShadow: isRecent ? '0 0 6px rgba(22, 163, 74, 0.6)' : 'none',
+            }}
+          />
+          <span>Active • Today</span>
+        </span>
+        {!compact && (
+          <span style={{ fontSize: '9.5px', color: '#15803D', paddingLeft: '4px', fontWeight: '700' }}>
+            {parsedActive.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Not active today -> Show last active date or joined date
+  const lastActiveText = isValidActive
+    ? formatActivationTime(parsedActive)
+    : isValidCreated
+    ? `Joined ${parsedCreated.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+    : 'First Login Pending';
+
+  return (
+    <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '1px', alignItems: 'flex-start' }}>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: compact ? '2px 7px' : '3px 9px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: '700',
+          backgroundColor: '#F8FAFC',
+          color: '#64748B',
+          border: '1px solid #E2E8F0',
+          whiteSpace: 'nowrap',
+        }}
+        title={isValidActive ? `Last Session: ${parsedActive.toLocaleString('en-IN')}` : 'No session recorded'}
+      >
+        <span
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            backgroundColor: '#94A3B8',
+            display: 'inline-block',
+          }}
+        />
+        <span>{isValidActive ? `Last Active: ${lastActiveText}` : lastActiveText}</span>
+      </span>
+      {!compact && isValidActive && (
+        <span style={{ fontSize: '9.5px', color: '#94A3B8', paddingLeft: '4px', fontWeight: '600' }}>
+          {parsedActive.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+        </span>
+      )}
+    </div>
+  );
+};
+
 export const FranchiseTypeBadge = ({ type }) => {
+  const baseStyle = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+    padding: '3px 8px',
+    borderRadius: '6px',
+    fontSize: '11.5px',
+    fontWeight: '700',
+    lineHeight: '1.2',
+    width: 'fit-content',
+  };
+
   if (type === 'NON_EXCLUSIVE_DISTRICT') {
     return (
       <span
         style={{
+          ...baseStyle,
           backgroundColor: '#EFF6FF',
           color: '#1D4ED8',
           border: '1px solid #BFDBFE',
-          padding: '3px 8px',
-          borderRadius: '6px',
-          fontSize: '11.5px',
-          fontWeight: '700',
         }}
       >
         Non Exclusive District
@@ -86,13 +238,10 @@ export const FranchiseTypeBadge = ({ type }) => {
     return (
       <span
         style={{
+          ...baseStyle,
           backgroundColor: '#F0FDF4',
           color: '#15803D',
           border: '1px solid #BBF7D0',
-          padding: '3px 8px',
-          borderRadius: '6px',
-          fontSize: '11.5px',
-          fontWeight: '700',
         }}
       >
         Standard Exclusive District
@@ -104,13 +253,10 @@ export const FranchiseTypeBadge = ({ type }) => {
     return (
       <span
         style={{
+          ...baseStyle,
           backgroundColor: '#FEF3C7',
           color: '#B45309',
           border: '1px solid #FDE68A',
-          padding: '3px 8px',
-          borderRadius: '6px',
-          fontSize: '11.5px',
-          fontWeight: '700',
         }}
       >
         Premium Exclusive District
@@ -122,13 +268,10 @@ export const FranchiseTypeBadge = ({ type }) => {
     return (
       <span
         style={{
+          ...baseStyle,
           backgroundColor: '#EFF6FF',
           color: '#1D4ED8',
           border: '1px solid #BFDBFE',
-          padding: '3px 8px',
-          borderRadius: '6px',
-          fontSize: '11.5px',
-          fontWeight: '700',
         }}
       >
         State Franchise
@@ -140,13 +283,10 @@ export const FranchiseTypeBadge = ({ type }) => {
     return (
       <span
         style={{
+          ...baseStyle,
           backgroundColor: '#F0FDF4',
           color: '#15803D',
           border: '1px solid #BBF7D0',
-          padding: '3px 8px',
-          borderRadius: '6px',
-          fontSize: '11.5px',
-          fontWeight: '700',
         }}
       >
         District Franchise
@@ -157,13 +297,10 @@ export const FranchiseTypeBadge = ({ type }) => {
   return (
     <span
       style={{
+        ...baseStyle,
         backgroundColor: '#FAF5FF',
         color: '#7E22CE',
         border: '1px solid #E9D5FF',
-        padding: '3px 8px',
-        borderRadius: '6px',
-        fontSize: '11.5px',
-        fontWeight: '700',
       }}
     >
       Sub-Franchise

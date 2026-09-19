@@ -50,6 +50,11 @@ export const protect = async (req, res, next) => {
           );
         }
         req.partner = partner;
+        // Background touch lastActiveAt if older than 1 minute
+        const lastActive = partner.lastActiveAt ? new Date(partner.lastActiveAt).getTime() : 0;
+        if (Date.now() - lastActive > 60000) {
+          FranchisePartner.updateOne({ _id: partner._id }, { $set: { lastActiveAt: new Date() } }).catch(() => {});
+        }
       }
     }
 

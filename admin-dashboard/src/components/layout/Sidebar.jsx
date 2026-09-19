@@ -20,6 +20,10 @@ import {
   Shield,
   Activity,
   Sparkles,
+  Clock,
+  Zap,
+  UserCheck,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -220,6 +224,16 @@ const Sidebar = ({ isOpen, onClose }) => {
                   <span>Territory Coverage</span>
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/rewards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Award size={18} />
+                  <span>Rewards & Recognitions</span>
+                </NavLink>
+              </li>
 
               <div className="nav-section-title">Card Distribution</div>
               <li>
@@ -285,6 +299,68 @@ const Sidebar = ({ isOpen, onClose }) => {
                 </NavLink>
               </li>
 
+              <div className="nav-section-title">Franchise Partner Views</div>
+              <li>
+                <NavLink
+                  to="/my-customers"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Users size={18} />
+                  <span>My Customer</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/my-installed-cards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Zap size={18} />
+                  <span>My Installed Cards</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/my-pending-cards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Clock size={18} />
+                  <span>My Pending Cards</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/my-sub-franchises"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Building2 size={18} />
+                  <span>My Sub Franchise Partners</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/sub-franchise-installed-cards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Wrench size={18} />
+                  <span>My Sub Franchise Installed Cards</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/sub-franchise-customers"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <UserCheck size={18} />
+                  <span>Sub Franchise Customers</span>
+                </NavLink>
+              </li>
+
               <div className="nav-section-title">Intelligence & Audit</div>
               <li>
                 <NavLink
@@ -339,10 +415,11 @@ const Sidebar = ({ isOpen, onClose }) => {
             </>
           ) : (
             <>
-              <div className="nav-section-title">Field Operations</div>
+              {/* FRANCHISE OPERATIONS */}
+              <div className="nav-section-title">Franchise Operations</div>
               <li>
                 <NavLink
-                  to="/customers"
+                  to="/my-customers"
                   onClick={handleNavClick}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
@@ -352,36 +429,64 @@ const Sidebar = ({ isOpen, onClose }) => {
               </li>
               <li>
                 <NavLink
-                  to="/customers/new"
+                  to="/my-installed-cards"
                   onClick={handleNavClick}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
-                  <UserPlus size={18} />
-                  <span>Install Card</span>
+                  <Zap size={18} />
+                  <span>My Installed Cards</span>
                 </NavLink>
               </li>
               <li>
                 <NavLink
-                  to="/installations"
+                  to="/my-pending-cards"
                   onClick={handleNavClick}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
-                  <Wrench size={18} />
-                  <span>Installations Log</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/location-verifications"
-                  onClick={handleNavClick}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                >
-                  <MapPin size={18} />
-                  <span>GPS Location Logs</span>
+                  <Clock size={18} />
+                  <span>My Pending Cards</span>
                 </NavLink>
               </li>
 
-              <div className="nav-section-title">Inventory & Stock</div>
+              {/* SUB-FRANCHISE NETWORK */}
+              {partner?.franchiseType !== 'SUB_FRANCHISE' && (
+                <>
+                  <div className="nav-section-title">Sub-Franchise Network</div>
+                  <li>
+                    <NavLink
+                      to="/my-sub-franchises"
+                      onClick={handleNavClick}
+                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                      <Building2 size={18} />
+                      <span>My Sub-Franchise Partners</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink
+                      to="/sub-franchise-installed-cards"
+                      onClick={handleNavClick}
+                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                      <Wrench size={18} />
+                      <span>My Sub-Franchise Installed Cards</span>
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink
+                      to="/sub-franchise-customers"
+                      onClick={handleNavClick}
+                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                      <UserCheck size={18} />
+                      <span>Sub-Franchise Customers</span>
+                    </NavLink>
+                  </li>
+                </>
+              )}
+
+              {/* INVENTORY MANAGEMENT */}
+              <div className="nav-section-title">Inventory Management</div>
               <li>
                 <NavLink
                   to="/cards"
@@ -389,10 +494,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 >
                   <CreditCard size={18} />
-                  <span>My Card Inventory</span>
+                  <span>My Total Stock</span>
                 </NavLink>
               </li>
-
+              <li>
+                <NavLink
+                  to="/transactions"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <FileText size={18} />
+                  <span>Stock Transfer History</span>
+                </NavLink>
+              </li>
               {partner?.franchiseType !== 'SUB_FRANCHISE' && (
                 <li>
                   <NavLink
@@ -405,31 +519,32 @@ const Sidebar = ({ isOpen, onClose }) => {
                   </NavLink>
                 </li>
               )}
-              {partner?.franchiseType !== 'SUB_FRANCHISE' && (
-                <>
-                  <li>
-                    <NavLink
-                      to="/partners"
-                      end
-                      onClick={handleNavClick}
-                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                    >
-                      <Building2 size={18} />
-                      <span>Sub-Franchise Network</span>
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/partners/new"
-                      onClick={handleNavClick}
-                      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                    >
-                      <UserPlus size={18} />
-                      <span>Add Sub-Franchise</span>
-                    </NavLink>
-                  </li>
-                </>
-              )}
+              <li>
+                <NavLink
+                  to="/customers/new"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <UserPlus size={18} />
+                  <span>Install Card</span>
+                </NavLink>
+              </li>
+
+              {/* REWARDS & RECOGNITION */}
+              <div className="nav-section-title">Performance & Recognition</div>
+              <li>
+                <NavLink
+                  to="/rewards"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Award size={18} />
+                  <span>Rewards & Recognitions</span>
+                </NavLink>
+              </li>
+
+              {/* ACCOUNT & SUPPORT */}
+              <div className="nav-section-title">Account & Support</div>
               {partner?._id && (
                 <li>
                   <NavLink
@@ -438,35 +553,22 @@ const Sidebar = ({ isOpen, onClose }) => {
                     className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                   >
                     <UserCircle size={18} />
-                    <span>My Profile</span>
+                    <span>Profile & KYC</span>
                   </NavLink>
                 </li>
               )}
-            </>
-          )}
-
-          {(!partner || partner?.franchiseType !== 'SUB_FRANCHISE') && (
-            <>
-              <div className="nav-section-title">Upcoming</div>
-              <li className="nav-item disabled">
-                <BarChart3 size={18} />
-                <span>Franchise Settlements</span>
-                <span className="nav-badge-soon">Phase 7</span>
+              <li>
+                <NavLink
+                  to="/settings"
+                  onClick={handleNavClick}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Settings size={18} />
+                  <span>Settings</span>
+                </NavLink>
               </li>
             </>
           )}
-
-          <div className="nav-section-title">Account</div>
-          <li>
-            <NavLink
-              to="/settings"
-              onClick={handleNavClick}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            >
-              <Settings size={18} />
-              <span>Settings & Preferences</span>
-            </NavLink>
-          </li>
         </ul>
 
         {/* Sidebar Footer: User Status Card & Logout */}

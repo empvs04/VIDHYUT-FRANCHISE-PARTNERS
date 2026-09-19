@@ -134,3 +134,118 @@ export const markAllNotificationsAsRead = async (userId) => {
   );
   return result;
 };
+
+/**
+ * Broadcast Target Milestone / Reward Scheme Alert to Targeted Partners
+ */
+export const broadcastTargetNotification = async ({
+  senderRole,
+  senderName,
+  target,
+}) => {
+  try {
+    if (!target) return [];
+
+    let targetPartners = [];
+
+    if (target.scopeType === 'INDIVIDUAL' || target.scopeType === 'INDIVIDUAL_SUB_FRANCHISE') {
+      if (target.partnerId) {
+        targetPartners = await FranchisePartner.find({
+          $or: [
+            { _id: target.partnerId.length === 24 ? target.partnerId : null },
+            { franchiseId: target.partnerFranchiseId || target.partnerId },
+          ].filter(Boolean),
+          status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+        }).select('_id userId fullName state district franchiseType');
+      }
+    } else if (target.targetAudience === 'SUB_FRANCHISE' || target.scopeType === 'MY_SUB_FRANCHISES') {
+      const query = {
+        franchiseType: { $in: ['SUB_FRANCHISE', 'FOFO'] },
+        status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+      };
+
+      if (target.creatorPartnerId && target.creatorPartnerId.length === 24) {
+        query.$or = [
+          { parentPartnerId: target.creatorPartnerId },
+          ...(target.targetDistrict ? [{ district: new RegExp(`^${target.targetDistrict.trim()}$`, 'i') }] : []),
+          ...(target.targetState ? [{ state: new RegExp(`^${target.targetState.trim()}$`, 'i') }] : []),
+        ];
+      } else if (target.targetDistrict) {
+        query.district = new RegExp(`^${target.targetDistrict.trim()}$`, 'i');
+      } else if (target.targetState) {
+        query.state = new RegExp(`^${target.targetState.trim()}$`, 'i');
+      }
+
+      targetPartners = await FranchisePartner.find(query).select('_id userId fullName state district franchiseType');
+
+      if (targetPartners.length === 0) {
+        // Broaden to all sub-franchises
+        targetPartners = await FranchisePartner.find({
+          franchiseType: { $in: ['SUB_FRANCHISE', 'FOFO'] },
+          status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+        }).select('_id userId fullName state district franchiseType');
+      }
+    } else if (target.scopeType === 'DISTRICT') {
+      const query = {
+        franchiseType: { $ne: 'SUB_FRANCHISE' },
+        status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+      };
+      if (target.targetDistrict) query.district = new RegExp(`^${target.targetDistrict.trim()}$`, 'i');
+      if (target.targetState) query.state = new RegExp(`^${target.targetState.trim()}$`, 'i');
+      targetPartners = await FranchisePartner.find(query).select('_id userId fullName state district franchiseType');
+    } else if (target.scopeType === 'STATE') {
+      const query = {
+        franchiseType: { $ne: 'SUB_FRANCHISE' },
+        status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+      };
+      if (target.targetState) query.state = new RegExp(`^${target.targetState.trim()}$`, 'i');
+      targetPartners = await FranchisePartner.find(query).select('_id userId fullName state district franchiseType');
+    } else {
+      // GLOBAL / ALL - Target all regular Franchise Partners (non-subs)
+      targetPartners = await FranchisePartner.find({
+        franchiseType: { $ne: 'SUB_FRANCHISE' },
+        status: { $ne: ACCOUNT_STATUS.SUSPENDED },
+      }).select('_id userId fullName state district franchiseType');
+    }
+
+    const isSubTarget = target.targetAudience === 'SUB_FRANCHISE' || target.scopeType === 'MY_SUB_FRANCHISES';
+    const notifTitle = isSubTarget
+      ? `🎁 New Reward Challenge: ${target.title || target.rewardName}`
+      : `🎯 New Target Milestone: ${target.title || target.rewardName}`;
+
+    const metricLabel = target.metricType === 'PURCHASED_CARDS' ? 'Cards Stock Purchase' : 'Cards Installation';
+    const deadlineStr = target.deadline ? ` (Deadline: ${target.deadline})` : '';
+
+    const notifMessage = isSubTarget
+      ? `${senderName || 'Franchise Partner'} assigned a new reward goal: Complete ${target.targetValue} ${metricLabel} to win "${target.rewardName}"!${deadlineStr}`
+      : `Company Admin has assigned a new milestone: Install/Purchase ${target.targetValue} ${metricLabel} to claim "${target.rewardName}"!${deadlineStr}`;
+
+    const createdNotifications = [];
+    for (const p of targetPartners) {
+      if (p.userId) {
+        const notif = await createNotification({
+          recipientUserId: p.userId,
+          recipientPartnerId: p._id,
+          type: isSubTarget ? 'REWARD_SCHEME_CREATED' : 'TARGET_ASSIGNED',
+          title: notifTitle,
+          message: notifMessage,
+          entityType: 'TARGET',
+          entityId: String(target.id || ''),
+          metadata: {
+            targetId: target.id,
+            targetValue: target.targetValue,
+            rewardName: target.rewardName,
+            deadline: target.deadline,
+            senderRole,
+          },
+        });
+        if (notif) createdNotifications.push(notif);
+      }
+    }
+
+    return createdNotifications;
+  } catch (err) {
+    console.error('Failed to broadcast target notification:', err.message);
+    return [];
+  }
+};

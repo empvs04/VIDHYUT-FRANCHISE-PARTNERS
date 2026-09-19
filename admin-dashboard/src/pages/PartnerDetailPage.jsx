@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Send,
   Package,
+  Clock,
 } from 'lucide-react';
 import api from '../services/api';
 import {
@@ -32,6 +33,8 @@ import {
   FranchiseTypeBadge,
   PaymentStatusBadge,
   TransactionStatusBadge,
+  PartnerActivationBadge,
+  formatActivationTime,
 } from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import { useNotification } from '../context/NotificationContext';
@@ -168,7 +171,11 @@ const PartnerDetailPage = () => {
                   <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
                     {partner.fullName}
                   </h1>
-                  <StatusBadge status={partner.accountStatus} />
+                  <PartnerActivationBadge
+                    status={partner.accountStatus}
+                    lastLoginAt={partner.lastLoginAt || partner.userId?.lastLoginAt}
+                    lastActiveAt={partner.lastActiveAt}
+                  />
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -218,40 +225,65 @@ const PartnerDetailPage = () => {
               </div>
             </div>
 
-            {/* Registration Date Meta */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: '#F8FAFC',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid #E2E8F0',
-                alignSelf: 'flex-start',
-              }}
-            >
-              <Calendar size={15} color="#64748B" />
-              <div>
-                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>
-                  Registered On
-                </div>
-                <div style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                  {new Date(partner.joiningDate || partner.createdAt).toLocaleDateString('en-IN', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </div>
-              </div>
-              {partner.expiryDate && (
-                <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '8px', marginLeft: '4px' }}>
-                  <div style={{ fontSize: '10.5px', color: '#D97706', fontWeight: '600' }}>Expires</div>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#B45309' }}>
-                    {new Date(partner.expiryDate).toLocaleDateString('en-IN')}
+            {/* Registration & Latest Activation Meta Boxes */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', alignSelf: 'flex-start' }}>
+              {/* Latest Activation Meta Box */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: '#F0FDF4',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #BBF7D0',
+                }}
+              >
+                <Clock size={15} color="#16A34A" />
+                <div>
+                  <div style={{ fontSize: '10.5px', color: '#166534', fontWeight: '700', textTransform: 'uppercase' }}>
+                    Latest Activation
+                  </div>
+                  <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#15803D' }}>
+                    {formatActivationTime(partner.lastActiveAt || partner.lastLoginAt || partner.userId?.lastLoginAt)}
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* Registration Date Meta */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: '#F8FAFC',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #E2E8F0',
+                }}
+              >
+                <Calendar size={15} color="#64748B" />
+                <div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase' }}>
+                    Registered On
+                  </div>
+                  <div style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                    {new Date(partner.joiningDate || partner.createdAt).toLocaleDateString('en-IN', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </div>
+                </div>
+                {partner.expiryDate && (
+                  <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '8px', marginLeft: '4px' }}>
+                    <div style={{ fontSize: '10.5px', color: '#D97706', fontWeight: '600' }}>Expires</div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#B45309' }}>
+                      {new Date(partner.expiryDate).toLocaleDateString('en-IN')}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -22,7 +22,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import api from '../services/api';
-import { StatusBadge, FranchiseTypeBadge } from '../components/common/Badge';
+import { StatusBadge, FranchiseTypeBadge, PartnerActivationBadge, formatActivationTime } from '../components/common/Badge';
 import Modal from '../components/common/Modal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -507,7 +507,7 @@ const PartnersPage = () => {
               <th>Territory</th>
               <th>Parent Partner</th>
               <th>Mobile & Email</th>
-              <th>Status</th>
+              <th>Latest Activation</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
@@ -570,7 +570,11 @@ const PartnersPage = () => {
                     <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{p.email}</div>
                   </td>
                   <td>
-                    <StatusBadge status={p.accountStatus} />
+                    <PartnerActivationBadge
+                      status={p.accountStatus}
+                      lastLoginAt={p.lastLoginAt || p.userId?.lastLoginAt}
+                      lastActiveAt={p.lastActiveAt}
+                    />
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '6px' }}>
@@ -694,7 +698,12 @@ const PartnersPage = () => {
                   </div>
                 </div>
 
-                <StatusBadge status={p.accountStatus} />
+                <PartnerActivationBadge
+                  status={p.accountStatus}
+                  lastLoginAt={p.lastLoginAt || p.userId?.lastLoginAt}
+                  lastActiveAt={p.lastActiveAt}
+                  compact
+                />
               </div>
 
               {/* Tag & Territory Info */}

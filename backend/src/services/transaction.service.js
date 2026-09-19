@@ -377,8 +377,8 @@ export const getTransactions = async (queryParams, user, partner) => {
   const [total, transactions] = await Promise.all([
     Transaction.countDocuments(query),
     Transaction.find(query)
-      .populate('sellerPartnerId', 'fullName franchiseId franchiseType state district mobileNumber email')
-      .populate('buyerPartnerId', 'fullName franchiseId franchiseType state district mobileNumber email')
+      .populate('sellerPartnerId', 'fullName franchiseId franchiseType state district mobileNumber email firmName businessName installedCount assignedCount')
+      .populate('buyerPartnerId', 'fullName franchiseId franchiseType state district mobileNumber email firmName businessName installedCount assignedCount')
       .populate('createdBy', 'fullName email role')
       .populate('confirmedBy', 'fullName email role')
       .sort({ createdAt: -1 })
@@ -424,8 +424,8 @@ export const getTransactionById = async (transactionId, user, partner) => {
   }
 
   await transaction.populate([
-    { path: 'sellerPartnerId', select: 'fullName franchiseId franchiseType state district mobileNumber email city addressLine1' },
-    { path: 'buyerPartnerId', select: 'fullName franchiseId franchiseType state district mobileNumber email city addressLine1' },
+    { path: 'sellerPartnerId', select: 'fullName franchiseId franchiseType state district mobileNumber email city addressLine1 firmName businessName installedCount assignedCount' },
+    { path: 'buyerPartnerId', select: 'fullName franchiseId franchiseType state district mobileNumber email city addressLine1 firmName businessName installedCount assignedCount' },
     { path: 'createdBy', select: 'fullName email role' },
     { path: 'confirmedBy', select: 'fullName email role' },
     { path: 'disputedBy', select: 'fullName email role' },
@@ -1155,20 +1155,25 @@ export const getTransactionStats = async (user, partner) => {
     query.$or = [{ sellerPartnerId: partner._id }, { buyerPartnerId: partner._id }];
   }
 
-  const [total, pending, confirmed, disputed, cancelled, salesAggregation] = await Promise.all([
+  const [total, pending, confirmed, disputed, cancelled, salesAggregation, allCardsTransferredAgg] = await Promise.all([
     Transaction.countDocuments(query),
     Transaction.countDocuments({ ...query, status: TRANSACTION_STATUS.PENDING_CONFIRMATION }),
     Transaction.countDocuments({ ...query, status: TRANSACTION_STATUS.CONFIRMED }),
     Transaction.countDocuments({ ...query, status: TRANSACTION_STATUS.DISPUTED }),
     Transaction.countDocuments({ ...query, status: TRANSACTION_STATUS.CANCELLED }),
     Transaction.aggregate([
-      { $match: { ...query, status: TRANSACTION_STATUS.CONFIRMED, transactionType: TRANSACTION_TYPES.SALE } },
+      { $match: { ...query, status: TRANSACTION_STATUS.CONFIRMED } },
       { $group: { _id: null, totalSalesAmount: { $sum: '$totalAmount' }, totalCardsSold: { $sum: '$quantity' } } },
+    ]),
+    Transaction.aggregate([
+      { $match: { ...query, status: { $in: [TRANSACTION_STATUS.CONFIRMED, TRANSACTION_STATUS.PENDING_CONFIRMATION] } } },
+      { $group: { _id: null, totalUnits: { $sum: '$quantity' } } },
     ]),
   ]);
 
   const salesTotal = salesAggregation[0] ? salesAggregation[0].totalSalesAmount : 0;
   const cardsSoldTotal = salesAggregation[0] ? salesAggregation[0].totalCardsSold : 0;
+  const totalUnits = allCardsTransferredAgg[0] ? allCardsTransferredAgg[0].totalUnits : cardsSoldTotal;
 
   let incomingPending = 0;
   let outgoingPending = 0;
@@ -1182,12 +1187,15 @@ export const getTransactionStats = async (user, partner) => {
 
   return {
     total,
+    totalTransactions: total,
     pending,
     confirmed,
     disputed,
     cancelled,
     totalSalesAmount: salesTotal,
+    totalSalesValue: salesTotal,
     totalCardsSold: cardsSoldTotal,
+    totalCardsTransferred: totalUnits || cardsSoldTotal,
     incomingPending,
     outgoingPending,
   };

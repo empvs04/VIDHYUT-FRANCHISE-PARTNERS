@@ -34,3 +34,29 @@ export const markAllAsRead = async (req, res, next) => {
     next(err);
   }
 };
+
+export const broadcastTargetNotificationController = async (req, res, next) => {
+  try {
+    const { target } = req.body;
+    const senderRole = req.user.role;
+    const senderName = req.user.fullName;
+
+    const notifs = await notificationService.broadcastTargetNotification({
+      senderRole,
+      senderName,
+      target,
+    });
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { count: notifs.length, notifications: notifs },
+          `${notifs.length} target notifications delivered to partners successfully`
+        )
+      );
+  } catch (err) {
+    next(err);
+  }
+};

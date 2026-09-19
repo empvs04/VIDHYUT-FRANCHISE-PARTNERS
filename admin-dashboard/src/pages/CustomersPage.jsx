@@ -52,6 +52,7 @@ const CustomersPage = () => {
   const fetchCustomers = async (page = 1) => {
     try {
       setLoading(true);
+      const currentPartnerId = partner?._id || partner?.id || undefined;
       const params = {
         page,
         limit: 10,
@@ -59,23 +60,36 @@ const CustomersPage = () => {
         customerType: customerType || undefined,
         district: district || undefined,
         source: isParentPartner && source !== 'ALL' ? source : undefined,
+        partnerId: isSuperAdmin ? currentPartnerId : undefined,
       };
 
-      const res = await api.get('/customers', { params });
+      const [res, statsRes] = await Promise.all([
+        api.get('/customers', { params }),
+        api.get('/customers', {
+          params: {
+            limit: 100,
+            district: district || undefined,
+            source: isParentPartner && source !== 'ALL' ? source : undefined,
+            partnerId: isSuperAdmin ? currentPartnerId : undefined,
+          },
+        }).catch(() => null),
+      ]);
+
       if (res.data?.data) {
         const data = res.data.data;
-        setCustomers(data.customers || []);
+        const list = Array.isArray(data?.customers) ? data.customers : (Array.isArray(data) ? data : []);
+        setCustomers(list);
         setPagination(data.pagination || { page: 1, limit: 10, totalRecords: 0, totalPages: 1 });
 
         // Calculate counts
-        const allList = data.customers || [];
+        const allList = statsRes?.data?.data?.customers || list;
         const resCount = allList.filter((c) => c.customerType === 'RESIDENTIAL').length;
         const commCount = allList.filter((c) => c.customerType === 'COMMERCIAL').length;
         const indCount = allList.filter((c) => c.customerType === 'INDUSTRIAL').length;
         const totalCards = allList.reduce((acc, c) => acc + (c.installedCardCount || 0), 0);
 
         setStats({
-          total: data.pagination?.totalRecords || allList.length,
+          total: statsRes?.data?.data?.pagination?.totalRecords || allList.length,
           residential: resCount,
           commercial: commCount,
           industrial: indCount,
@@ -160,15 +174,23 @@ const CustomersPage = () => {
         )}
       </div>
 
-      {/* Metrics Row (Interactive Filters) */}
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: '20px' }}>
+      {/* Metrics Row (Interactive Filters with Top-Border Colors) */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+          gap: '12px',
+          marginBottom: '18px',
+        }}
+      >
         <StatCard
           title="Total Registered Customers"
           value={stats.total}
-          subtitle={customerType === '' ? '● All Accounts Showing' : 'Click to show all'}
+          subtitle={customerType === '' ? '● All Accounts Showing' : 'Click to show all →'}
           icon={Users}
           bgLight="#e0f2fe"
           iconColor="#0284c7"
+          borderTopColor="#0284c7"
           onClick={() => setCustomerType('')}
           isActive={customerType === ''}
           activeLabel="All"
@@ -178,10 +200,11 @@ const CustomersPage = () => {
         <StatCard
           title="Installed Energy Cards"
           value={stats.installedCards}
-          subtitle="Active in field"
+          subtitle="Active in field units →"
           icon={CreditCard}
           bgLight="#dcfce7"
-          iconColor="#15803d"
+          iconColor="#16a34a"
+          borderTopColor="#16a34a"
           onClick={() => setCustomerType('')}
           loading={loading}
         />
@@ -189,51 +212,105 @@ const CustomersPage = () => {
         <StatCard
           title="Residential Consumers"
           value={stats.residential}
-          subtitle="Homes & Apartments"
+          subtitle="Homes & Apartments →"
           icon={Home}
-          bgLight="#e0f2fe"
-          iconColor="#0369a1"
+          bgLight="#faf5ff"
+          iconColor="#9333ea"
+          borderTopColor="#9333ea"
           onClick={() => setCustomerType((prev) => (prev === 'RESIDENTIAL' ? '' : 'RESIDENTIAL'))}
           isActive={customerType === 'RESIDENTIAL'}
-          activeLabel="Filtered"
+          activeLabel="Residential"
           loading={loading}
         />
 
         <StatCard
           title="Commercial Accounts"
           value={stats.commercial}
-          subtitle="Offices & Shops"
+          subtitle="Offices & Commercial →"
           icon={Building}
           bgLight="#fef3c7"
-          iconColor="#b45309"
+          iconColor="#d97706"
+          borderTopColor="#d97706"
           onClick={() => setCustomerType((prev) => (prev === 'COMMERCIAL' ? '' : 'COMMERCIAL'))}
           isActive={customerType === 'COMMERCIAL'}
-          activeLabel="Filtered"
+          activeLabel="Commercial"
           loading={loading}
         />
       </div>
 
-      {/* Search and Filters Bar */}
-      <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
-        <form onSubmit={handleSearchSubmit} className="filter-form-responsive">
-          <div className="search-input-wrap">
-            <Search size={18} />
+      {/* Unified Search and Filters Bar */}
+      <div
+        className="card"
+        style={{
+          padding: '14px 16px',
+          marginBottom: '18px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid var(--border-color)',
+          borderRadius: '12px',
+          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+        }}
+      >
+        <form
+          onSubmit={handleSearchSubmit}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px',
+            width: '100%',
+          }}
+        >
+          {/* 1. Search Input */}
+          <div
+            style={{
+              position: 'relative',
+              flex: '1 1 240px',
+              minWidth: '220px',
+            }}
+          >
+            <Search
+              size={15}
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)',
+                pointerEvents: 'none',
+              }}
+            />
             <input
               type="text"
-              className="form-control"
+              className="input"
               placeholder="Search by Customer ID, Name, Mobile, City, District..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ height: '42px', paddingLeft: '40px' }}
+              style={{
+                height: '38px',
+                padding: '0 12px 0 36px',
+                fontSize: '13px',
+                borderRadius: '8px',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
             />
           </div>
 
-          <div className="filter-select-wrap" style={{ width: '200px', minWidth: '160px' }}>
+          {/* 2. Customer Type Dropdown */}
+          <div style={{ flex: '0 1 180px', minWidth: '150px' }}>
             <select
-              className="form-control"
+              className="select"
               value={customerType}
               onChange={(e) => setCustomerType(e.target.value)}
-              style={{ height: '42px' }}
+              style={{
+                height: '38px',
+                padding: '0 28px 0 10px',
+                fontSize: '13px',
+                borderRadius: '8px',
+                width: '100%',
+                boxSizing: 'border-box',
+                cursor: 'pointer',
+              }}
             >
               <option value="">All Customer Types</option>
               <option value="RESIDENTIAL">Residential</option>
@@ -242,13 +319,23 @@ const CustomersPage = () => {
             </select>
           </div>
 
+          {/* 3. Source Dropdown (Direct vs Sub-Franchise) */}
           {isParentPartner && (
-            <div className="filter-select-wrap" style={{ width: '240px', minWidth: '180px' }}>
+            <div style={{ flex: '0 1 270px', minWidth: '240px' }}>
               <select
-                className="form-control"
+                className="select"
                 value={source}
                 onChange={(e) => setSource(e.target.value)}
-                style={{ height: '42px', fontWeight: 500 }}
+                style={{
+                  height: '38px',
+                  padding: '0 28px 0 10px',
+                  fontSize: '13px',
+                  borderRadius: '8px',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                }}
               >
                 <option value="ALL">All Sources (Direct + Sub-Franchise)</option>
                 <option value="MY_CUSTOMERS">Direct Customers Only</option>
@@ -257,13 +344,23 @@ const CustomersPage = () => {
             </div>
           )}
 
-          <div className="filter-actions-wrap" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* 4. Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ height: '42px', padding: '0 20px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              style={{
+                height: '38px',
+                padding: '0 16px',
+                fontSize: '13px',
+                borderRadius: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '700',
+              }}
             >
-              <Search size={16} />
+              <Search size={14} />
               <span>Search</span>
             </button>
 
@@ -278,9 +375,20 @@ const CustomersPage = () => {
                   setSource('ALL');
                   fetchCustomers(1);
                 }}
-                style={{ height: '42px', padding: '0 16px' }}
+                style={{
+                  height: '38px',
+                  padding: '0 12px',
+                  fontSize: '13px',
+                  borderRadius: '8px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: '#dc2626',
+                  borderColor: '#fca5a5',
+                }}
+                title="Reset all filters"
               >
-                Reset
+                <span>Reset</span>
               </button>
             )}
 
@@ -288,10 +396,18 @@ const CustomersPage = () => {
               type="button"
               className="btn btn-outline"
               onClick={() => fetchCustomers(pagination.page)}
-              title="Refresh list"
-              style={{ height: '42px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Refresh customer list"
+              style={{
+                height: '38px',
+                padding: '0 12px',
+                fontSize: '13px',
+                borderRadius: '8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
           </div>
         </form>

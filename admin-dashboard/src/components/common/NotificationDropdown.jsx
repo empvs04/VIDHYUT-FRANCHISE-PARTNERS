@@ -10,6 +10,10 @@ import {
   Zap,
   CreditCard,
   Building2,
+  Target,
+  Gift,
+  Trophy,
+  Sparkles,
   X,
 } from 'lucide-react';
 import api from '../../services/api';
@@ -25,7 +29,7 @@ const NotificationDropdown = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/notifications', { params: { limit: 15 } });
+      const res = await api.get('/notifications', { params: { limit: 20 } });
       if (res.data?.data) {
         setNotifications(res.data.data.notifications || []);
         setUnreadCount(res.data.data.unreadCount || 0);
@@ -38,8 +42,17 @@ const NotificationDropdown = () => {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 15000); // Polling every 15s for instant alerts
+    const interval = setInterval(fetchNotifications, 10000); // Polling every 10s for instant alerts
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for custom target-created local events to refresh instantly
+  useEffect(() => {
+    const handleTargetCreatedEvent = () => {
+      fetchNotifications();
+    };
+    window.addEventListener('vidhyut:target_created', handleTargetCreatedEvent);
+    return () => window.removeEventListener('vidhyut:target_created', handleTargetCreatedEvent);
   }, []);
 
   // Close on outside click
@@ -66,8 +79,11 @@ const NotificationDropdown = () => {
       } catch {}
     }
 
-    // Optional Quick Navigation based on entityType & type
-    if (notif.type === 'TERRITORY_MISMATCH' || notif.entityType === 'LOCATION_VERIFICATION') {
+    // Quick Navigation based on entityType & type
+    if (notif.type?.includes('TARGET') || notif.type?.includes('REWARD') || notif.entityType === 'TARGET' || notif.entityType === 'REWARD') {
+      navigate('/rewards-recognition');
+      setIsOpen(false);
+    } else if (notif.type === 'TERRITORY_MISMATCH' || notif.entityType === 'LOCATION_VERIFICATION') {
       navigate('/location-verifications');
       setIsOpen(false);
     } else if (notif.entityType === 'TRANSACTION') {
@@ -92,6 +108,8 @@ const NotificationDropdown = () => {
   };
 
   const getNotificationIcon = (type) => {
+    if (type?.includes('REWARD')) return <Gift size={17} color="#d97706" />;
+    if (type?.includes('TARGET')) return <Target size={17} color="#ea580c" />;
     if (type?.includes('CARD')) return <CreditCard size={16} color="#0284c7" />;
     if (type?.includes('INSTALLATION')) return <Zap size={16} color="#16a34a" />;
     if (type?.includes('MISMATCH') || type?.includes('DISPUTED')) return <AlertTriangle size={17} color="#dc2626" />;
@@ -203,15 +221,16 @@ const NotificationDropdown = () => {
             {notifications.length > 0 ? (
               notifications.map((notif) => {
                 const isMismatch = notif.type === 'TERRITORY_MISMATCH';
+                const isTargetOrReward = notif.type?.includes('TARGET') || notif.type?.includes('REWARD') || notif.entityType === 'TARGET' || notif.entityType === 'REWARD';
 
                 return (
                   <div
-                    key={notif._id}
+                    key={notif._id || notif.notificationId}
                     onClick={(e) => handleMarkAsRead(notif, e)}
                     style={{
                       padding: '12px 16px',
                       borderBottom: '1px solid #f1f5f9',
-                      borderLeft: isMismatch ? '4px solid #dc2626' : 'none',
+                      borderLeft: isMismatch ? '4px solid #dc2626' : isTargetOrReward ? '4px solid #ea580c' : 'none',
                       display: 'flex',
                       gap: '12px',
                       cursor: 'pointer',
@@ -219,6 +238,8 @@ const NotificationDropdown = () => {
                         ? '#ffffff'
                         : isMismatch
                         ? '#fff5f5'
+                        : isTargetOrReward
+                        ? '#fffbeb'
                         : '#f0f9ff',
                       transition: 'background 0.15s',
                     }}
@@ -226,7 +247,7 @@ const NotificationDropdown = () => {
                     <div style={{ marginTop: '2px' }}>{getNotificationIcon(notif.type)}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: '13px', fontWeight: notif.isRead ? 600 : 700, color: isMismatch ? '#991b1b' : '#0f172a' }}>
+                        <span style={{ fontSize: '13px', fontWeight: notif.isRead ? 600 : 700, color: isMismatch ? '#991b1b' : isTargetOrReward ? '#9a3412' : '#0f172a' }}>
                           {notif.title}
                         </span>
                         {!notif.isRead && (
@@ -235,13 +256,13 @@ const NotificationDropdown = () => {
                               width: '8px',
                               height: '8px',
                               borderRadius: '50%',
-                              background: isMismatch ? '#dc2626' : '#0284c7',
+                              background: isMismatch ? '#dc2626' : isTargetOrReward ? '#ea580c' : '#0284c7',
                               marginTop: '4px',
                             }}
                           />
                         )}
                       </div>
-                      <div style={{ fontSize: '12px', color: isMismatch ? '#7f1d1d' : '#475569', marginTop: '2px', lineHeight: 1.4 }}>
+                      <div style={{ fontSize: '12px', color: isMismatch ? '#7f1d1d' : isTargetOrReward ? '#78350f' : '#475569', marginTop: '2px', lineHeight: 1.4 }}>
                         {notif.message}
                       </div>
                       <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>

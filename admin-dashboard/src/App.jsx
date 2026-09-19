@@ -19,6 +19,12 @@ import DistributeCardsPage from './pages/DistributeCardsPage';
 import TransactionsPage from './pages/TransactionsPage';
 import TransactionDetailPage from './pages/TransactionDetailPage';
 import CustomersPage from './pages/CustomersPage';
+import MyCustomersPage from './pages/MyCustomersPage';
+import MyInstalledCardsPage from './pages/MyInstalledCardsPage';
+import MyPendingCardsPage from './pages/MyPendingCardsPage';
+import MySubFranchisesPage from './pages/MySubFranchisesPage';
+import SubFranchiseInstalledCardsPage from './pages/SubFranchiseInstalledCardsPage';
+import SubFranchiseCustomersPage from './pages/SubFranchiseCustomersPage';
 import AddCustomerInstallationPage from './pages/AddCustomerInstallationPage';
 import CustomerDetailPage from './pages/CustomerDetailPage';
 import InstallationsPage from './pages/InstallationsPage';
@@ -29,6 +35,7 @@ import ReportsPage from './pages/ReportsPage';
 import GlobalAuditPage from './pages/GlobalAuditPage';
 import AuditLogsPage from './pages/AuditLogsPage';
 import SystemHealthPage from './pages/SystemHealthPage';
+import RewardsRecognitionPage from './pages/RewardsRecognitionPage';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 
@@ -120,6 +127,15 @@ function App() {
                 <Route path="customers" element={<CustomersPage />} />
                 <Route path="customers/new" element={<AddCustomerInstallationPage />} />
                 <Route path="customers/:id" element={<CustomerDetailPage />} />
+                
+                {/* 6 Dedicated Franchise Partner Operations Pages */}
+                <Route path="my-customers" element={<MyCustomersPage />} />
+                <Route path="my-installed-cards" element={<MyInstalledCardsPage />} />
+                <Route path="my-pending-cards" element={<MyPendingCardsPage />} />
+                <Route path="my-sub-franchises" element={<MySubFranchisesPage />} />
+                <Route path="sub-franchise-installed-cards" element={<SubFranchiseInstalledCardsPage />} />
+                <Route path="sub-franchise-customers" element={<SubFranchiseCustomersPage />} />
+
                 <Route path="installations" element={<InstallationsPage />} />
                 <Route path="installations/new" element={<AddCustomerInstallationPage />} />
                 <Route path="location-verifications" element={<LocationReviewPage />} />
@@ -163,6 +179,7 @@ function App() {
                     </AdminOnlyRoute>
                   }
                 />
+                <Route path="rewards" element={<RewardsRecognitionPage />} />
                 <Route path="settings" element={<SettingsPage />} />
 
               </Route>

@@ -269,7 +269,8 @@ export const getAdminMetrics = async (req, res, next) => {
       })
         .sort({ createdAt: -1 })
         .populate('parentPartnerId', 'fullName franchiseId')
-        .select('franchiseId fullName mobileNumber email state district city franchiseType accountStatus createdAt parentPartnerId'),
+        .populate('userId', 'role status lastLoginAt')
+        .select('franchiseId fullName mobileNumber email state district city franchiseType accountStatus createdAt lastLoginAt lastActiveAt parentPartnerId userId'),
       FranchisePartner.countDocuments({
         createdAt: { $gte: startOfToday, $lte: endOfToday },
         franchiseType: { $ne: FRANCHISE_TYPES.SUB_FRANCHISE },
@@ -294,7 +295,8 @@ export const getAdminMetrics = async (req, res, next) => {
         .sort({ createdAt: -1 })
         .limit(12)
         .populate('parentPartnerId', 'fullName franchiseId franchiseType state district mobileNumber email')
-        .select('franchiseId fullName mobileNumber email state district city franchiseType accountStatus createdAt parentPartnerId'),
+        .populate('userId', 'role status lastLoginAt')
+        .select('franchiseId fullName mobileNumber email state district city franchiseType accountStatus createdAt lastLoginAt lastActiveAt parentPartnerId userId'),
       // 6. Sub-Franchise Card Allotment Total Revenue
       Transaction.aggregate([
         {
@@ -447,26 +449,23 @@ export const getAdminMetrics = async (req, res, next) => {
         (i.createdByPartnerId && i.createdByPartnerId.toString() === sub._id.toString())
       );
       const totalInstalledCards = myInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
-      const totalInstallationRevenue = myInstalls.reduce((sum, i) => sum + (i.totalAmount || ((i.installedCardCount || 1) * (i.pricePerCard || 3500))), 0);
-      const avgSellPrice = totalInstalledCards > 0 ? Math.round(totalInstallationRevenue / totalInstalledCards) : 3500;
-
-      const hasInstallations = totalInstalledCards > 0;
-      const effectiveCardsSold = totalInstalledCards; // Revenue & Profit only update upon actual card installations!
       
-      // Calculate profit from each actual customer installation
-      let netProfit = 0;
-      if (hasInstallations) {
-        netProfit = myInstalls.reduce((sum, inst) => {
-          const instCount = inst.installedCardCount || 1;
-          const instSellPrice = inst.pricePerCard || (inst.totalAmount ? Math.round(inst.totalAmount / instCount) : 3500);
-          const profitPerCardForThisInstall = Math.max(0, instSellPrice - avgBuyPrice);
-          return sum + (profitPerCardForThisInstall * instCount);
-        }, 0);
-      }
-
+      // Calculate customer installation revenue and profit accurately (standard customer installation MRP: 3,500)
+      const totalInstallationRevenue = myInstalls.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        const rate = (i.pricePerCard && i.pricePerCard > avgBuyPrice) ? i.pricePerCard : (i.totalAmount && Math.round(i.totalAmount / count) > avgBuyPrice ? Math.round(i.totalAmount / count) : 3500);
+        return sum + (count * rate);
+      }, 0);
+      
+      const avgSellPrice = totalInstalledCards > 0 ? Math.round(totalInstallationRevenue / totalInstalledCards) : 3500;
+      const hasInstallations = totalInstalledCards > 0;
+      const effectiveCardsSold = totalInstalledCards;
+      
+      // Profit per card = Customer Sell Price - Sub-Franchise Card Buy Price
       const profitPerCard = hasInstallations ? Math.max(0, avgSellPrice - avgBuyPrice) : 0;
-      const totalRevenueGenerated = netProfit; // Revenue margin earned: (Sell Price - Buy Price) * Installed Cards
-      const totalGrossSales = hasInstallations ? totalInstallationRevenue : 0;
+      const netProfit = hasInstallations ? (totalInstalledCards * profitPerCard) : 0;
+      const totalRevenueGenerated = hasInstallations ? totalInstallationRevenue : 0;
+      const totalGrossSales = totalRevenueGenerated;
       const marginPercent = (hasInstallations && avgBuyPrice > 0) ? Math.round(((avgSellPrice - avgBuyPrice) / avgBuyPrice) * 100) : 0;
 
       const resolvedParent = sub.parentPartnerId ? {
@@ -830,8 +829,23 @@ export const getAdminMetrics = async (req, res, next) => {
 // Partner-Specific Dashboard Summary (Real DB statistics for logged-in Partner)
 export const getPartnerSummary = async (req, res, next) => {
   try {
-    const partner = await FranchisePartner.findOne({ userId: req.user._id })
-      .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber email state district');
+    let partner = null;
+    if (req.query.partnerId) {
+      partner = await FranchisePartner.findById(req.query.partnerId)
+        .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber email state district');
+    } else {
+      partner = await FranchisePartner.findOne({ userId: req.user._id })
+        .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber email state district');
+    }
+
+    if (!partner && req.user.role === USER_ROLES.SUPER_ADMIN) {
+      partner = await FranchisePartner.findOne({ franchiseType: { $ne: FRANCHISE_TYPES.SUB_FRANCHISE } })
+        .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber email state district');
+      if (!partner) {
+        partner = await FranchisePartner.findOne()
+          .populate('parentPartnerId', 'fullName franchiseId franchiseType mobileNumber email state district');
+      }
+    }
 
     if (!partner) {
       return res.status(200).json(
@@ -994,6 +1008,407 @@ export const getPartnerSummary = async (req, res, next) => {
       }
     }
 
+    // Query sub-franchise transfer transactions count
+    let subTransfersCount = 0;
+    if (!isSubFranchise) {
+      subTransfersCount = await Transaction.countDocuments({
+        sellerPartnerId: partner._id,
+      });
+    }
+
+    // REAL REVENUE & REAL PROFIT CALCULATION (Live Database Records)
+    const subPartnerIds = subFranchisePartnersList.map((s) => s._id);
+
+    const [partnerBuyTxns, partnerSellTxns, partnerInstalls, subFranchiseInstalls] = await Promise.all([
+      Transaction.find({
+        buyerPartnerId: partner._id,
+        status: { $ne: TRANSACTION_STATUS.CANCELLED },
+      }),
+      Transaction.find({
+        sellerPartnerId: partner._id,
+        status: { $ne: TRANSACTION_STATUS.CANCELLED },
+      }).populate('buyerPartnerId', 'fullName franchiseId franchiseType mobileNumber district state city'),
+      Installation.find({
+        partnerId: partner._id,
+      }).populate('customerId', 'fullName mobileNumber customerId customerType electricityDetails'),
+      !isSubFranchise && subPartnerIds.length > 0
+        ? Installation.find({
+            partnerId: { $in: subPartnerIds },
+          })
+            .populate('partnerId', 'fullName franchiseId franchiseType mobileNumber district state city')
+            .populate('customerId', 'fullName mobileNumber customerId customerType electricityDetails')
+            .sort({ createdAt: -1 })
+        : Promise.resolve([]),
+    ]);
+
+    const totalBoughtCards = partnerBuyTxns.reduce((sum, t) => sum + (t.paidQuantity || t.quantity || 0), 0);
+    const totalBuyCost = partnerBuyTxns.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const avgBuyPrice = totalBoughtCards > 0 && totalBuyCost > 0 ? Math.round(totalBuyCost / totalBoughtCards) : 0;
+
+    // Direct Customer Installations done by Active Franchise Partner
+    const directInstalledCards = partnerInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
+    const directInstallRevenue = partnerInstalls.reduce((sum, i) => {
+      const count = i.installedCardCount || 1;
+      return sum + (i.totalAmount || (count * (i.pricePerCard || 0)));
+    }, 0);
+    const directInstallProfit = partnerInstalls.reduce((sum, i) => {
+      const count = i.installedCardCount || 1;
+      const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+      const margin = Math.max(0, sellRate - avgBuyPrice);
+      return sum + (margin * count);
+    }, 0);
+
+    // Cards Allotted by Active Partner to Sub-Franchises
+    const subAllottedCards = partnerSellTxns.reduce((sum, t) => sum + (t.paidQuantity || t.quantity || 0), 0);
+    const subAllotmentRevenue = partnerSellTxns.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const subAllotmentProfit = partnerSellTxns.reduce((sum, t) => {
+      const sellRate = t.pricePerCard || (t.paidQuantity > 0 ? Math.round(t.totalAmount / t.paidQuantity) : 0);
+      const margin = Math.max(0, sellRate - avgBuyPrice);
+      const qty = t.paidQuantity || t.quantity || 0;
+      return sum + (margin * qty);
+    }, 0);
+
+    // Retail Card Sales & Profit performed BY SUB-FRANCHISE PARTNERS (when viewed by parent partner)
+    const subRetailCards = subFranchiseInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
+    const subRetailRevenue = subFranchiseInstalls.reduce((sum, i) => {
+      const count = i.installedCardCount || 1;
+      return sum + (i.totalAmount || (count * (i.pricePerCard || 0)));
+    }, 0);
+    const subRetailProfit = subFranchiseInstalls.reduce((sum, i) => {
+      const count = i.installedCardCount || 1;
+      const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+      const buyCost = 2400; // Sub-franchise acquisition cost from district partner
+      const margin = Math.max(0, sellRate - buyCost);
+      return sum + (margin * count);
+    }, 0);
+
+    const totalCardsSold = isSubFranchise ? directInstalledCards : (subAllottedCards + directInstalledCards);
+    const realizedRevenue = isSubFranchise ? directInstallRevenue : (subAllotmentRevenue + directInstallRevenue);
+    const realizedProfit = isSubFranchise ? directInstallProfit : (subAllotmentProfit + directInstallProfit);
+
+    const totalInHandStock = currentCardInventoryCount || Math.max(0, totalBoughtCards - totalCardsSold) || 0;
+
+    // PERIODIC BREAKDOWN (Today / Per Day, Last 7 Days / Week, This Month, All Time)
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const calcPeriodMetrics = (sellTxns, installs, startDate) => {
+      const filteredTxns = startDate ? sellTxns.filter(t => new Date(t.createdAt) >= startDate) : sellTxns;
+      const filteredInstalls = startDate ? installs.filter(i => new Date(i.createdAt || i.installationDate || i.updatedAt) >= startDate) : installs;
+
+      const subRev = filteredTxns.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+      const subCards = filteredTxns.reduce((sum, t) => sum + (t.paidQuantity || t.quantity || 0), 0);
+      const subProfit = filteredTxns.reduce((sum, t) => {
+        const sellRate = t.pricePerCard || (t.paidQuantity > 0 ? Math.round(t.totalAmount / t.paidQuantity) : 0);
+        const margin = Math.max(0, sellRate - avgBuyPrice);
+        const qty = t.paidQuantity || t.quantity || 0;
+        return sum + (margin * qty);
+      }, 0);
+
+      const instRev = filteredInstalls.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        return sum + (i.totalAmount || (count * (i.pricePerCard || 0)));
+      }, 0);
+      const instCards = filteredInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
+      const instProfit = filteredInstalls.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const margin = Math.max(0, sellRate - avgBuyPrice);
+        return sum + (margin * count);
+      }, 0);
+
+      const rev = subRev + instRev;
+      const prof = subProfit + instProfit;
+      const sold = subCards + instCards;
+
+      // Group by Recipient to know exactly who received cards and how much profit was made
+      const recipientMap = new Map();
+      filteredTxns.forEach(t => {
+        const name = t.buyerPartnerId?.fullName || 'Sub-Franchise Partner';
+        const fid = t.buyerPartnerId?.franchiseId || '';
+        const qty = t.paidQuantity || t.quantity || 0;
+        const sellRate = t.pricePerCard || (t.paidQuantity > 0 ? Math.round(t.totalAmount / t.paidQuantity) : 0);
+        const margin = Math.max(0, sellRate - avgBuyPrice);
+        const p = margin * qty;
+        const r = t.totalAmount || (sellRate * qty);
+
+        const key = `SUB_${t.buyerPartnerId?._id || name}`;
+        if (!recipientMap.has(key)) {
+          recipientMap.set(key, {
+            name: fid ? `${name} (${fid})` : name,
+            rawName: name,
+            identifier: fid,
+            type: 'Sub-Franchise',
+            cards: 0,
+            revenue: 0,
+            profit: 0,
+            rate: sellRate,
+          });
+        }
+        const entry = recipientMap.get(key);
+        entry.cards += qty;
+        entry.revenue += r;
+        entry.profit += p;
+      });
+
+      filteredInstalls.forEach(i => {
+        const name = i.customerName || i.customerId?.fullName || 'Customer';
+        const cid = i.customerId?.customerId || '';
+        const count = i.installedCardCount || 1;
+        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const margin = Math.max(0, sellRate - avgBuyPrice);
+        const p = margin * count;
+        const r = i.totalAmount || (sellRate * count);
+
+        const key = `CUST_${i.customerId?._id || name}`;
+        if (!recipientMap.has(key)) {
+          recipientMap.set(key, {
+            name: cid ? `${name} (${cid})` : name,
+            rawName: name,
+            identifier: cid,
+            type: 'Direct Customer',
+            cards: 0,
+            revenue: 0,
+            profit: 0,
+            rate: sellRate,
+          });
+        }
+        const entry = recipientMap.get(key);
+        entry.cards += count;
+        entry.revenue += r;
+        entry.profit += p;
+      });
+
+      const recipients = Array.from(recipientMap.values()).sort((a, b) => b.profit - a.profit);
+
+      return {
+        revenue: rev,
+        profit: prof,
+        cardsSold: sold,
+        marginPercent: rev > 0 ? Math.round((prof / rev) * 100) : 0,
+        recipients,
+      };
+    };
+
+    // Sub-Franchise Network Retail Sales Period Metrics (Sub-Franchise card sales to customers)
+    const calcSubRetailPeriodMetrics = (subInstalls, startDate) => {
+      const filtered = startDate ? subInstalls.filter(i => new Date(i.createdAt || i.installationDate || i.updatedAt) >= startDate) : subInstalls;
+      const rev = filtered.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        return sum + (i.totalAmount || (count * (i.pricePerCard || 0)));
+      }, 0);
+      const cards = filtered.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
+      const profit = filtered.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const buyCost = 2400;
+        const margin = Math.max(0, sellRate - buyCost);
+        return sum + (margin * count);
+      }, 0);
+      return {
+        revenue: rev,
+        profit,
+        cardsSold: cards,
+        marginPercent: rev > 0 ? Math.round((profit / rev) * 100) : 0,
+      };
+    };
+
+    // Direct Installations Period Metrics (Active Partner's own direct sales to consumers)
+    const calcDirectPeriodMetrics = (installs, startDate) => {
+      const filteredInstalls = startDate ? installs.filter(i => new Date(i.createdAt || i.installationDate || i.updatedAt) >= startDate) : installs;
+      const instRev = filteredInstalls.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        return sum + (i.totalAmount || (count * (i.pricePerCard || 0)));
+      }, 0);
+      const instCards = filteredInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
+      const instProfit = filteredInstalls.reduce((sum, i) => {
+        const count = i.installedCardCount || 1;
+        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const margin = Math.max(0, sellRate - avgBuyPrice);
+        return sum + (margin * count);
+      }, 0);
+
+      const recipientMap = new Map();
+      filteredInstalls.forEach(i => {
+        const name = i.customerName || i.customerId?.fullName || 'Customer';
+        const cid = i.customerId?.customerId || '';
+        const count = i.installedCardCount || 1;
+        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const margin = Math.max(0, sellRate - avgBuyPrice);
+        const p = margin * count;
+        const r = i.totalAmount || (sellRate * count);
+
+        const key = `CUST_${i.customerId?._id || name}`;
+        if (!recipientMap.has(key)) {
+          recipientMap.set(key, {
+            name: cid ? `${name} (${cid})` : name,
+            rawName: name,
+            identifier: cid,
+            type: 'Consumer',
+            cards: 0,
+            revenue: 0,
+            profit: 0,
+            rate: sellRate,
+          });
+        }
+        const entry = recipientMap.get(key);
+        entry.cards += count;
+        entry.revenue += r;
+        entry.profit += p;
+      });
+
+      const recipients = Array.from(recipientMap.values()).sort((a, b) => b.profit - a.profit);
+
+      return {
+        revenue: instRev,
+        profit: instProfit,
+        cardsSold: instCards,
+        marginPercent: instRev > 0 ? Math.round((instProfit / instRev) * 100) : 0,
+        recipients,
+      };
+    };
+
+    const todayPeriod = calcPeriodMetrics(partnerSellTxns, partnerInstalls, startOfToday);
+    const last7DaysPeriod = calcPeriodMetrics(partnerSellTxns, partnerInstalls, sevenDaysAgo);
+    const thisMonthPeriod = calcPeriodMetrics(partnerSellTxns, partnerInstalls, startOfMonth);
+    const allTimePeriod = calcPeriodMetrics(partnerSellTxns, partnerInstalls, null);
+
+    // Mapped Detail Records for Popup Modal (Sub-Franchise Card Allotments)
+    const subAllotmentsList = partnerSellTxns.map((t) => {
+      const sellRate = t.pricePerCard || (t.paidQuantity > 0 ? Math.round(t.totalAmount / t.paidQuantity) : 2400);
+      const margin = Math.max(0, sellRate - avgBuyPrice);
+      const qty = t.paidQuantity || t.quantity || 0;
+      const serials = t.cardSerialNumbers || [];
+      const serialRange = serials.length > 1 ? `${serials[0]} ➔ ${serials[serials.length - 1]}` : (serials[0] || 'N/A');
+      return {
+        _id: t._id,
+        transactionId: t.transactionId,
+        buyerName: t.buyerPartnerId?.fullName || 'Sub-Franchise Partner',
+        buyerFranchiseId: t.buyerPartnerId?.franchiseId,
+        mobileNumber: t.buyerPartnerId?.mobileNumber,
+        district: t.buyerPartnerId?.district,
+        city: t.buyerPartnerId?.city,
+        state: t.buyerPartnerId?.state,
+        quantity: qty,
+        freeQuantity: t.freeQuantity || 0,
+        paidQuantity: t.paidQuantity || qty,
+        pricePerCard: sellRate,
+        totalAmount: t.totalAmount,
+        profit: margin * qty,
+        profitPerCard: margin,
+        avgBuyPrice,
+        serialRange,
+        serialNumbers: serials,
+        status: t.status,
+        paymentStatus: t.paymentStatus,
+        paymentMode: t.paymentMode || 'BANK_TRANSFER',
+        invoiceNumber: t.invoiceNumber,
+        date: t.confirmedAt || t.createdAt,
+      };
+    });
+
+    // Mapped Detail Records of Retail Sales performed BY SUB-FRANCHISES
+    const subFranchiseInstallsList = subFranchiseInstalls.map((i) => {
+      const sellRate = i.pricePerCard || 3500;
+      const buyCost = 2400;
+      const margin = Math.max(0, sellRate - buyCost);
+      const count = i.installedCardCount || 1;
+      return {
+        _id: i._id,
+        installationId: i.installationId || `INST-${i._id.toString().slice(-6).toUpperCase()}`,
+        subPartnerName: i.partnerId?.fullName || 'Sub-Franchise Partner',
+        subFranchiseId: i.partnerId?.franchiseId || 'Sub-Franchise',
+        subMobile: i.partnerId?.mobileNumber,
+        subTerritory: i.partnerId?.district || i.partnerId?.city || i.partnerId?.state,
+        customerName: i.customerName || i.customerId?.fullName || 'Consumer',
+        customerMobile: i.customerMobile || i.customerId?.mobileNumber,
+        customerId: i.customerId?.customerId,
+        loadKw: i.electricityDetails?.connectedLoadKw || 1,
+        serialNumber: i.cardSerialNumber,
+        quantity: count,
+        pricePerCard: sellRate,
+        buyCost,
+        totalAmount: i.totalAmount || (count * sellRate),
+        profit: margin * count,
+        profitPerCard: margin,
+        date: i.installationDate || i.createdAt,
+      };
+    });
+
+    // Active Partner Direct Customer Installations
+    const directInstallsList = partnerInstalls.map((i) => {
+      const sellRate = i.pricePerCard || 3500;
+      const margin = Math.max(0, sellRate - avgBuyPrice);
+      const count = i.installedCardCount || 1;
+      return {
+        _id: i._id,
+        installationId: i.installationId || `INST-${i._id.toString().slice(-6).toUpperCase()}`,
+        customerName: i.customerName || i.customerId?.fullName || 'Consumer',
+        customerMobile: i.customerMobile || i.customerId?.mobileNumber,
+        customerId: i.customerId?.customerId,
+        consumerCategory: i.customerType || i.customerId?.customerType || 'RESIDENTIAL',
+        loadKw: i.electricityDetails?.connectedLoadKw || 1,
+        serialNumber: i.cardSerialNumber || (i.cardSerialNumbers && i.cardSerialNumbers[0]) || 'CARD-SRL',
+        quantity: count,
+        pricePerCard: sellRate,
+        totalAmount: i.totalAmount || (count * sellRate),
+        profit: margin * count,
+        profitPerCard: margin,
+        date: i.installationDate || i.createdAt,
+      };
+    });
+
+    // Strict Pure Realized Financials for Active Partner & Sub-Franchise Network
+    const financials = {
+      totalBoughtCards,
+      totalBuyCost,
+      avgBuyPrice,
+      // Active Partner Direct Customer Sales
+      directInstalledCards,
+      directInstallRevenue,
+      directInstallProfit,
+      directPeriods: {
+        TODAY: calcDirectPeriodMetrics(partnerInstalls, startOfToday),
+        LAST_7_DAYS: calcDirectPeriodMetrics(partnerInstalls, sevenDaysAgo),
+        THIS_MONTH: calcDirectPeriodMetrics(partnerInstalls, startOfMonth),
+        ALL_TIME: calcDirectPeriodMetrics(partnerInstalls, null),
+      },
+      // Active Partner Allotments to Sub-Franchises
+      subAllottedCards,
+      subAllotmentRevenue,
+      subAllotmentProfit,
+      subAllotmentsList,
+      // Sub-Franchise Network Retail Sales & Profit (What Sub-Franchises sold to their customers)
+      subRetailCards,
+      subRetailRevenue,
+      subRetailProfit,
+      subFranchiseInstallsList,
+      subRetailPeriods: {
+        TODAY: calcSubRetailPeriodMetrics(subFranchiseInstalls, startOfToday),
+        LAST_7_DAYS: calcSubRetailPeriodMetrics(subFranchiseInstalls, sevenDaysAgo),
+        THIS_MONTH: calcSubRetailPeriodMetrics(subFranchiseInstalls, startOfMonth),
+        ALL_TIME: calcSubRetailPeriodMetrics(subFranchiseInstalls, null),
+      },
+      // Totals
+      totalCardsSold,
+      realizedRevenue,
+      realizedProfit,
+      totalInHandStock,
+      totalRevenue: realizedRevenue,
+      netProfit: realizedProfit,
+      profitPerCard: totalCardsSold > 0 ? Math.round(realizedProfit / totalCardsSold) : 0,
+      marginPercent: realizedRevenue > 0 ? Math.round((realizedProfit / realizedRevenue) * 100) : 0,
+      directInstallsList,
+      periods: {
+        TODAY: todayPeriod,
+        LAST_7_DAYS: last7DaysPeriod,
+        THIS_MONTH: thisMonthPeriod,
+        ALL_TIME: allTimePeriod,
+      },
+    };
+
     res.status(200).json(
       new ApiResponse(
         200,
@@ -1006,6 +1421,10 @@ export const getPartnerSummary = async (req, res, next) => {
             inactive: inactiveSubFranchises,
             recent: recentSubFranchises,
             performance: subFranchisePerformance,
+            totalStock: subFranchisePerformance.reduce((acc, s) => acc + (s.currentInventory || 0) + (s.cardsInstalled || 0), 0),
+            installedCards: subFranchisePerformance.reduce((acc, s) => acc + (s.cardsInstalled || 0), 0),
+            pendingCards: subFranchisePerformance.reduce((acc, s) => acc + (s.currentInventory || 0), 0),
+            transfersCount: subTransfersCount,
           },
           customers: {
             totalCardsAllotted: partnerInstalledCardsCount + currentCardInventoryCount,
@@ -1016,6 +1435,7 @@ export const getPartnerSummary = async (req, res, next) => {
             pendingVerifications: pendingVerificationsCount,
           },
           latestAllotment,
+          financials,
         },
         'Partner dashboard summary retrieved successfully'
       )

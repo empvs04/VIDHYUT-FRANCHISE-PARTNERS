@@ -370,17 +370,18 @@ body {
 }
 
 .stat-card-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 10px;
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  font-size: 9.5px;
   font-weight: 800;
   text-transform: uppercase;
   background-color: var(--color-primary-light);
   color: var(--color-primary-dark);
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 1.5px 6px;
+  border-radius: 4px;
   letter-spacing: 0.3px;
+  line-height: 1.2;
 }
 
 .stat-title {
@@ -1610,6 +1611,390 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ============================================================ */
+/* DASHBOARD & MODAL MOBILE RESPONSIVENESS                      */
+/* ============================================================ */
+
+/* Dashboard Page Header Actions (Desktop: Flex Row, Mobile: Row 1 = [Install Card][Distribute Stock], Row 2 = [Refresh] full width) */
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Row 1 on mobile: Install Card (Child 1) and Distribute Stock (Child 2) side-by-side horizontally */
+  .dashboard-header-actions > *:nth-child(1),
+  .dashboard-header-actions > *:nth-child(2) {
+    width: 100% !important;
+    height: 42px !important;
+    font-size: 13px !important;
+    padding: 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Row 2 on mobile: Refresh button below them, taking 100% full width (equal to both cards above) */
+  .dashboard-header-actions > *:nth-child(3),
+  .dashboard-header-actions > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    height: 42px !important;
+    font-size: 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* 4-Column Partner / Sub-Franchise Inventory Grids */
+.dashboard-partner-4grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-partner-4grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-partner-4grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+/* 5-Column Partner / Sub-Franchise Inventory Grids */
+.dashboard-partner-5grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-partner-5grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile: First 4 cards in 2x2 grid, 5th card (Search Card) full width */
+@media (max-width: 900px) {
+  .dashboard-partner-5grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .dashboard-partner-5grid .stat-card {
+    padding: 10px 12px !important;
+    min-height: 88px !important;
+  }
+
+  .dashboard-partner-5grid .stat-card .stat-title {
+    font-size: 10px !important;
+  }
+
+  .dashboard-partner-5grid .stat-card .stat-value {
+    font-size: 20px !important;
+    margin: 2px 0 !important;
+  }
+
+  .dashboard-partner-5grid .stat-card .stat-subtitle {
+    font-size: 10px !important;
+  }
+
+  /* 5th card (Search Card by Serial Number) spans full width across 2 columns */
+  .dashboard-partner-5grid .dashboard-search-stat-card,
+  .dashboard-partner-5grid > :nth-child(5),
+  .dashboard-partner-5grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 12px 14px !important;
+  }
+}
+
+.dashboard-search-stat-card {
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 94px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard-search-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.08);
+}
+
+/* 2-Column Commercial Performance Cards (Revenue & Profit) */
+.dashboard-commercial-2grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-commercial-2grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+/* Modal 4-Column Top KPI Strips */
+.modal-kpi-4grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .modal-kpi-4grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-kpi-4grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* Modal 4-Column Period Breakdown Matrix */
+.modal-period-4grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1024px) {
+  .modal-period-4grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+}
+
+@media (max-width: 580px) {
+  .modal-period-4grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+/* Modal Controls: Header, Tabs, Search */
+.modal-header-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .modal-header-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+}
+
+.modal-tabs-scroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #F1F5F9;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .modal-tabs-scroll {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+  .modal-tabs-scroll button {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 6px 10px !important;
+    font-size: 11.5px !important;
+  }
+}
+
+.modal-search-wrapper {
+  position: relative;
+  width: 250px;
+}
+
+@media (max-width: 768px) {
+  .modal-search-wrapper {
+    width: 100% !important;
+  }
+}
+
+/* ============================================================ */
+/* CARD INVENTORY PAGE MOBILE RESPONSIVE UTILITIES              */
+/* ============================================================ */
+
+/* 3 Context Cards (Serial Range, Readiness, Valuation) */
+.inventory-context-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .inventory-context-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
+
+/* Card Inventory Filter Header */
+.inventory-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+/* View Switcher Tabs (Serial Ranges vs 1-by-1 Cards) */
+.inventory-view-tabs {
+  display: inline-flex;
+  align-items: center;
+  background-color: #F1F5F9;
+  padding: 3px;
+  border-radius: 9px;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* Search and Filter Form */
+.inventory-search-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.inventory-search-input-wrap {
+  position: relative;
+  min-width: 200px;
+  max-width: 260px;
+  flex: 1 1 200px;
+}
+
+.inventory-search-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .inventory-filter-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .inventory-view-tabs {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .inventory-view-tabs button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    font-size: 12px !important;
+  }
+  .inventory-search-form {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .inventory-search-input-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+  }
+  .inventory-search-controls-row {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .inventory-search-controls-row > div {
+    flex: 1 1 120px !important;
+    min-width: 110px !important;
+  }
+}
+
+/* Table Top Slider & Pagination Bar */
+.inventory-table-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background-color: #F8FAFC;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .inventory-table-top-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+  }
+  .inventory-table-top-controls {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+}
+
+
 
 
 

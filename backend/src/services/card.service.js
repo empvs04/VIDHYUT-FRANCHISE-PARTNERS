@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import Card from '../models/Card.model.js';
 import CardHistory from '../models/CardHistory.model.js';
 import FranchisePartner from '../models/FranchisePartner.model.js';
+import Transaction from '../models/Transaction.model.js';
+import Installation from '../models/Installation.model.js';
+import Customer from '../models/Customer.model.js';
 import { ApiError } from '../utils/apiError.js';
 import {
   CARD_STATUS,
@@ -10,6 +13,7 @@ import {
   USER_ROLES,
   NOTIFICATION_TYPES,
   ENTITY_TYPES,
+  CONFIRMATION_STATUS,
 } from '../config/constants.js';
 import { createNotification } from './notification.service.js';
 
@@ -290,6 +294,7 @@ export const getCards = async (queryParams, currentUser, authPartner) => {
     district = '',
     ownerId = '',
     batchId = '',
+    partnerOnly = '',
   } = queryParams;
 
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -303,16 +308,27 @@ export const getCards = async (queryParams, currentUser, authPartner) => {
     if (!authPartner) {
       throw new ApiError(403, 'Partner profile required to access inventory.');
     }
-    // Franchise Partner can only view cards in their custody
-    filter.currentOwnerId = authPartner._id;
+    if (queryParams.scope === 'SUB_FRANCHISE' || queryParams.ownerScope === 'SUB_FRANCHISE') {
+      const subPartners = await FranchisePartner.find({ parentPartnerId: authPartner._id }).select('_id').lean();
+      const subPartnerIds = subPartners.map((p) => p._id);
+      filter.currentOwnerId = { $in: subPartnerIds };
+    } else {
+      // Franchise Partner can only view cards in their custody
+      filter.currentOwnerId = authPartner._id;
+    }
   } else {
     // Super Admin explicit owner filter
     if (ownerId) {
       if (ownerId === 'HQ' || ownerId === 'HEADQUARTERS') {
         filter.currentOwnerType = CARD_OWNER_TYPES.HEADQUARTERS;
+      } else if (ownerId === 'PARTNERS' || ownerId === 'PARTNER') {
+        filter.currentOwnerId = { $ne: null };
       } else if (mongoose.Types.ObjectId.isValid(ownerId)) {
         filter.currentOwnerId = new mongoose.Types.ObjectId(ownerId);
       }
+    }
+    if (partnerOnly === 'true' || partnerOnly === true) {
+      filter.currentOwnerId = { $ne: null };
     }
   }
 
@@ -343,7 +359,11 @@ export const getCards = async (queryParams, currentUser, authPartner) => {
     const matchingPartners = await FranchisePartner.find(partnerFilter).select('_id');
     const partnerIds = matchingPartners.map((p) => p._id);
 
-    if (filter.currentOwnerId) {
+    const isSpecificOwner =
+      filter.currentOwnerId &&
+      !(typeof filter.currentOwnerId === 'object' && ('$ne' in filter.currentOwnerId || '$in' in filter.currentOwnerId));
+
+    if (isSpecificOwner) {
       // If already filtered by specific owner, ensure it matches territory filter
       if (!partnerIds.some((id) => id.equals(filter.currentOwnerId))) {
         return { cards: [], pagination: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 } };
@@ -422,6 +442,7 @@ export const getCardRanges = async (queryParams, currentUser, authPartner) => {
     district = '',
     ownerId = '',
     batchId = '',
+    partnerOnly = '',
   } = queryParams;
 
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -438,9 +459,14 @@ export const getCardRanges = async (queryParams, currentUser, authPartner) => {
     if (ownerId) {
       if (ownerId === 'HQ' || ownerId === 'HEADQUARTERS') {
         filter.currentOwnerType = CARD_OWNER_TYPES.HEADQUARTERS;
+      } else if (ownerId === 'PARTNERS' || ownerId === 'PARTNER') {
+        filter.currentOwnerId = { $ne: null };
       } else if (mongoose.Types.ObjectId.isValid(ownerId)) {
         filter.currentOwnerId = new mongoose.Types.ObjectId(ownerId);
       }
+    }
+    if (partnerOnly === 'true' || partnerOnly === true) {
+      filter.currentOwnerId = { $ne: null };
     }
   }
 
@@ -471,7 +497,11 @@ export const getCardRanges = async (queryParams, currentUser, authPartner) => {
     const matchingPartners = await FranchisePartner.find(partnerFilter).select('_id');
     const partnerIds = matchingPartners.map((p) => p._id);
 
-    if (filter.currentOwnerId) {
+    const isSpecificOwner =
+      filter.currentOwnerId &&
+      !(typeof filter.currentOwnerId === 'object' && ('$ne' in filter.currentOwnerId || '$in' in filter.currentOwnerId));
+
+    if (isSpecificOwner) {
       if (!partnerIds.some((id) => id.equals(filter.currentOwnerId))) {
         return { ranges: [], pagination: { total: 0, totalCards: 0, page: pageNum, limit: limitNum, totalPages: 0 } };
       }
@@ -629,16 +659,62 @@ export const getCardRanges = async (queryParams, currentUser, authPartner) => {
     allRanges.push(currentRange);
   }
 
-  // Sort ranges descending by assigned date
-  allRanges.sort((a, b) => {
+  // Consolidate ranges per partner:
+  // Show only the LATEST stock assigned by admin on the main table per partner,
+  // and preserve the full historical breakdown in `history` for viewing via "View".
+  const consolidatedRanges = [];
+  const partnerRangesMap = new Map();
+
+  for (const rng of allRanges) {
+    const isHQ = rng.currentOwnerType === 'HEADQUARTERS' || !rng.currentOwner;
+    if (isHQ) {
+      // HQ warehouse stock ranges remain individual contiguous ranges
+      consolidatedRanges.push(rng);
+    } else {
+      const ownerId = rng.ownerKey;
+      if (!partnerRangesMap.has(ownerId)) {
+        partnerRangesMap.set(ownerId, []);
+      }
+      partnerRangesMap.get(ownerId).push(rng);
+    }
+  }
+
+  for (const [ownerId, ownerRanges] of partnerRangesMap.entries()) {
+    // Sort this partner's ranges by assigned date descending, then serial numbers descending
+    ownerRanges.sort((a, b) => {
+      const dateA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
+      const dateB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
+      if (dateA !== dateB) return dateB - dateA;
+      return (b.lastNum || 0) - (a.lastNum || 0);
+    });
+
+    const latestRange = ownerRanges[0];
+    const totalPartnerCards = ownerRanges.reduce((sum, r) => sum + r.totalCards, 0);
+    const allCardIds = ownerRanges.flatMap((r) => r.cardIds || []);
+    const allSerials = ownerRanges.flatMap((r) => r.serials || []);
+
+    consolidatedRanges.push({
+      ...latestRange,
+      rangeId: `partner-${ownerId}-${latestRange.rangeId}`,
+      isConsolidatedPartner: true,
+      partnerTotalCards: totalPartnerCards,
+      totalAllotments: ownerRanges.length,
+      history: ownerRanges, // Complete history of all batches given to this partner
+      allCardIds,
+      allSerials,
+    });
+  }
+
+  // Sort consolidated ranges descending by assigned date
+  consolidatedRanges.sort((a, b) => {
     const dateA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
     const dateB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
     return dateB - dateA;
   });
 
-  const totalRanges = allRanges.length;
+  const totalRanges = consolidatedRanges.length;
   const skip = (pageNum - 1) * limitNum;
-  const paginatedRanges = allRanges.slice(skip, skip + limitNum);
+  const paginatedRanges = consolidatedRanges.slice(skip, skip + limitNum);
 
   return {
     ranges: paginatedRanges,
@@ -795,6 +871,7 @@ export const updateCardStatus = async (cardId, newStatus, reason, modifierUser) 
 // 8. Aggregated Real-Time Card Statistics from MongoDB
 export const getCardStats = async (currentUser, authPartner) => {
   if (currentUser.role === USER_ROLES.SUPER_ADMIN) {
+    const subFranchisePartners = await FranchisePartner.find({ franchiseType: 'SUB_FRANCHISE' }).distinct('_id');
     const [
       totalCards,
       availableCards,
@@ -802,6 +879,10 @@ export const getCardStats = async (currentUser, authPartner) => {
       transferredCards,
       installedCards,
       blockedCards,
+      mainFranchiseCards,
+      subFranchiseCards,
+      franchiseToSubTransactions,
+      subFranchiseCustomerInstallations,
     ] = await Promise.all([
       Card.countDocuments(),
       Card.countDocuments({ status: CARD_STATUS.AVAILABLE }),
@@ -814,7 +895,39 @@ export const getCardStats = async (currentUser, authPartner) => {
       }),
       Card.countDocuments({ status: CARD_STATUS.INSTALLED }),
       Card.countDocuments({ status: CARD_STATUS.BLOCKED }),
+      Card.countDocuments({ currentOwnerId: { $ne: null, $nin: subFranchisePartners } }),
+      Card.countDocuments({ currentOwnerId: { $in: subFranchisePartners } }),
+      Transaction.find({
+        sellerPartnerId: { $ne: null },
+        buyerPartnerId: { $in: subFranchisePartners },
+        status: { $in: ['CONFIRMED', 'PENDING_CONFIRMATION'] },
+      }).select('totalAmount pricePerCard quantity paidQuantity').sort({ createdAt: -1 }),
+      Installation.find({
+        partnerId: { $in: subFranchisePartners },
+        customerConfirmationStatus: CONFIRMATION_STATUS.CONFIRMED,
+      }).select('totalAmount pricePerCard installedCardCount cardSerialNumbers').lean(),
     ]);
+
+    // 1. Calculate Franchise -> Sub-Franchise quotation values (4th Card)
+    const subFranchiseAllotmentValue = franchiseToSubTransactions.reduce(
+      (sum, t) => sum + (t.totalAmount || 0),
+      0
+    );
+    const quotationRate = franchiseToSubTransactions[0]?.pricePerCard || 2400;
+    const franchiseCardsNetValue = (mainFranchiseCards || 0) * quotationRate;
+    const totalNetworkQuotationValue = ((mainFranchiseCards || 0) + (subFranchiseCards || 0)) * quotationRate;
+
+    // 2. Calculate Sub-Franchise -> Customer installation quotation values (5th Card)
+    const subFranchiseInstallations = subFranchiseCustomerInstallations || [];
+    const subFranchiseCustomerNetValue = subFranchiseInstallations.reduce(
+      (sum, inst) => sum + (inst.totalAmount || 0),
+      0
+    );
+    const subFranchiseInstalledCardsCount = subFranchiseInstallations.reduce(
+      (sum, inst) => sum + (inst.installedCardCount || inst.cardSerialNumbers?.length || 0),
+      0
+    );
+    const customerQuotationRate = subFranchiseInstallations[0]?.pricePerCard || 3000;
 
     return {
       total: totalCards,
@@ -823,6 +936,15 @@ export const getCardStats = async (currentUser, authPartner) => {
       transferred: transferredCards,
       installed: installedCards,
       blocked: blockedCards,
+      franchiseCards: mainFranchiseCards,
+      subFranchiseCards: subFranchiseCards || 0,
+      netValue: subFranchiseAllotmentValue || ((subFranchiseCards || 0) * quotationRate),
+      quotationRate,
+      subFranchiseCustomerNetValue,
+      subFranchiseInstalledCardsCount,
+      customerQuotationRate,
+      franchiseCardsNetValue,
+      totalNetworkQuotationValue,
     };
   } else {
     // Partner-specific counts
@@ -830,33 +952,107 @@ export const getCardStats = async (currentUser, authPartner) => {
       throw new ApiError(403, 'Partner profile required.');
     }
 
+    // Sub-franchises under this partner
+    const subPartners = await FranchisePartner.find({ parentPartnerId: authPartner._id }).select('_id').lean();
+    const subPartnerIds = subPartners.map((s) => s._id);
+
     const [
       inPossessionTotal,
       availableCards,
       transferredCards,
       installedCards,
       blockedCards,
+      partnerTransactions,
+      firstCard,
+      lastCard,
+      subFranchiseCardsCount,
+      subFranchiseInstalledCount,
+      partnerCustomersCount,
+      subCustomersCount,
+      subTransactions,
     ] = await Promise.all([
       Card.countDocuments({ currentOwnerId: authPartner._id }),
       Card.countDocuments({ currentOwnerId: authPartner._id, status: CARD_STATUS.ASSIGNED, previousOwnerId: null }),
-      Card.countDocuments({
-        currentOwnerId: authPartner._id,
-        $or: [
-          { status: CARD_STATUS.TRANSFERRED },
-          { previousOwnerId: { $ne: null } },
-        ],
-      }),
+      Card.countDocuments({ previousOwnerId: authPartner._id }),
       Card.countDocuments({ currentOwnerId: authPartner._id, status: CARD_STATUS.INSTALLED }),
       Card.countDocuments({ currentOwnerId: authPartner._id, status: CARD_STATUS.BLOCKED }),
+      Transaction.find({
+        $or: [
+          { sellerPartnerId: authPartner._id },
+          { buyerPartnerId: authPartner._id },
+        ],
+        status: { $in: ['CONFIRMED', 'PENDING_CONFIRMATION'] },
+      }).select('totalAmount pricePerCard quantity paidQuantity').sort({ createdAt: -1 }),
+      Card.findOne({ currentOwnerId: authPartner._id }).sort({ serialNumber: 1 }).select('serialNumber').lean(),
+      Card.findOne({ currentOwnerId: authPartner._id }).sort({ serialNumber: -1 }).select('serialNumber').lean(),
+      subPartnerIds.length > 0
+        ? Card.countDocuments({ currentOwnerId: { $in: subPartnerIds } })
+        : Promise.resolve(0),
+      subPartnerIds.length > 0
+        ? Card.countDocuments({ currentOwnerId: { $in: subPartnerIds }, status: CARD_STATUS.INSTALLED })
+        : Promise.resolve(0),
+      Customer.countDocuments({ createdByPartnerId: authPartner._id }),
+      subPartnerIds.length > 0
+        ? Customer.countDocuments({ createdByPartnerId: { $in: subPartnerIds } })
+        : Promise.resolve(0),
+      subPartnerIds.length > 0
+        ? Transaction.find({
+            sellerPartnerId: authPartner._id,
+            buyerPartnerId: { $in: subPartnerIds },
+            status: { $in: ['CONFIRMED', 'PENDING_CONFIRMATION'] },
+          }).select('totalAmount pricePerCard quantity paidQuantity').sort({ createdAt: -1 })
+        : Promise.resolve([]),
     ]);
 
+    const effectiveTransferred = transferredCards || subFranchiseCardsCount || 0;
+    const partnerQuotationTotal = partnerTransactions.reduce(
+      (sum, t) => sum + (t.totalAmount || 0),
+      0
+    );
+    const partnerQuotationRate = partnerTransactions[0]?.pricePerCard || 1200;
+    const partnerNetValue = partnerQuotationTotal || (inPossessionTotal * partnerQuotationRate);
+
+    // Sub-Franchise calculations
+    const subAvailableStock = Math.max(0, subFranchiseCardsCount - subFranchiseInstalledCount);
+    const subQuotationTotal = (subTransactions || []).reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const subQuotationRate = subTransactions[0]?.pricePerCard || 2400;
+    const subNetValue = subQuotationTotal || (subFranchiseCardsCount * subQuotationRate);
+
+    const totalCustomers = partnerCustomersCount + subCustomersCount;
+    const totalAllottedStock = inPossessionTotal + effectiveTransferred + installedCards;
+    const myAvailableStock = Math.max(0, inPossessionTotal - installedCards);
+
     return {
-      total: inPossessionTotal,
+      total: totalAllottedStock,
+      totalAllotted: totalAllottedStock,
+      totalReceived: totalAllottedStock,
       available: availableCards,
       assigned: inPossessionTotal,
-      transferred: transferredCards,
+      transferred: effectiveTransferred,
+      transferredToSubs: effectiveTransferred,
+      subFranchisesCount: subPartnerIds.length,
       installed: installedCards,
+      pending: myAvailableStock,
+      myAvailableStock: myAvailableStock,
+      subFranchiseAvailableStock: subAvailableStock,
+      subFranchiseTotalCards: subFranchiseCardsCount,
+      subFranchiseInstalledCards: subFranchiseInstalledCount,
+      customers: totalCustomers,
+      partnerCustomers: partnerCustomersCount,
+      subCustomers: subCustomersCount,
+      myNetValue: partnerNetValue,
+      subFranchiseNetValue: subNetValue,
+      subQuotationRate,
       blocked: blockedCards,
+      franchiseCards: inPossessionTotal,
+      subFranchiseCards: subFranchiseCardsCount,
+      netValue: partnerNetValue,
+      quotationRate: partnerQuotationRate,
+      franchiseCardsNetValue: inPossessionTotal * partnerQuotationRate,
+      totalNetworkQuotationValue: (inPossessionTotal + subFranchiseCardsCount) * partnerQuotationRate,
+      startSerial: firstCard?.serialNumber || '',
+      endSerial: lastCard?.serialNumber || '',
+      batchCount: partnerTransactions.length || 1,
     };
   }
 };
@@ -1101,7 +1297,7 @@ export const assignCardsToPartner = async (allocationParams, modifierUser) => {
 
 // 11. Partner-Wise Card Distribution Breakdown (Who has how many cards & how many remain)
 export const getPartnerDistributionBreakdown = async (queryParams) => {
-  const { state = '', district = '', search = '' } = queryParams;
+  const { state = '', district = '', search = '', franchiseType = '' } = queryParams;
 
   // 1. Overall System Stock Overview
   const [totalCards, availableAtHQ, totalAssigned, totalTransferred, totalInstalled, totalBlocked] =
@@ -1122,7 +1318,23 @@ export const getPartnerDistributionBreakdown = async (queryParams) => {
   // 2. Fetch partners
   const partnerFilter = { accountStatus: 'ACTIVE' };
   if (state) partnerFilter.state = { $regex: new RegExp(`^${state.trim()}$`, 'i') };
-  if (district) partnerFilter.district = { $regex: new RegExp(`^${district.trim()}$`, 'i') };
+  if (franchiseType && franchiseType.trim()) {
+    const trimmed = franchiseType.trim();
+    if (trimmed === 'MAIN_FRANCHISE' || trimmed === 'FRANCHISE_PARTNER') {
+      partnerFilter.franchiseType = { $ne: 'SUB_FRANCHISE' };
+    } else if (trimmed === 'DISTRICT_FRANCHISE') {
+      partnerFilter.franchiseType = {
+        $in: [
+          'DISTRICT_FRANCHISE',
+          'PREMIUM_EXCLUSIVE_DISTRICT',
+          'STANDARD_EXCLUSIVE_DISTRICT',
+          'NON_EXCLUSIVE_DISTRICT',
+        ],
+      };
+    } else {
+      partnerFilter.franchiseType = trimmed;
+    }
+  }
 
   if (search && search.trim()) {
     const reg = new RegExp(search.trim(), 'i');
@@ -1130,10 +1342,23 @@ export const getPartnerDistributionBreakdown = async (queryParams) => {
   }
 
   const partners = await FranchisePartner.find(partnerFilter)
-    .select('fullName franchiseId franchiseType state district mobileNumber email')
+    .select('fullName franchiseId franchiseType state district mobileNumber email parentPartnerId')
+    .populate('parentPartnerId', 'fullName franchiseId mobileNumber')
     .sort({ state: 1, district: 1 });
 
-  // 3. Aggregate cards per partner
+  // 3. Fetch ONLY Franchise Partner -> Sub-Franchise Partner Quotation Transactions
+  const subFranchisePartnerIds = await FranchisePartner.find({ franchiseType: 'SUB_FRANCHISE' }).distinct('_id');
+  const franchiseToSubTxns = await Transaction.find({
+    sellerPartnerId: { $ne: null },
+    buyerPartnerId: { $in: subFranchisePartnerIds },
+    status: { $in: ['CONFIRMED', 'PENDING_CONFIRMATION'] },
+  })
+    .populate('sellerPartnerId', 'fullName franchiseId mobileNumber district state franchiseType')
+    .populate('buyerPartnerId', 'fullName franchiseId mobileNumber district state franchiseType')
+    .sort({ createdAt: -1 })
+    .select('transactionId buyerPartnerId sellerPartnerId pricePerCard totalAmount quantity paidQuantity createdAt');
+
+  // 4. Aggregate cards and quotation values per partner
   const partnerDistribution = await Promise.all(
     partners.map(async (p) => {
       const [assignedCount, installedCount, blockedCount, sampleCards] = await Promise.all([
@@ -1145,11 +1370,76 @@ export const getPartnerDistributionBreakdown = async (queryParams) => {
 
       const totalOwned = assignedCount + installedCount + blockedCount;
 
+      // Check for Franchise -> Sub-Franchise quotation data
+      const isSub = p.franchiseType === 'SUB_FRANCHISE';
+      let quotationRate = 0;
+      let quotationTotal = 0;
+      let quotationTxnId = null;
+      let quotationDate = null;
+      let hasSubFranchiseQuotation = false;
+      let relatedPartner = null;
+      let subCardsAssigned = 0;
+
+      if (isSub) {
+        // Find transaction where this sub-franchise received cards from Franchise Partner
+        const matchingTxns = franchiseToSubTxns.filter((t) => {
+          const bId = t.buyerPartnerId?._id ? t.buyerPartnerId._id.toString() : t.buyerPartnerId?.toString();
+          return bId === p._id.toString();
+        });
+        if (matchingTxns.length > 0) {
+          hasSubFranchiseQuotation = true;
+          quotationRate = matchingTxns[0].pricePerCard || 0;
+          quotationTotal = matchingTxns.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+          subCardsAssigned = matchingTxns.reduce((sum, t) => sum + (t.quantity || 0), 0);
+          quotationTxnId = matchingTxns[0].transactionId;
+          quotationDate = matchingTxns[0].createdAt;
+          if (matchingTxns[0].sellerPartnerId) {
+            relatedPartner = {
+              fullName: matchingTxns[0].sellerPartnerId.fullName,
+              franchiseId: matchingTxns[0].sellerPartnerId.franchiseId,
+              mobileNumber: matchingTxns[0].sellerPartnerId.mobileNumber,
+              district: matchingTxns[0].sellerPartnerId.district,
+              state: matchingTxns[0].sellerPartnerId.state,
+              relationship: 'Assigned By Franchise Partner',
+            };
+          }
+        }
+      } else {
+        // Partner is a Franchise Partner: find transactions where he assigned cards to Sub-Franchises
+        const matchingTxns = franchiseToSubTxns.filter((t) => {
+          const sId = t.sellerPartnerId?._id ? t.sellerPartnerId._id.toString() : t.sellerPartnerId?.toString();
+          return sId === p._id.toString();
+        });
+        if (matchingTxns.length > 0) {
+          hasSubFranchiseQuotation = true;
+          quotationRate = matchingTxns[0].pricePerCard || 0;
+          quotationTotal = matchingTxns.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+          subCardsAssigned = matchingTxns.reduce((sum, t) => sum + (t.quantity || 0), 0);
+          quotationTxnId = matchingTxns[0].transactionId;
+          quotationDate = matchingTxns[0].createdAt;
+          if (matchingTxns[0].buyerPartnerId) {
+            relatedPartner = {
+              fullName: matchingTxns[0].buyerPartnerId.fullName,
+              franchiseId: matchingTxns[0].buyerPartnerId.franchiseId,
+              mobileNumber: matchingTxns[0].buyerPartnerId.mobileNumber,
+              district: matchingTxns[0].buyerPartnerId.district,
+              state: matchingTxns[0].buyerPartnerId.state,
+              relationship: 'Assigned To Sub-Franchise',
+            };
+          }
+        }
+      }
+
       return {
         partnerId: p._id,
         fullName: p.fullName,
         franchiseId: p.franchiseId,
         franchiseType: p.franchiseType,
+        parentPartner: p.parentPartnerId ? {
+          fullName: p.parentPartnerId.fullName,
+          franchiseId: p.parentPartnerId.franchiseId,
+          mobileNumber: p.parentPartnerId.mobileNumber,
+        } : null,
         state: p.state,
         district: p.district,
         mobileNumber: p.mobileNumber,
@@ -1159,9 +1449,107 @@ export const getPartnerDistributionBreakdown = async (queryParams) => {
         installedCount,
         blockedCount,
         sampleSerials: sampleCards.map((c) => c.serialNumber),
+        quotationRate,
+        quotationTotal,
+        quotationTxnId,
+        quotationDate,
+        hasSubFranchiseQuotation,
+        subCardsAssigned,
+        relatedPartner,
       };
     })
   );
+
+  const totalSubFranchiseQuotationValue = franchiseToSubTxns.reduce(
+    (sum, t) => sum + (t.totalAmount || 0),
+    0
+  );
+  const latestQuotationRate = franchiseToSubTxns[0]?.pricePerCard || 2400;
+  const totalSubFranchiseCardsAssigned = franchiseToSubTxns.reduce(
+    (sum, t) => sum + (t.quantity || 0),
+    0
+  );
+
+  const subFranchiseQuotations = franchiseToSubTxns.map((t) => ({
+    _id: t._id,
+    transactionId: t.transactionId,
+    franchisePartner: t.sellerPartnerId
+      ? {
+          _id: t.sellerPartnerId._id,
+          fullName: t.sellerPartnerId.fullName,
+          franchiseId: t.sellerPartnerId.franchiseId,
+          franchiseType: t.sellerPartnerId.franchiseType,
+          district: t.sellerPartnerId.district,
+          state: t.sellerPartnerId.state,
+          mobileNumber: t.sellerPartnerId.mobileNumber,
+        }
+      : null,
+    subFranchisePartner: t.buyerPartnerId
+      ? {
+          _id: t.buyerPartnerId._id,
+          fullName: t.buyerPartnerId.fullName,
+          franchiseId: t.buyerPartnerId.franchiseId,
+          franchiseType: t.buyerPartnerId.franchiseType,
+          district: t.buyerPartnerId.district,
+          state: t.buyerPartnerId.state,
+          mobileNumber: t.buyerPartnerId.mobileNumber,
+        }
+      : null,
+    cardsAssigned: t.quantity || 0,
+    quotationRate: t.pricePerCard || 0,
+    totalAmount: t.totalAmount || 0,
+    status: t.status,
+    createdAt: t.createdAt,
+  }));
+
+  // 5. Fetch Sub-Franchise -> Customer Quotation Installations (Cards given to customers after quotation)
+  const customerInstallations = await Installation.find({
+    partnerId: { $in: subFranchisePartnerIds },
+    customerConfirmationStatus: CONFIRMATION_STATUS.CONFIRMED,
+  })
+    .populate('partnerId', 'fullName franchiseId mobileNumber district state franchiseType parentPartnerId')
+    .populate('customerId', 'fullName mobileNumber email customerType address')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const subFranchiseCustomerQuotations = customerInstallations.map((inst) => ({
+    _id: inst._id,
+    installationId: inst.installationId,
+    subFranchisePartner: inst.partnerId
+      ? {
+          _id: inst.partnerId._id,
+          fullName: inst.partnerId.fullName,
+          franchiseId: inst.partnerId.franchiseId,
+          mobileNumber: inst.partnerId.mobileNumber,
+          district: inst.partnerId.district,
+          state: inst.partnerId.state,
+        }
+      : null,
+    customer: {
+      _id: inst.customerId?._id,
+      fullName: inst.customerId?.fullName || 'Customer',
+      mobileNumber: inst.customerId?.mobileNumber || '',
+      customerType: inst.customerType || inst.customerId?.customerType || 'RESIDENTIAL',
+      address: inst.installationAddress || inst.customerId?.address || {},
+    },
+    cardsInstalled: inst.installedCardCount || inst.cardSerialNumbers?.length || 0,
+    cardSerialNumbers: inst.cardSerialNumbers || [],
+    pricePerCard: inst.pricePerCard || 0,
+    totalAmount: inst.totalAmount || 0,
+    installationDateTime: inst.installationDateTime || inst.createdAt,
+    verificationStatus: inst.verificationStatus || 'CONFIRMED',
+    customerConfirmationStatus: inst.customerConfirmationStatus || 'CONFIRMED',
+  }));
+
+  const subFranchiseCustomerNetValue = subFranchiseCustomerQuotations.reduce(
+    (sum, inst) => sum + (inst.totalAmount || 0),
+    0
+  );
+  const subFranchiseCustomerCardsCount = subFranchiseCustomerQuotations.reduce(
+    (sum, inst) => sum + (inst.cardsInstalled || 0),
+    0
+  );
+  const latestCustomerRate = subFranchiseCustomerQuotations[0]?.pricePerCard || 3000;
 
   return {
     overview: {
@@ -1170,8 +1558,16 @@ export const getPartnerDistributionBreakdown = async (queryParams) => {
       distributedToPartners: totalAssigned + totalTransferred,
       installedCustomers: totalInstalled,
       blockedQC: totalBlocked,
+      subFranchiseQuotationValue: totalSubFranchiseQuotationValue,
+      quotationRate: latestQuotationRate,
+      totalSubFranchiseCardsAssigned,
+      subFranchiseCustomerNetValue,
+      subFranchiseCustomerCardsCount,
+      customerQuotationRate: latestCustomerRate,
     },
     partners: partnerDistribution,
+    subFranchiseQuotations,
+    subFranchiseCustomerQuotations,
   };
 };
 

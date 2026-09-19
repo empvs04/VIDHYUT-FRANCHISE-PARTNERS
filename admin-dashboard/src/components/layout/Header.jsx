@@ -29,20 +29,19 @@ const Header = ({ onToggleSidebar }) => {
                 alignItems: 'center',
                 gap: '5px',
                 fontSize: '11px',
-                fontWeight: '800',
+                fontWeight: '700',
                 color: '#15803d',
-                backgroundColor: '#dcfce7',
-                border: '1px solid #bbf7d0',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #dcfce7',
                 padding: '2px 8px',
-                borderRadius: '12px',
+                borderRadius: '6px',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
-                textTransform: 'uppercase',
-                letterSpacing: '0.4px',
+                letterSpacing: '0.3px',
               }}
             >
-              <Circle size={6} fill="#15803d" />
-              Live
+              <Circle size={6} fill="#16a34a" color="#16a34a" />
+              Active System
             </span>
 
             {partner && (
@@ -53,21 +52,21 @@ const Header = ({ onToggleSidebar }) => {
                   alignItems: 'center',
                   gap: '5px',
                   fontSize: '11.5px',
-                  fontWeight: '700',
-                  color: '#0284c7',
-                  backgroundColor: '#e0f2fe',
-                  border: '1px solid #bae6fd',
+                  fontWeight: '600',
+                  color: '#0369a1',
+                  backgroundColor: '#f0f9ff',
+                  border: '1px solid #e0f2fe',
                   padding: '2px 8px',
-                  borderRadius: '12px',
+                  borderRadius: '6px',
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                 }}
                 title={`${partner.franchiseId} (${partner.district || partner.state})`}
               >
-                <span className="franchise-id-text" style={{ fontFamily: 'monospace', fontWeight: 800 }}>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>
                   {partner.franchiseId}
                 </span>
-                <span className="franchise-territory-text" style={{ fontWeight: 600, color: '#0369a1' }}>
+                <span style={{ color: '#64748b' }}>
                   ({partner.district || partner.state})
                 </span>
               </span>
@@ -84,20 +83,16 @@ const Header = ({ onToggleSidebar }) => {
               textOverflow: 'ellipsis',
             }}
           >
-            <Sparkles size={15} color="#ea580c" style={{ flexShrink: 0 }} />
             <span
               style={{
-                fontSize: '14.5px',
-                fontWeight: '900',
-                letterSpacing: '0.4px',
-                background: 'linear-gradient(90deg, #ea580c 0%, #d97706 32%, #15803d 68%, #0284c7 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                fontSize: '13.5px',
+                fontWeight: '800',
+                letterSpacing: '0.3px',
+                color: '#1e293b',
                 textTransform: 'uppercase',
-                filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.08))',
               }}
             >
-              WELCOME VIDHYUT SAATHI ENERGY SAVERS LTD
+              VIDHYUT SAATHI <span style={{ color: '#0284c7', fontWeight: '700' }}>ENERGY SAVERS</span>
             </span>
           </div>
         </div>

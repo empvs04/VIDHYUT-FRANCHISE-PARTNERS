@@ -12,6 +12,7 @@ router.get('/admin-metrics', authorize(USER_ROLES.SUPER_ADMIN), getAdminMetrics)
 router.get(
   '/partner-summary',
   authorize(
+    USER_ROLES.SUPER_ADMIN,
     USER_ROLES.STATE_FRANCHISE,
     USER_ROLES.DISTRICT_FRANCHISE,
     USER_ROLES.SUB_FRANCHISE,

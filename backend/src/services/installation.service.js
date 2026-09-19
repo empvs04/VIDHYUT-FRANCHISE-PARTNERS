@@ -518,7 +518,26 @@ export const getInstallations = async (queryParams, user, partner) => {
   // RBAC Scope
   if (user.role === USER_ROLES.SUPER_ADMIN) {
     if (partnerId && mongoose.Types.ObjectId.isValid(partnerId)) {
-      filter.$or = [{ partnerId }, { parentPartnerId: partnerId }];
+      const subPartnerIds = await FranchisePartner.find({
+        parentPartnerId: partnerId,
+      }).distinct('_id');
+      if (source === 'MY_INSTALLATIONS') {
+        filter.partnerId = partnerId;
+      } else if (source === 'SUB_FRANCHISE_INSTALLATIONS') {
+        filter.partnerId = { $in: subPartnerIds };
+      } else {
+        filter.$or = [{ partnerId }, { partnerId: { $in: subPartnerIds } }, { parentPartnerId: partnerId }];
+      }
+    } else if (source === 'SUB_FRANCHISE_INSTALLATIONS') {
+      const subPartnerIds = await FranchisePartner.find({
+        franchiseType: 'SUB_FRANCHISE',
+      }).distinct('_id');
+      filter.partnerId = { $in: subPartnerIds };
+    } else if (source === 'MY_INSTALLATIONS') {
+      const mainPartnerIds = await FranchisePartner.find({
+        franchiseType: { $ne: 'SUB_FRANCHISE' },
+      }).distinct('_id');
+      filter.partnerId = { $in: mainPartnerIds };
     }
   } else {
     if (!partner) {

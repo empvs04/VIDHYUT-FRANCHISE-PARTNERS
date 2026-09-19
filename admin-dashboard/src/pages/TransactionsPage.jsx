@@ -247,7 +247,19 @@ const TransactionsPage = () => {
       }
 
       if (statsRes.data?.data) {
-        setStats(statsRes.data.data);
+        const d = statsRes.data.data;
+        setStats({
+          totalTransactions: d.totalTransactions ?? d.total ?? 0,
+          total: d.total ?? d.totalTransactions ?? 0,
+          pending: d.pending ?? 0,
+          confirmed: d.confirmed ?? 0,
+          disputed: d.disputed ?? 0,
+          cancelled: d.cancelled ?? 0,
+          totalCardsTransferred: d.totalCardsTransferred ?? d.totalCardsSold ?? 0,
+          totalSalesValue: d.totalSalesValue ?? d.totalSalesAmount ?? 0,
+          incomingPending: d.incomingPending ?? 0,
+          outgoingPending: d.outgoingPending ?? 0,
+        });
       }
     } catch (err) {
       showToast(err.response?.data?.message || 'Error fetching transactions', 'error');
