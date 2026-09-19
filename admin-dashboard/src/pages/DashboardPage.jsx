@@ -893,12 +893,13 @@ const DashboardPage = () => {
 
             {/* 5. Search Card by Serial Number (Dedicated Line Below 4 Cards) */}
             <div
-              className="card"
+              className="card partner-search-card"
               onClick={() => handlePerformSerialSearch(serialQuickInput, 'DIRECT')}
               style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '12px',
                 border: '1px solid #E2E8F0',
+                borderLeft: '4px solid #2563EB',
                 padding: '10px 16px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                 display: 'flex',
@@ -1034,6 +1035,7 @@ const DashboardPage = () => {
             <div className="dashboard-commercial-2grid" style={{ marginBottom: '10px' }}>
               {/* Left Card: Sub-Franchise Revenue */}
               <div
+                className="commercial-stat-card"
                 onClick={() => {
                   setFranchiseModalTab('INSTALLATIONS');
                   setFranchiseModalOpen(true);
@@ -1141,7 +1143,7 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
+                      <div className="commercial-val" style={{ fontSize: '28px', fontWeight: '800', color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(revenueVal).toLocaleString('en-IN')}
                       </div>
 
@@ -1159,6 +1161,7 @@ const DashboardPage = () => {
 
               {/* Right Card: Sub-Franchise Profit */}
               <div
+                className="commercial-stat-card"
                 onClick={() => {
                   setFranchiseModalTab('INSTALLATIONS');
                   setFranchiseModalOpen(true);
@@ -1268,7 +1271,7 @@ const DashboardPage = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '28px', fontWeight: '800', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
+                      <div className="commercial-val" style={{ fontSize: '28px', fontWeight: '800', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.4px', margin: '8px 0 6px' }}>
                         ₹{Number(profitVal).toLocaleString('en-IN')}
                       </div>
 
@@ -1438,30 +1441,9 @@ const DashboardPage = () => {
               }
 
               return (
-                <div
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '16px',
-                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.05)',
-                    overflow: 'hidden',
-                    marginTop: '10px',
-                    marginBottom: '24px',
-                  }}
-                >
+                <div className="partner-analytics-hub">
                   {/* Top Header Strip */}
-                  <div
-                    style={{
-                      padding: '16px 20px',
-                      borderBottom: '1px solid #F1F5F9',
-                      background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                    }}
-                  >
+                  <div className="partner-analytics-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div
                         style={{
@@ -1541,18 +1523,10 @@ const DashboardPage = () => {
                   </div>
 
                   {/* Top Row: 4 Metric Highlights Strip */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                      gap: '14px',
-                      padding: '16px 20px',
-                      backgroundColor: '#F8FAFC',
-                      borderBottom: '1px solid #E2E8F0',
-                    }}
-                  >
+                  <div className="partner-analytics-telemetry sub-franchise-telemetry">
                     {/* 1. Total Customers */}
                     <div
+                      className="sub-franchise-telemetry-card"
                       style={{
                         backgroundColor: '#FFFFFF',
                         border: '1.5px solid #CBD5E1',
@@ -1578,24 +1552,25 @@ const DashboardPage = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span className="telemetry-label" style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           Total Consumers
                         </span>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="telemetry-icon" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Users size={15} />
                         </div>
                       </div>
-                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                      <div className="telemetry-value" style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.3px', margin: '2px 0' }}>
                         {custMetrics?.totalCustomers || rawInstalls.length || 0}{' '}
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748B' }}>Registered</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#475569', fontWeight: '600', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                      <div className="telemetry-badge" style={{ fontSize: '11px', color: '#475569', fontWeight: '600', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
                         {resCount} Res • {commCount} Comm • {indCount} Ind
                       </div>
                     </div>
 
                     {/* 2. Stock Deployed */}
                     <div
+                      className="sub-franchise-telemetry-card"
                       style={{
                         backgroundColor: '#FFFFFF',
                         border: '1.5px solid #BAE6FD',
@@ -1621,24 +1596,25 @@ const DashboardPage = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span className="telemetry-label" style={{ fontSize: '11px', fontWeight: '800', color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           Deployment Ratio
                         </span>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#F0F9FF', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="telemetry-icon" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#F0F9FF', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Zap size={15} />
                         </div>
                       </div>
-                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#0284C7', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                      <div className="telemetry-value" style={{ fontSize: '20px', fontWeight: '900', color: '#0284C7', letterSpacing: '-0.3px', margin: '2px 0' }}>
                         {deploymentRate}%{' '}
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#0369A1' }}>Installed</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#0369A1', fontWeight: '600', backgroundColor: '#E0F2FE', border: '1px solid #BAE6FD', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                      <div className="telemetry-badge" style={{ fontSize: '11px', color: '#0369A1', fontWeight: '600', backgroundColor: '#E0F2FE', border: '1px solid #BAE6FD', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
                         {totalInstCount} of {totalStock} Cards Active
                       </div>
                     </div>
 
                     {/* 3. Average Net Profit Margin */}
                     <div
+                      className="sub-franchise-telemetry-card"
                       style={{
                         backgroundColor: '#FFFFFF',
                         border: '1.5px solid #A7F3D0',
@@ -1664,24 +1640,25 @@ const DashboardPage = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span className="telemetry-label" style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           Net Margin Rate
                         </span>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="telemetry-icon" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <TrendingUp size={15} />
                         </div>
                       </div>
-                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#059669', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                      <div className="telemetry-value" style={{ fontSize: '20px', fontWeight: '900', color: '#059669', letterSpacing: '-0.3px', margin: '2px 0' }}>
                         {overallMargin}%{' '}
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#047857' }}>Profit Margin</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#047857', fontWeight: '700', backgroundColor: '#D1FAE5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                      <div className="telemetry-badge" style={{ fontSize: '11px', color: '#047857', fontWeight: '700', backgroundColor: '#D1FAE5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
                         {avgProfitPerCard > 0 ? `+₹${avgProfitPerCard} / card avg` : 'Live calculated'}
                       </div>
                     </div>
 
                     {/* 4. Ready Stock */}
                     <div
+                      className="sub-franchise-telemetry-card"
                       style={{
                         backgroundColor: '#FFFFFF',
                         border: '1.5px solid #FDE68A',
@@ -1707,18 +1684,19 @@ const DashboardPage = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span className="telemetry-label" style={{ fontSize: '11px', fontWeight: '800', color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                           Ready In-Hand Stock
                         </span>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#FEF9C3', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="telemetry-icon" style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#FEF9C3', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Package size={15} />
                         </div>
                       </div>
-                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#B45309', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                      <div className="telemetry-value" style={{ fontSize: '20px', fontWeight: '900', color: '#B45309', letterSpacing: '-0.3px', margin: '2px 0' }}>
                         {inHandStock}{' '}
                         <span style={{ fontSize: '13px', fontWeight: '700', color: '#78350F' }}>Cards</span>
                       </div>
                       <div
+                        className="telemetry-badge"
                         style={{
                           fontSize: '11px',
                           color: inHandStock <= 5 ? '#991B1B' : '#92400E',
@@ -1939,6 +1917,7 @@ const DashboardPage = () => {
 
                     {/* GRAPH 4: Stock Deployment & Custody Donut (PieChart) */}
                     <div
+                      className="partner-graph-card"
                       style={{
                         backgroundColor: '#FFFFFF',
                         border: '1.5px solid #E2E8F0',
@@ -2031,7 +2010,7 @@ const DashboardPage = () => {
                   {/* BOTTOM COLLAPSIBLE CUSTOMER INSTALLATION LEDGER & TABLE             */}
                   {/* =================================================================== */}
                   <div style={{ borderTop: '1px solid #F1F5F9', backgroundColor: '#FAFAFA', padding: '16px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div className="partner-ledger-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
                         <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>🧾 Live Customer Installation & Billing Ledger</span>
@@ -2045,7 +2024,7 @@ const DashboardPage = () => {
                       </div>
 
                       {/* Search Bar */}
-                      <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
+                      <div className="partner-ledger-search" style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
                         <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                         <input
                           type="text"
@@ -2076,8 +2055,8 @@ const DashboardPage = () => {
 
                     {filteredInstalls.length > 0 ? (
                       <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
-                        <div style={{ overflowX: 'auto', maxHeight: '280px' }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxHeight: '280px' }}>
+                          <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                             <thead>
                               <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: '800' }}>
                                 <th style={{ padding: '9px 12px' }}>CUSTOMER & PHONE</th>
@@ -2243,7 +2222,7 @@ const DashboardPage = () => {
 
             {/* 5. Search Card by Serial Number (Dedicated Line Below 4 Cards) */}
             <div
-              className="card"
+              className="card partner-search-card"
               onClick={() => handlePerformSerialSearch(serialQuickInput, 'DIRECT')}
               style={{
                 backgroundColor: '#FFFFFF',
