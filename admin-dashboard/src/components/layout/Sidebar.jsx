@@ -25,6 +25,7 @@ import {
   UserCheck,
   Award,
   ChevronRight,
+  Crown,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -177,7 +178,14 @@ const Sidebar = ({ isOpen, onClose }) => {
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <LayoutDashboard size={18} />
-              <span>{isSuperAdmin ? 'Super Admin Dashboard' : 'Partner Dashboard'}</span>
+              <span>
+                {isSuperAdmin
+                  ? 'Super Admin Dashboard'
+                  : partner?.franchiseType === 'SUB_FRANCHISE'
+                  ? 'Sub-Franchise Dashboard'
+                  : 'Partner Dashboard'}
+              </span>
+              <ChevronRight size={14} className="nav-chevron" />
             </NavLink>
           </li>
 
@@ -215,6 +223,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <UserPlus size={18} />
                   <span>Add Partner</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -271,6 +280,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Send size={18} />
                   <span>Distribute Cards</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
 
@@ -368,8 +378,10 @@ const Sidebar = ({ isOpen, onClose }) => {
             </>
           ) : (
             <>
-              {/* FRANCHISE OPERATIONS */}
-              <div className="nav-section-title">FRANCHISE OPERATIONS</div>
+              {/* FIELD & FRANCHISE OPERATIONS */}
+              <div className="nav-section-title">
+                {partner?.franchiseType === 'SUB_FRANCHISE' ? 'FIELD OPERATIONS' : 'FRANCHISE OPERATIONS'}
+              </div>
               <li>
                 <NavLink
                   to="/my-customers"
@@ -378,6 +390,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Users size={18} />
                   <span>My Customers</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -388,6 +401,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Zap size={18} />
                   <span>My Installed Cards</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -398,13 +412,14 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Clock size={18} />
                   <span>My Pending Cards</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
 
-              {/* SUB-FRANCHISE NETWORK */}
+              {/* SUB-FRANCHISE NETWORK (Only for District & State Partners) */}
               {partner?.franchiseType !== 'SUB_FRANCHISE' && (
                 <>
-                  <div className="nav-section-title">Sub-Franchise Network</div>
+                  <div className="nav-section-title">SUB-FRANCHISE NETWORK</div>
                   <li>
                     <NavLink
                       to="/my-sub-franchises"
@@ -412,7 +427,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
                       <Building2 size={18} />
-                      <span>My Sub-Franchise Partners</span>
+                      <span>Sub-Franchise Partners</span>
+                      <ChevronRight size={14} className="nav-chevron" />
                     </NavLink>
                   </li>
                   <li>
@@ -422,7 +438,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                     >
                       <Wrench size={18} />
-                      <span>My Sub-Franchise Installed Cards</span>
+                      <span>Sub-Franchise Installations</span>
+                      <ChevronRight size={14} className="nav-chevron" />
                     </NavLink>
                   </li>
                   <li>
@@ -433,13 +450,16 @@ const Sidebar = ({ isOpen, onClose }) => {
                     >
                       <UserCheck size={18} />
                       <span>Sub-Franchise Customers</span>
+                      <ChevronRight size={14} className="nav-chevron" />
                     </NavLink>
                   </li>
                 </>
               )}
 
-              {/* INVENTORY MANAGEMENT */}
-              <div className="nav-section-title">Inventory Management</div>
+              {/* INVENTORY & DISTRIBUTION */}
+              <div className="nav-section-title">
+                {partner?.franchiseType === 'SUB_FRANCHISE' ? 'CARD STOCK & INVENTORY' : 'CARD DISTRIBUTION & STOCK'}
+              </div>
               <li>
                 <NavLink
                   to="/cards"
@@ -448,6 +468,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <CreditCard size={18} />
                   <span>My Total Stock</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               <li>
@@ -458,6 +479,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <FileText size={18} />
                   <span>Stock Transfer History</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
               {partner?.franchiseType !== 'SUB_FRANCHISE' && (
@@ -469,6 +491,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   >
                     <Send size={18} />
                     <span>Distribute Stock</span>
+                    <ChevronRight size={14} className="nav-chevron" />
                   </NavLink>
                 </li>
               )}
@@ -480,11 +503,12 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <UserPlus size={18} />
                   <span>Install Card</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
 
               {/* REWARDS & RECOGNITION */}
-              <div className="nav-section-title">Performance & Recognition</div>
+              <div className="nav-section-title">PERFORMANCE & REWARDS</div>
               <li>
                 <NavLink
                   to="/rewards"
@@ -493,11 +517,12 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Award size={18} />
                   <span>Rewards & Recognitions</span>
+                  <span className="nav-badge-pill">NEW</span>
                 </NavLink>
               </li>
 
               {/* ACCOUNT & SUPPORT */}
-              <div className="nav-section-title">Account & Support</div>
+              <div className="nav-section-title">ACCOUNT & SETTINGS</div>
               {partner?._id && (
                 <li>
                   <NavLink
@@ -507,6 +532,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                   >
                     <UserCircle size={18} />
                     <span>Profile & KYC</span>
+                    <ChevronRight size={14} className="nav-chevron" />
                   </NavLink>
                 </li>
               )}
@@ -518,6 +544,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 >
                   <Settings size={18} />
                   <span>Settings</span>
+                  <ChevronRight size={14} className="nav-chevron" />
                 </NavLink>
               </li>
             </>
@@ -552,7 +579,11 @@ const Sidebar = ({ isOpen, onClose }) => {
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                backgroundColor: isSuperAdmin ? '#087db5' : '#16a34a',
+                background: isSuperAdmin
+                  ? 'linear-gradient(135deg, #087DB5 0%, #0369A1 100%)'
+                  : partner?.franchiseType === 'SUB_FRANCHISE'
+                  ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)'
+                  : 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
                 color: '#ffffff',
                 display: 'flex',
                 alignItems: 'center',
@@ -560,10 +591,20 @@ const Sidebar = ({ isOpen, onClose }) => {
                 fontWeight: '800',
                 fontSize: '13px',
                 flexShrink: 0,
-                boxShadow: isSuperAdmin ? '0 2px 6px rgba(8, 125, 181, 0.25)' : '0 2px 6px rgba(22, 163, 74, 0.25)',
+                boxShadow: isSuperAdmin
+                  ? '0 2px 6px rgba(8, 125, 181, 0.25)'
+                  : partner?.franchiseType === 'SUB_FRANCHISE'
+                  ? '0 2px 6px rgba(2, 132, 199, 0.25)'
+                  : '0 2px 6px rgba(22, 163, 74, 0.25)',
               }}
             >
-              {isSuperAdmin ? <Sparkles size={16} /> : <UserCircle size={17} />}
+              {isSuperAdmin ? (
+                <Sparkles size={16} />
+              ) : partner?.franchiseType === 'SUB_FRANCHISE' ? (
+                <Building2 size={16} />
+              ) : (
+                <Crown size={16} />
+              )}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div
@@ -583,8 +624,12 @@ const Sidebar = ({ isOpen, onClose }) => {
               <div
                 style={{
                   fontSize: '10.5px',
-                  fontWeight: '600',
-                  color: isSuperAdmin ? '#087db5' : '#16a34a',
+                  fontWeight: '700',
+                  color: isSuperAdmin
+                    ? '#087db5'
+                    : partner?.franchiseType === 'SUB_FRANCHISE'
+                    ? '#0284c7'
+                    : '#16a34a',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',

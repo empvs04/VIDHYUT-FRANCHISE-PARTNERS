@@ -1446,9 +1446,9 @@ const DashboardPage = () => {
                   {/* Top Header Strip */}
                   <div
                     style={{
-                      padding: '14px 18px',
-                      borderBottom: '1px solid #e2e8f0',
-                      backgroundColor: '#f8fafc',
+                      padding: '16px 20px',
+                      borderBottom: '1px solid #F1F5F9',
+                      background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -1456,44 +1456,49 @@ const DashboardPage = () => {
                       gap: '12px',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div
                         style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
-                          backgroundColor: '#f0f9ff',
-                          color: '#0284c7',
+                          width: '38px',
+                          height: '38px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)',
+                          color: '#FFFFFF',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          boxShadow: '0 3px 8px -1px rgba(2, 132, 199, 0.35)',
                           flexShrink: 0,
                         }}
                       >
-                        <BarChart3 size={18} />
+                        <BarChart3 size={20} strokeWidth={2.5} />
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.2px' }}>
+                          <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.2px' }}>
                             Visual Performance & Field Analytics
                           </h3>
                           <span
                             style={{
-                              fontSize: '10px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              fontSize: '10.5px',
                               fontWeight: '700',
-                              backgroundColor: '#f0f9ff',
-                              color: '#0369a1',
+                              backgroundColor: '#ECFDF5',
+                              color: '#059669',
                               padding: '2px 8px',
-                              borderRadius: '6px',
-                              border: '1px solid #bae6fd',
+                              borderRadius: '20px',
+                              border: '1px solid #A7F3D0',
                             }}
                           >
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
                             Live Data
                           </span>
                         </div>
-                        <p style={{ fontSize: '11.5px', color: '#64748b', margin: '2px 0 0' }}>
+                        <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0' }}>
                           Trajectory, Revenue vs Profit, Stock Lifecycle & Demographics for{' '}
-                          <strong style={{ color: '#0f172a' }}>{partner?.fullName || authPartner?.fullName}</strong>
+                          <strong style={{ color: '#0F172A' }}>{partner?.fullName || authPartner?.fullName}</strong>
                           {partner?.franchiseId ? ` (${partner.franchiseId})` : ''}
                         </p>
                       </div>
@@ -1506,21 +1511,22 @@ const DashboardPage = () => {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          fontSize: '11.5px',
+                          backgroundColor: '#FFFFFF',
+                          border: '1.5px solid #E2E8F0',
+                          borderRadius: '8px',
+                          padding: '5px 12px',
+                          fontSize: '12px',
                           color: '#475569',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                         }}
                       >
-                        <Building2 size={13} color="#0284c7" />
+                        <Building2 size={14} color="#0284C7" />
                         <span>
                           Parent District Franchise:{' '}
-                          <strong style={{ color: '#0f172a' }}>
+                          <strong style={{ color: '#0F172A' }}>
                             {parent?.fullName || 'District Partner HQ'}
                           </strong>{' '}
-                          <span style={{ color: '#0284c7', fontFamily: 'monospace', fontWeight: '700' }}>
+                          <span style={{ color: '#0284C7', fontFamily: 'monospace', fontWeight: '700' }}>
                             {parent?.franchiseId ? `(${parent.franchiseId})` : ''}
                           </span>
                         </span>
@@ -1532,39 +1538,194 @@ const DashboardPage = () => {
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: '10px',
-                      padding: '12px 18px',
-                      backgroundColor: '#ffffff',
-                      borderBottom: '1px solid #e2e8f0',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                      gap: '14px',
+                      padding: '16px 20px',
+                      backgroundColor: '#F8FAFC',
+                      borderBottom: '1px solid #E2E8F0',
                     }}
                   >
                     {/* 1. Total Customers */}
-                    <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Total Consumers</div>
-                      <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '2px 0 1px' }}>{custMetrics?.totalCustomers || rawInstalls.length || 0} Registered</div>
-                      <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600' }}>{resCount} Res • {commCount} Comm • {indCount} Ind</div>
+                    <div
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        border: '1.5px solid #CBD5E1',
+                        borderRadius: '14px',
+                        padding: '14px 16px',
+                        boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '6px',
+                        minHeight: '100px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#3B82F6';
+                        e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(59, 130, 246, 0.15)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#CBD5E1';
+                        e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
+                        e.currentTarget.style.transform = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Total Consumers
+                        </span>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Users size={15} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                        {custMetrics?.totalCustomers || rawInstalls.length || 0}{' '}
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#64748B' }}>Registered</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#475569', fontWeight: '600', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                        {resCount} Res • {commCount} Comm • {indCount} Ind
+                      </div>
                     </div>
 
                     {/* 2. Stock Deployed */}
-                    <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Deployment Ratio</div>
-                      <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '2px 0 1px' }}>{deploymentRate}% Installed</div>
-                      <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600' }}>{totalInstCount} of {totalStock} Cards Active</div>
+                    <div
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        border: '1.5px solid #BAE6FD',
+                        borderRadius: '14px',
+                        padding: '14px 16px',
+                        boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '6px',
+                        minHeight: '100px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#0284C7';
+                        e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(2, 132, 199, 0.18)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#BAE6FD';
+                        e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
+                        e.currentTarget.style.transform = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Deployment Ratio
+                        </span>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#F0F9FF', color: '#0284C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Zap size={15} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#0284C7', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                        {deploymentRate}%{' '}
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#0369A1' }}>Installed</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#0369A1', fontWeight: '600', backgroundColor: '#E0F2FE', border: '1px solid #BAE6FD', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                        {totalInstCount} of {totalStock} Cards Active
+                      </div>
                     </div>
 
                     {/* 3. Average Net Profit Margin */}
-                    <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Net Margin Rate</div>
-                      <div style={{ fontSize: '17px', fontWeight: '800', color: '#16a34a', margin: '2px 0 1px' }}>{overallMargin}% Profit Margin</div>
-                      <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600' }}>{avgProfitPerCard > 0 ? `+₹${avgProfitPerCard}/card avg` : 'Live calculated'}</div>
+                    <div
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        border: '1.5px solid #A7F3D0',
+                        borderRadius: '14px',
+                        padding: '14px 16px',
+                        boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '6px',
+                        minHeight: '100px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#16A34A';
+                        e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(22, 163, 74, 0.18)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#A7F3D0';
+                        e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
+                        e.currentTarget.style.transform = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Net Margin Rate
+                        </span>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <TrendingUp size={15} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#059669', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                        {overallMargin}%{' '}
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#047857' }}>Profit Margin</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#047857', fontWeight: '700', backgroundColor: '#D1FAE5', border: '1px solid #A7F3D0', padding: '3px 8px', borderRadius: '6px', width: 'fit-content' }}>
+                        {avgProfitPerCard > 0 ? `+₹${avgProfitPerCard} / card avg` : 'Live calculated'}
+                      </div>
                     </div>
 
                     {/* 4. Ready Stock */}
-                    <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '10.5px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Ready In-Hand Stock</div>
-                      <div style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '2px 0 1px' }}>{inHandStock} Cards</div>
-                      <div style={{ fontSize: '10.5px', color: inHandStock <= 5 ? '#dc2626' : '#16a34a', fontWeight: '600' }}>{inHandStock <= 5 ? 'Low stock in custody' : 'Ready for new installs'}</div>
+                    <div
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        border: '1.5px solid #FDE68A',
+                        borderRadius: '14px',
+                        padding: '14px 16px',
+                        boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '6px',
+                        minHeight: '100px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#EAB308';
+                        e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(234, 179, 8, 0.2)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#FDE68A';
+                        e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04)';
+                        e.currentTarget.style.transform = 'none';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Ready In-Hand Stock
+                        </span>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: '#FEF9C3', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Package size={15} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#B45309', letterSpacing: '-0.3px', margin: '2px 0' }}>
+                        {inHandStock}{' '}
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#78350F' }}>Cards</span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: inHandStock <= 5 ? '#991B1B' : '#92400E',
+                          fontWeight: '700',
+                          backgroundColor: inHandStock <= 5 ? '#FEE2E2' : '#FEF3C7',
+                          border: `1px solid ${inHandStock <= 5 ? '#FECACA' : '#FDE68A'}`,
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          width: 'fit-content',
+                        }}
+                      >
+                        {inHandStock <= 5 ? '⚠️ Low stock in custody' : '✓ Ready for new installs'}
+                      </div>
                     </div>
                   </div>
 
@@ -1583,36 +1744,36 @@ const DashboardPage = () => {
                     <div
                       style={{
                         backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '12px',
-                        padding: '16px 18px',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        border: '1.5px solid #E2E8F0',
+                        borderRadius: '14px',
+                        padding: '18px 20px',
+                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
                         display: 'flex',
                         flexDirection: 'column',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
-                          <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>📊 Financial & Margin Velocity Comparison</span>
                           </h4>
-                          <p style={{ fontSize: '11px', color: '#64748B', margin: '2px 0 0' }}>
+                          <p style={{ fontSize: '11.5px', color: '#64748B', margin: '3px 0 0' }}>
                             Period breakdown of Customer Revenue vs Actual Net Profit vs Buy Cost
                           </p>
                         </div>
 
                         {/* Chart Legend Tags */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '11px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ width: '9px', height: '9px', borderRadius: '2px', backgroundColor: '#0284c7' }} />
-                            <span style={{ color: '#475569', fontWeight: '700' }}>Revenue</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#F0F9FF', padding: '3px 8px', borderRadius: '6px', border: '1px solid #BAE6FD' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#0284C7' }} />
+                            <span style={{ color: '#0369A1', fontWeight: '700' }}>Revenue</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ width: '9px', height: '9px', borderRadius: '2px', backgroundColor: '#16a34a' }} />
-                            <span style={{ color: '#475569', fontWeight: '700' }}>Profit</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#10B981' }} />
+                            <span style={{ color: '#047857', fontWeight: '700' }}>Profit</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ width: '9px', height: '9px', borderRadius: '2px', backgroundColor: '#94a3b8' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#F8FAFC', padding: '3px 8px', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#94A3B8' }} />
                             <span style={{ color: '#475569', fontWeight: '700' }}>Cost</span>
                           </div>
                         </div>
@@ -1620,20 +1781,21 @@ const DashboardPage = () => {
 
                       <div style={{ width: '100%', height: 260, marginTop: '10px' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={financialBarData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                          <BarChart data={financialBarData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }} barGap={6}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                            <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} tickLine={false} />
+                            <XAxis dataKey="name" stroke="#94A3B8" fontSize={11.5} fontWeight={600} tickLine={false} />
                             <YAxis
                               stroke="#94A3B8"
                               fontSize={11}
+                              fontWeight={600}
                               tickLine={false}
                               axisLine={false}
                               tickFormatter={(v) => (v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`)}
                             />
                             <Tooltip content={<VisualFinancialTooltip />} />
-                            <Bar dataKey="Revenue" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                            <Bar dataKey="Profit" fill="#16a34a" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                            <Bar dataKey="BuyCost" fill="#94a3b8" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                            <Bar dataKey="Revenue" fill="#0284C7" radius={[5, 5, 0, 0]} maxBarSize={32} />
+                            <Bar dataKey="Profit" fill="#10B981" radius={[5, 5, 0, 0]} maxBarSize={32} />
+                            <Bar dataKey="BuyCost" fill="#94A3B8" radius={[5, 5, 0, 0]} maxBarSize={32} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -1643,32 +1805,32 @@ const DashboardPage = () => {
                     <div
                       style={{
                         backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '12px',
-                        padding: '16px 18px',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        border: '1.5px solid #E2E8F0',
+                        borderRadius: '14px',
+                        padding: '18px 20px',
+                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
                         display: 'flex',
                         flexDirection: 'column',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
-                          <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>📈 Customer Installation & Trajectory Curve</span>
                           </h4>
-                          <p style={{ fontSize: '11px', color: '#64748B', margin: '2px 0 0' }}>
+                          <p style={{ fontSize: '11.5px', color: '#64748B', margin: '3px 0 0' }}>
                             Cumulative deployment velocity & revenue momentum across time
                           </p>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '11px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
-                            <span style={{ color: '#475569', fontWeight: '700' }}>Cumulative Revenue</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#ECFDF5', padding: '3px 8px', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
+                            <span style={{ color: '#047857', fontWeight: '700' }}>Cumulative Revenue</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#0284C7' }} />
-                            <span style={{ color: '#475569', fontWeight: '700' }}>Cards Installed</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', backgroundColor: '#F0F9FF', padding: '3px 8px', borderRadius: '6px', border: '1px solid #BAE6FD' }}>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#0284C7' }} />
+                            <span style={{ color: '#0369A1', fontWeight: '700' }}>Cards Installed</span>
                           </div>
                         </div>
                       </div>
@@ -1678,8 +1840,8 @@ const DashboardPage = () => {
                           <AreaChart data={timelinePoints} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
                               <linearGradient id="colorSubRev" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#16A34A" stopOpacity={0.35} />
-                                <stop offset="95%" stopColor="#16A34A" stopOpacity={0.0} />
+                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.35} />
+                                <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
                               </linearGradient>
                               <linearGradient id="colorSubProf" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#0284C7" stopOpacity={0.3} />
@@ -1687,29 +1849,32 @@ const DashboardPage = () => {
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                            <XAxis dataKey="label" stroke="#94A3B8" fontSize={11} tickLine={false} />
+                            <XAxis dataKey="label" stroke="#94A3B8" fontSize={11.5} fontWeight={600} tickLine={false} />
                             <YAxis
                               stroke="#94A3B8"
                               fontSize={11}
+                              fontWeight={600}
                               tickLine={false}
                               axisLine={false}
                               tickFormatter={(v) => (v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`)}
                             />
                             <Tooltip
                               contentStyle={{
-                                backgroundColor: '#FFFFFF',
-                                borderRadius: '8px',
-                                border: '1px solid #CBD5E1',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                                backgroundColor: '#0F172A',
+                                borderRadius: '10px',
+                                border: '1.5px solid #334155',
+                                boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
                                 fontSize: '12px',
+                                color: '#FFFFFF',
                               }}
+                              itemStyle={{ color: '#F8FAFC' }}
                               formatter={(val, name) => [
                                 name === 'cards' ? `${val} Cards` : `₹${Number(val).toLocaleString('en-IN')}`,
                                 name === 'revenue' ? 'Cumulative Revenue' : name === 'profit' ? 'Cumulative Profit' : 'Cards Installed',
                               ]}
                             />
-                            <Area type="monotone" dataKey="revenue" stroke="#16A34A" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSubRev)" name="revenue" />
-                            <Area type="monotone" dataKey="profit" stroke="#0284C7" strokeWidth={2} fillOpacity={1} fill="url(#colorSubProf)" name="profit" />
+                            <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorSubRev)" name="revenue" />
+                            <Area type="monotone" dataKey="profit" stroke="#0284C7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSubProf)" name="profit" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -1731,23 +1896,23 @@ const DashboardPage = () => {
                     <div
                       style={{
                         backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '12px',
-                        padding: '16px 18px',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        border: '1.5px solid #E2E8F0',
+                        borderRadius: '14px',
+                        padding: '18px 20px',
+                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
                         display: 'flex',
                         flexDirection: 'column',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>🥧 Consumer Demographics Breakdown</span>
                         </h4>
-                        <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#E0F2FE', color: '#0284C7', padding: '2px 7px', borderRadius: '6px' }}>
+                        <span style={{ fontSize: '10.5px', fontWeight: '800', backgroundColor: '#EFF6FF', color: '#2563EB', padding: '3px 8px', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
                           {custMetrics?.totalCustomers || rawInstalls.length || 0} TOTAL
                         </span>
                       </div>
-                      <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 10px' }}>
+                      <p style={{ fontSize: '11.5px', color: '#64748B', margin: '0 0 12px' }}>
                         Customer segmentation between Residential, Commercial & Industrial connections
                       </p>
 
@@ -1755,19 +1920,21 @@ const DashboardPage = () => {
                         <div style={{ width: 170, height: 170, position: 'relative' }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                              <Pie data={consumerPieData} innerRadius={48} outerRadius={72} paddingAngle={4} dataKey="value">
+                              <Pie data={consumerPieData} innerRadius={50} outerRadius={74} paddingAngle={4} dataKey="value">
                                 {consumerPieData.map((entry, index) => (
-                                  <Cell key={`cell-c-${index}`} fill={entry.color} />
+                                  <Cell key={`cell-c-${index}`} fill={entry.color} stroke="#FFFFFF" strokeWidth={2} />
                                 ))}
                               </Pie>
                               <Tooltip
                                 contentStyle={{
-                                  backgroundColor: '#FFFFFF',
+                                  backgroundColor: '#0F172A',
                                   borderRadius: '8px',
-                                  border: '1px solid #CBD5E1',
+                                  border: '1.5px solid #334155',
                                   fontSize: '12px',
+                                  color: '#FFFFFF',
                                 }}
-                                formatter={(v, n) => [`${v} Units`, n]}
+                                itemStyle={{ color: '#F8FAFC' }}
+                                formatter={(v, n) => [`${v} Connections`, n]}
                               />
                             </PieChart>
                           </ResponsiveContainer>
@@ -1781,37 +1948,37 @@ const DashboardPage = () => {
                               pointerEvents: 'none',
                             }}
                           >
-                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#0F172A' }}>
+                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A' }}>
                               {totalInstCount}
                             </div>
-                            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>
+                            <div style={{ fontSize: '10px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>
                               Active
                             </div>
                           </div>
                         </div>
 
                         {/* Custom Legend */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11.5px', flex: 1, minWidth: '130px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', flex: 1, minWidth: '140px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', padding: '6px 10px', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#0284c7' }} />
-                              <span style={{ color: '#475569', fontWeight: '600' }}>Residential (1-3 KW)</span>
+                              <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#0284c7' }} />
+                              <span style={{ color: '#334155', fontWeight: '600' }}>Residential</span>
                             </span>
-                            <strong style={{ color: '#0f172a' }}>{resCount}</strong>
+                            <strong style={{ color: '#0F172A', fontWeight: '800' }}>{resCount}</strong>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', padding: '6px 10px', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#38bdf8' }} />
-                              <span style={{ color: '#475569', fontWeight: '600' }}>Commercial (3-10 KW)</span>
+                              <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#38bdf8' }} />
+                              <span style={{ color: '#334155', fontWeight: '600' }}>Commercial</span>
                             </span>
-                            <strong style={{ color: '#0f172a' }}>{commCount}</strong>
+                            <strong style={{ color: '#0F172A', fontWeight: '800' }}>{commCount}</strong>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', padding: '6px 10px', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#64748b' }} />
-                              <span style={{ color: '#475569', fontWeight: '600' }}>Industrial (10+ KW)</span>
+                              <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#64748b' }} />
+                              <span style={{ color: '#334155', fontWeight: '600' }}>Industrial</span>
                             </span>
-                            <strong style={{ color: '#0f172a' }}>{indCount}</strong>
+                            <strong style={{ color: '#0F172A', fontWeight: '800' }}>{indCount}</strong>
                           </div>
                         </div>
                       </div>
@@ -1821,23 +1988,23 @@ const DashboardPage = () => {
                     <div
                       style={{
                         backgroundColor: '#FFFFFF',
-                        border: '1px solid #E2E8F0',
-                        borderRadius: '12px',
-                        padding: '16px 18px',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        border: '1.5px solid #E2E8F0',
+                        borderRadius: '14px',
+                        padding: '18px 20px',
+                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
                         display: 'flex',
                         flexDirection: 'column',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <h4 style={{ fontSize: '13.5px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>⚡ Stock Custody & Deployment Lifecycle</span>
                         </h4>
-                        <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 7px', borderRadius: '6px' }}>
+                        <span style={{ fontSize: '10.5px', fontWeight: '800', backgroundColor: '#ECFDF5', color: '#059669', padding: '3px 8px', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
                           {totalStock} ALLOTTED
                         </span>
                       </div>
-                      <p style={{ fontSize: '11px', color: '#64748B', margin: '0 0 10px' }}>
+                      <p style={{ fontSize: '11.5px', color: '#64748B', margin: '0 0 12px' }}>
                         Ratio of cards deployed with consumers vs ready stock held in custody
                       </p>
 
@@ -1845,18 +2012,20 @@ const DashboardPage = () => {
                         <div style={{ width: 170, height: 170, position: 'relative' }}>
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                              <Pie data={stockDonutData} innerRadius={48} outerRadius={72} paddingAngle={4} dataKey="value">
+                              <Pie data={stockDonutData} innerRadius={50} outerRadius={74} paddingAngle={4} dataKey="value">
                                 {stockDonutData.map((entry, index) => (
-                                  <Cell key={`cell-s-${index}`} fill={entry.color} />
+                                  <Cell key={`cell-s-${index}`} fill={entry.color} stroke="#FFFFFF" strokeWidth={2} />
                                 ))}
                               </Pie>
                               <Tooltip
                                 contentStyle={{
-                                  backgroundColor: '#FFFFFF',
+                                  backgroundColor: '#0F172A',
                                   borderRadius: '8px',
-                                  border: '1px solid #CBD5E1',
+                                  border: '1.5px solid #334155',
                                   fontSize: '12px',
+                                  color: '#FFFFFF',
                                 }}
+                                itemStyle={{ color: '#F8FAFC' }}
                                 formatter={(v, n) => [`${v} Cards`, n]}
                               />
                             </PieChart>
@@ -1871,34 +2040,34 @@ const DashboardPage = () => {
                               pointerEvents: 'none',
                             }}
                           >
-                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#16A34A' }}>
+                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#10B981' }}>
                               {deploymentRate}%
                             </div>
-                            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>
+                            <div style={{ fontSize: '10px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>
                               Deployed
                             </div>
                           </div>
                         </div>
 
                         {/* Custom Legend */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11.5px', flex: 1, minWidth: '130px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', flex: 1, minWidth: '140px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#ECFDF5', padding: '6px 10px', borderRadius: '8px', border: '1px solid #A7F3D0' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
-                              <span style={{ color: '#475569', fontWeight: '600' }}>Installed Cards</span>
+                              <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#10B981' }} />
+                              <span style={{ color: '#065F46', fontWeight: '700' }}>Installed Cards</span>
                             </span>
-                            <strong style={{ color: '#16A34A' }}>{totalInstCount} ({deploymentRate}%)</strong>
+                            <strong style={{ color: '#047857', fontWeight: '800' }}>{totalInstCount} ({deploymentRate}%)</strong>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FEF9C3', padding: '6px 10px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#0284C7' }} />
-                              <span style={{ color: '#475569', fontWeight: '600' }}>In-Hand Stock</span>
+                              <span style={{ width: '9px', height: '9px', borderRadius: '50%', backgroundColor: '#D97706' }} />
+                              <span style={{ color: '#92400E', fontWeight: '700' }}>In-Hand Stock</span>
                             </span>
-                            <strong style={{ color: '#0284C7' }}>{inHandStock} ({100 - deploymentRate}%)</strong>
+                            <strong style={{ color: '#B45309', fontWeight: '800' }}>{inHandStock} ({100 - deploymentRate}%)</strong>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '6px' }}>
-                            <span style={{ color: '#64748B', fontSize: '11px', fontWeight: '600' }}>Total Batch Custody</span>
-                            <strong style={{ color: '#0F172A' }}>{totalStock} Cards</strong>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
+                            <span style={{ color: '#64748B', fontSize: '11.5px', fontWeight: '600' }}>Total Batch Custody</span>
+                            <strong style={{ color: '#0F172A', fontWeight: '800' }}>{totalStock} Cards</strong>
                           </div>
                         </div>
                       </div>
