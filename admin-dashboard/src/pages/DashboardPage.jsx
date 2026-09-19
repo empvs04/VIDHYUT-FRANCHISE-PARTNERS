@@ -5520,8 +5520,10 @@ const DashboardPage = () => {
           title="PREMIUM EXCLUSIVE DISTRICT FRANCHISE"
           value={metrics?.premiumExclusiveDistrictPartners ?? 0}
           icon={Crown}
-          bgLight="#EFF6FF"
-          iconColor="#2563EB"
+          bgLight="#FEF9C3"
+          iconColor="#CA8A04"
+          borderLeftColor="#EAB308"
+          borderColor="#FDE047"
           onClick={() => navigate('/partners?type=PREMIUM_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activePremiumExclusiveDistrictPartners || 0} Active District Partners →`}
         />
@@ -5529,8 +5531,10 @@ const DashboardPage = () => {
           title="STANDARD EXCLUSIVE DISTRICT FRANCHISE"
           value={metrics?.standardExclusiveDistrictPartners ?? 0}
           icon={ShieldCheck}
-          bgLight="#EFF6FF"
-          iconColor="#2563EB"
+          bgLight="#ECFDF5"
+          iconColor="#059669"
+          borderLeftColor="#10B981"
+          borderColor="#A7F3D0"
           onClick={() => navigate('/partners?type=STANDARD_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activeStandardExclusiveDistrictPartners || 0} Active District Partners →`}
         />
@@ -5538,8 +5542,10 @@ const DashboardPage = () => {
           title="NON-EXCLUSIVE DISTRICT FRANCHISE"
           value={metrics?.nonExclusiveDistrictPartners ?? 0}
           icon={MapPin}
-          bgLight="#F8FAFC"
-          iconColor="#64748B"
+          bgLight="#FFF7ED"
+          iconColor="#EA580C"
+          borderLeftColor="#F97316"
+          borderColor="#FED7AA"
           onClick={() => navigate('/partners?type=NON_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activeNonExclusiveDistrictPartners || 0} Active District Partners →`}
         />
@@ -5595,8 +5601,10 @@ const DashboardPage = () => {
           }
           value={`₹${(activeRevenueCardData.revenue || 0).toLocaleString('en-IN')}`}
           icon={IndianRupee}
-          bgLight="#ECFDF5"
-          iconColor="#10B981"
+          bgLight="#EFF6FF"
+          iconColor="#2563EB"
+          borderLeftColor="#3B82F6"
+          borderColor="#BFDBFE"
           onClick={() => navigate('/transactions')}
           subtitle={activeRevenueCardData.subtitle}
         />
