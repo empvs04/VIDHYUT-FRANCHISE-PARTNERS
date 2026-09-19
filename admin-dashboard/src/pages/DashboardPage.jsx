@@ -522,37 +522,33 @@ const DashboardPage = () => {
     return list;
   }, [companyProfits]);
 
-  // Available Months for Card 1 (dynamically extracted + standard months)
-  const companyCardsMonthOptions = useMemo(() => {
-    const options = [
-      { value: 'ALL_TIME', label: 'All Months' },
-      { value: 'THIS_MONTH', label: 'This Month' },
-      { value: 'LAST_MONTH', label: 'Last Month' },
-    ];
-    const monthMap = new Map();
-    allCompanyTxns.forEach((t) => {
-      if (t.date) {
-        const d = new Date(t.date);
-        if (!isNaN(d.getTime())) {
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-          const monthName = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-          if (!monthMap.has(key)) {
-            monthMap.set(key, monthName);
-          }
-        }
-      }
-    });
-    const sortedKeys = Array.from(monthMap.keys()).sort().reverse();
-    sortedKeys.forEach((k) => {
-      options.push({ value: k, label: monthMap.get(k) });
-    });
-    return options;
-  }, [allCompanyTxns]);
+  // Available Months for Card 1 (All Months + All 12 calendar months from January to December)
+  const companyCardsMonthOptions = [
+    { value: 'ALL_TIME', label: 'All Months' },
+    { value: 'MONTH_0', label: 'January' },
+    { value: 'MONTH_1', label: 'February' },
+    { value: 'MONTH_2', label: 'March' },
+    { value: 'MONTH_3', label: 'April' },
+    { value: 'MONTH_4', label: 'May' },
+    { value: 'MONTH_5', label: 'June' },
+    { value: 'MONTH_6', label: 'July' },
+    { value: 'MONTH_7', label: 'August' },
+    { value: 'MONTH_8', label: 'September' },
+    { value: 'MONTH_9', label: 'October' },
+    { value: 'MONTH_10', label: 'November' },
+    { value: 'MONTH_11', label: 'December' },
+  ];
 
   const isDateInPeriod = (dateStr, period) => {
     if (!dateStr || period === 'ALL_TIME') return true;
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return false;
+
+    // Direct Calendar Month Match (MONTH_0 for Jan to MONTH_11 for Dec)
+    if (period.startsWith('MONTH_')) {
+      const targetMonthIndex = parseInt(period.replace('MONTH_', ''), 10);
+      return d.getMonth() === targetMonthIndex;
+    }
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
@@ -594,25 +590,14 @@ const DashboardPage = () => {
       return metrics?.companyTotalCardsSold || allCompanyTxns.reduce((s, t) => s + (t.paidQuantity || t.quantity || 0), 0);
     }
     const filtered = allCompanyTxns.filter((t) => isDateInPeriod(t.date, companyCardsMonth));
-    if (filtered.length > 0) {
-      return filtered.reduce((s, t) => s + (t.paidQuantity || t.quantity || 0), 0);
-    }
-    if (companyCardsMonth === 'THIS_MONTH' && metrics?.revenuePeriods?.THIS_MONTH) {
-      return metrics.revenuePeriods.THIS_MONTH.cards || 0;
-    }
-    if (companyCardsMonth === 'LAST_MONTH' && metrics?.revenuePeriods?.LAST_MONTH) {
-      return metrics.revenuePeriods.LAST_MONTH.cards || 0;
-    }
-    return 0;
+    return filtered.reduce((s, t) => s + (t.paidQuantity || t.quantity || 0), 0);
   }, [companyCardsMonth, allCompanyTxns, metrics]);
 
   const cardsSubtitle = useMemo(() => {
     if (companyCardsMonth === 'ALL_TIME') return 'Paid Card Outflow (All Months)';
-    if (companyCardsMonth === 'THIS_MONTH') return 'Paid Card Outflow • This Month';
-    if (companyCardsMonth === 'LAST_MONTH') return 'Paid Card Outflow • Last Month';
     const found = companyCardsMonthOptions.find((o) => o.value === companyCardsMonth);
     return `Paid Card Outflow • ${found ? found.label : companyCardsMonth}`;
-  }, [companyCardsMonth, companyCardsMonthOptions]);
+  }, [companyCardsMonth]);
 
   const displayCompanyRevenue = useMemo(() => {
     if (companyRevenuePeriod === 'ALL_TIME') {
