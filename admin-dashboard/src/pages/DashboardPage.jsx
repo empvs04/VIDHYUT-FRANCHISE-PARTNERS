@@ -5699,7 +5699,7 @@ const DashboardPage = () => {
           marginBottom: '20px',
         }}
       >
-        {/* LEFT COLUMN: TODAY'S ACTIVE TEAM */}
+        {/* LEFT COLUMN: RECENTLY ADDED FRANCHISE PARTNER */}
         <div
           className="card"
           style={{
@@ -5747,7 +5747,7 @@ const DashboardPage = () => {
               </div>
               <div>
                 <h3 style={{ fontSize: '13.5px', fontWeight: '700', color: '#1E293B', margin: 0, letterSpacing: '-0.1px' }}>
-                  TODAY'S ACTIVE TEAM
+                  RECENTLY ADDED FRANCHISE PARTNER
                 </h3>
                 <span style={{ fontSize: '11px', color: '#64748B' }}>
                   Live franchise partner activity & network monitoring
@@ -5975,7 +5975,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: TODAY'S LIVE LEADERBOARD */}
+        {/* RIGHT COLUMN: TODAY'S TOTAL REVENUE */}
         <div
           className="card"
           style={{
@@ -6023,7 +6023,7 @@ const DashboardPage = () => {
               </div>
               <div>
                 <h3 style={{ fontSize: '13.5px', fontWeight: '700', color: '#1E293B', margin: 0, letterSpacing: '-0.1px' }}>
-                  TODAY'S LIVE LEADERBOARD
+                  TODAY'S TOTAL REVENUE
                 </h3>
                 <span style={{ fontSize: '11px', color: '#64748B' }}>
                   Live performance rankings & today's card sales
