@@ -43,7 +43,7 @@ const StatCard = ({
         boxSizing: 'border-box',
         padding: '16px 18px',
         backgroundColor: '#FFFFFF',
-        border: `1px solid ${borderColor}`,
+        border: `1.5px solid ${borderColor || '#E2E8F0'}`,
         ...(borderLeftColor ? { borderLeft: `4px solid ${borderLeftColor}` } : {}),
         ...(borderTopColor ? { borderTop: `3px solid ${borderTopColor}` } : {}),
         borderRadius: '14px',
