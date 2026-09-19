@@ -1054,7 +1054,8 @@ export const getPartnerSummary = async (req, res, next) => {
     }, 0);
     const directInstallProfit = partnerInstalls.reduce((sum, i) => {
       const count = i.installedCardCount || 1;
-      const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+      const recordedRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+      const sellRate = (recordedRate > avgBuyPrice) ? recordedRate : (isSubFranchise ? 3500 : recordedRate);
       const margin = Math.max(0, sellRate - avgBuyPrice);
       return sum + (margin * count);
     }, 0);
@@ -1132,7 +1133,8 @@ export const getPartnerSummary = async (req, res, next) => {
       const instCards = filteredInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
       const instProfit = filteredInstalls.reduce((sum, i) => {
         const count = i.installedCardCount || 1;
-        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const recordedRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const sellRate = (recordedRate > avgBuyPrice) ? recordedRate : (isSubFranchise ? 3500 : recordedRate);
         const margin = Math.max(0, sellRate - avgBuyPrice);
         return sum + (margin * count);
       }, 0);
@@ -1175,7 +1177,8 @@ export const getPartnerSummary = async (req, res, next) => {
         const name = i.customerName || i.customerId?.fullName || 'Customer';
         const cid = i.customerId?.customerId || '';
         const count = i.installedCardCount || 1;
-        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const recordedRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const sellRate = (recordedRate > avgBuyPrice) ? recordedRate : (isSubFranchise ? 3500 : recordedRate);
         const margin = Math.max(0, sellRate - avgBuyPrice);
         const p = margin * count;
         const r = i.totalAmount || (sellRate * count);
@@ -1248,7 +1251,8 @@ export const getPartnerSummary = async (req, res, next) => {
       const instCards = filteredInstalls.reduce((sum, i) => sum + (i.installedCardCount || 1), 0);
       const instProfit = filteredInstalls.reduce((sum, i) => {
         const count = i.installedCardCount || 1;
-        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const recordedRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const sellRate = (recordedRate > avgBuyPrice) ? recordedRate : (isSubFranchise ? 3500 : recordedRate);
         const margin = Math.max(0, sellRate - avgBuyPrice);
         return sum + (margin * count);
       }, 0);
@@ -1258,7 +1262,8 @@ export const getPartnerSummary = async (req, res, next) => {
         const name = i.customerName || i.customerId?.fullName || 'Customer';
         const cid = i.customerId?.customerId || '';
         const count = i.installedCardCount || 1;
-        const sellRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const recordedRate = i.pricePerCard || (i.totalAmount ? Math.round(i.totalAmount / count) : 0);
+        const sellRate = (recordedRate > avgBuyPrice) ? recordedRate : (isSubFranchise ? 3500 : recordedRate);
         const margin = Math.max(0, sellRate - avgBuyPrice);
         const p = margin * count;
         const r = i.totalAmount || (sellRate * count);

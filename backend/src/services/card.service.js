@@ -972,7 +972,7 @@ export const getCardStats = async (currentUser, authPartner) => {
       subTransactions,
     ] = await Promise.all([
       Card.countDocuments({ currentOwnerId: authPartner._id }),
-      Card.countDocuments({ currentOwnerId: authPartner._id, status: CARD_STATUS.ASSIGNED, previousOwnerId: null }),
+      Card.countDocuments({ currentOwnerId: authPartner._id, status: { $in: [CARD_STATUS.ASSIGNED, CARD_STATUS.AVAILABLE] } }),
       Card.countDocuments({ previousOwnerId: authPartner._id }),
       Card.countDocuments({ currentOwnerId: authPartner._id, status: CARD_STATUS.INSTALLED }),
       Card.countDocuments({ currentOwnerId: authPartner._id, status: CARD_STATUS.BLOCKED }),
