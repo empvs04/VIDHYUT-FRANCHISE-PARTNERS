@@ -5512,8 +5512,8 @@ const DashboardPage = () => {
           icon={Crown}
           bgLight="linear-gradient(135deg, #FEF9C3 0%, #FEF08A 100%)"
           iconColor="#B45309"
-          borderLeftColor="#EAB308"
-          borderColor="#FDE047"
+          borderColor="#FDE68A"
+          borderHoverColor="#EAB308"
           badge={{ text: 'VIP TIER', bg: '#FEF08A', color: '#854D0E', border: '#FDE047' }}
           onClick={() => navigate('/partners?type=PREMIUM_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activePremiumExclusiveDistrictPartners || 0} Active District Partners →`}
@@ -5524,8 +5524,8 @@ const DashboardPage = () => {
           icon={ShieldCheck}
           bgLight="linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)"
           iconColor="#047857"
-          borderLeftColor="#10B981"
-          borderColor="#6EE7B7"
+          borderColor="#A7F3D0"
+          borderHoverColor="#10B981"
           badge={{ text: 'EXCLUSIVE', bg: '#D1FAE5', color: '#065F46', border: '#A7F3D0' }}
           onClick={() => navigate('/partners?type=STANDARD_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activeStandardExclusiveDistrictPartners || 0} Active District Partners →`}
@@ -5536,8 +5536,8 @@ const DashboardPage = () => {
           icon={MapPin}
           bgLight="linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)"
           iconColor="#C2410C"
-          borderLeftColor="#F97316"
-          borderColor="#FDBA74"
+          borderColor="#FED7AA"
+          borderHoverColor="#F97316"
           badge={{ text: 'DISTRICT', bg: '#FFEDD5', color: '#9A3412', border: '#FED7AA' }}
           onClick={() => navigate('/partners?type=NON_EXCLUSIVE_DISTRICT')}
           subtitle={`${metrics?.activeNonExclusiveDistrictPartners || 0} Active District Partners →`}
@@ -5597,8 +5597,8 @@ const DashboardPage = () => {
           icon={IndianRupee}
           bgLight="linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
           iconColor="#1D4ED8"
-          borderLeftColor="#3B82F6"
-          borderColor="#93C5FD"
+          borderColor="#BAE6FD"
+          borderHoverColor="#3B82F6"
           badge={{ text: 'LIVE REVENUE', bg: '#DBEAFE', color: '#1E40AF', border: '#BFDBFE' }}
           onClick={() => navigate('/transactions')}
           subtitle={activeRevenueCardData.subtitle}

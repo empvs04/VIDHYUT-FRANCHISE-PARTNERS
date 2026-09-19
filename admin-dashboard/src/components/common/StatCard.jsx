@@ -10,6 +10,7 @@ const StatCard = ({
   borderLeftColor,
   borderTopColor,
   borderColor = '#E2E8F0',
+  borderHoverColor,
   accentGradient,
   onClick,
   isActive = false,
@@ -32,6 +33,23 @@ const StatCard = ({
           onClick();
         }
       }}
+      onMouseEnter={(e) => {
+        const hoverColor = borderHoverColor || (
+          borderColor === '#FDE68A' ? '#FACC15' :
+          borderColor === '#A7F3D0' ? '#34D399' :
+          borderColor === '#FED7AA' ? '#FB923C' :
+          borderColor === '#BAE6FD' ? '#60A5FA' :
+          '#94A3B8'
+        );
+        e.currentTarget.style.borderColor = hoverColor;
+        e.currentTarget.style.boxShadow = `0 6px 18px -2px rgba(15, 23, 42, 0.08), 0 0 12px ${hoverColor}35`;
+        e.currentTarget.style.transform = 'translateY(-3px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = borderColor || '#E2E8F0';
+        e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(15, 23, 42, 0.04), 0 1px 2px 0 rgba(15, 23, 42, 0.02)';
+        e.currentTarget.style.transform = 'none';
+      }}
       title={isClickable ? `Click to filter by ${title}` : undefined}
       style={{
         overflow: 'hidden',
@@ -43,12 +61,13 @@ const StatCard = ({
         boxSizing: 'border-box',
         padding: '16px 18px',
         backgroundColor: '#FFFFFF',
-        border: '1px solid #E2E8F0',
+        border: `1.5px solid ${borderColor || '#E2E8F0'}`,
         ...(borderLeftColor ? { borderLeft: `4px solid ${borderLeftColor}` } : {}),
         ...(borderTopColor ? { borderTop: `3px solid ${borderTopColor}` } : {}),
         borderRadius: '14px',
         boxShadow: '0 2px 8px -2px rgba(15, 23, 42, 0.04), 0 1px 2px 0 rgba(15, 23, 42, 0.02)',
         transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+        cursor: isClickable ? 'pointer' : 'default',
         ...style,
       }}
     >
