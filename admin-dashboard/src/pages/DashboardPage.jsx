@@ -513,39 +513,39 @@ const DashboardPage = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [txnRes, cardRes, rangesRes] = await Promise.all([
-        api.get('/transactions/stats/summary').catch(() => ({ data: { data: null } })),
-        api.get('/cards/stats').catch(() => ({ data: { data: null } })),
-        api.get('/cards/ranges', { params: { status: 'ASSIGNED' } }).catch(() => ({ data: { data: [] } })),
-      ]);
-
-      if (txnRes.data?.data) {
-        setTxnStats(txnRes.data.data);
-      }
-      if (cardRes.data?.data) {
-        setCardStats(cardRes.data.data);
-      }
-      if (rangesRes.data?.data) {
-        const rawRanges = rangesRes.data.data;
-        const rangeList = Array.isArray(rawRanges?.ranges)
-          ? rawRanges.ranges
-          : Array.isArray(rawRanges)
-            ? rawRanges
-            : [];
-
-        let totalBatches = 0;
-        rangeList.forEach((r) => {
-          if (Array.isArray(r.history) && r.history.length > 0) {
-            totalBatches += r.history.length;
-          } else {
-            totalBatches += 1;
-          }
-        });
-        setPartnerBatchesCount(totalBatches || (rangeList.length > 0 ? rangeList.length : 0));
-      }
 
       if (isSuperAdmin) {
-        const adminRes = await api.get('/dashboard/admin-metrics').catch(() => ({ data: { data: null } }));
+        const [txnRes, cardRes, rangesRes, adminRes] = await Promise.all([
+          api.get('/transactions/stats/summary').catch(() => ({ data: { data: null } })),
+          api.get('/cards/stats').catch(() => ({ data: { data: null } })),
+          api.get('/cards/ranges', { params: { status: 'ASSIGNED' } }).catch(() => ({ data: { data: [] } })),
+          api.get('/dashboard/admin-metrics').catch(() => ({ data: { data: null } })),
+        ]);
+
+        if (txnRes.data?.data) {
+          setTxnStats(txnRes.data.data);
+        }
+        if (cardRes.data?.data) {
+          setCardStats(cardRes.data.data);
+        }
+        if (rangesRes.data?.data) {
+          const rawRanges = rangesRes.data.data;
+          const rangeList = Array.isArray(rawRanges?.ranges)
+            ? rawRanges.ranges
+            : Array.isArray(rawRanges)
+              ? rawRanges
+              : [];
+
+          let totalBatches = 0;
+          rangeList.forEach((r) => {
+            if (Array.isArray(r.history) && r.history.length > 0) {
+              totalBatches += r.history.length;
+            } else {
+              totalBatches += 1;
+            }
+          });
+          setPartnerBatchesCount(totalBatches || (rangeList.length > 0 ? rangeList.length : 0));
+        }
 
         if (adminRes.data?.data) {
           setMetrics(adminRes.data.data.overview);
@@ -562,7 +562,26 @@ const DashboardPage = () => {
 
         fetchDashboardAnalytics(dashboardAnalyticsRange);
       } else {
-        const res = await api.get('/dashboard/partner-summary');
+        const [txnRes, cardRes, rangesRes, res] = await Promise.all([
+          api.get('/transactions/stats/summary').catch(() => ({ data: { data: null } })),
+          api.get('/cards/stats').catch(() => ({ data: { data: null } })),
+          api.get('/cards/ranges', { params: { status: 'ASSIGNED' } }).catch(() => ({ data: { data: [] } })),
+          api.get('/dashboard/partner-summary').catch(() => ({ data: { data: null } })),
+        ]);
+
+        if (txnRes.data?.data) setTxnStats(txnRes.data.data);
+        if (cardRes.data?.data) setCardStats(cardRes.data.data);
+        if (rangesRes.data?.data) {
+          const rawRanges = rangesRes.data.data;
+          const rangeList = Array.isArray(rawRanges?.ranges) ? rawRanges.ranges : (Array.isArray(rawRanges) ? rawRanges : []);
+          let totalBatches = 0;
+          rangeList.forEach((r) => {
+            if (Array.isArray(r.history) && r.history.length > 0) totalBatches += r.history.length;
+            else totalBatches += 1;
+          });
+          setPartnerBatchesCount(totalBatches || (rangeList.length > 0 ? rangeList.length : 0));
+        }
+
         if (res.data?.data) {
           const summary = res.data.data;
           setPartnerSummary(summary);
@@ -5390,7 +5409,13 @@ const DashboardPage = () => {
 
   // Active revenue calculation for Top Card 4 Dropdown
   const getRevenueCardData = () => {
-    const periods = metrics?.revenuePeriods;
+    if (!metrics) {
+      return {
+        revenue: 0,
+        subtitle: 'Loading revenue metrics...',
+      };
+    }
+    const periods = metrics.revenuePeriods;
     if (periods && periods[revenueCardPeriod]) {
       return {
         revenue: periods[revenueCardPeriod].revenue ?? 0,
@@ -5399,12 +5424,12 @@ const DashboardPage = () => {
     }
     if (revenueCardPeriod === 'TODAY') {
       return {
-        revenue: metrics?.todayRevenue || 0,
-        subtitle: `${(metrics?.todayCardsTransferred || 0).toLocaleString('en-IN')} Cards Allotted Today →`,
+        revenue: metrics.todayRevenue || 0,
+        subtitle: `${(metrics.todayCardsTransferred || 0).toLocaleString('en-IN')} Cards Allotted Today →`,
       };
     }
-    const defaultRev = metrics?.monthlyRevenue != null ? metrics.monthlyRevenue : (metrics?.companyTotalRevenue || txnStats.totalSalesValue || 0);
-    const defaultCards = metrics?.monthlyCardsTransferred != null ? metrics.monthlyCardsTransferred : (metrics?.companyTotalCardsSold || 0);
+    const defaultRev = metrics.monthlyRevenue != null ? metrics.monthlyRevenue : (metrics.companyTotalRevenue || 0);
+    const defaultCards = metrics.monthlyCardsTransferred != null ? metrics.monthlyCardsTransferred : (metrics.companyTotalCardsSold || 0);
     return {
       revenue: defaultRev,
       subtitle: `${defaultCards.toLocaleString('en-IN')} Cards Allotted to Franchise Partners →`,
