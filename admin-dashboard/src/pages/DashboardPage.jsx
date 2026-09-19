@@ -1738,26 +1738,9 @@ const DashboardPage = () => {
                   {/* =================================================================== */}
                   {/* VISUAL GRAPHS GRID (ROW 1: TWO MAJOR GRAPHS)                        */}
                   {/* =================================================================== */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-                      gap: '18px',
-                      padding: '20px',
-                    }}
-                  >
+                  <div className="partner-analytics-graph-grid partner-analytics-body" style={{ gap: '18px' }}>
                     {/* GRAPH 1: Commercial Velocity Comparison (BarChart) */}
-                    <div
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1.5px solid #E2E8F0',
-                        borderRadius: '14px',
-                        padding: '18px 20px',
-                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}
-                    >
+                    <div className="partner-graph-card">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1808,17 +1791,7 @@ const DashboardPage = () => {
                     </div>
 
                     {/* GRAPH 2: Installation Growth & Cumulative Trajectory (AreaChart) */}
-                    <div
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1.5px solid #E2E8F0',
-                        borderRadius: '14px',
-                        padding: '18px 20px',
-                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}
-                    >
+                    <div className="partner-graph-card">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1845,42 +1818,33 @@ const DashboardPage = () => {
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={timelinePoints} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <defs>
-                              <linearGradient id="colorSubRev" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.35} />
+                              <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#10B981" stopOpacity={0.4} />
                                 <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
                               </linearGradient>
-                              <linearGradient id="colorSubProf" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#0284C7" stopOpacity={0.3} />
+                              <linearGradient id="colorInst" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#0284C7" stopOpacity={0.4} />
                                 <stop offset="95%" stopColor="#0284C7" stopOpacity={0.0} />
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                            <XAxis dataKey="label" stroke="#94A3B8" fontSize={11.5} fontWeight={600} tickLine={false} />
+                            <XAxis dataKey="label" stroke="#94A3B8" fontSize={11} fontWeight={600} tickLine={false} />
                             <YAxis
                               stroke="#94A3B8"
                               fontSize={11}
                               fontWeight={600}
                               tickLine={false}
                               axisLine={false}
-                              tickFormatter={(v) => (v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`)}
+                              tickFormatter={(v) => (v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `${v}`)}
                             />
                             <Tooltip
-                              contentStyle={{
-                                backgroundColor: '#0F172A',
-                                borderRadius: '10px',
-                                border: '1.5px solid #334155',
-                                boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-                                fontSize: '12px',
-                                color: '#FFFFFF',
-                              }}
-                              itemStyle={{ color: '#F8FAFC' }}
-                              formatter={(val, name) => [
-                                name === 'cards' ? `${val} Cards` : `₹${Number(val).toLocaleString('en-IN')}`,
-                                name === 'revenue' ? 'Cumulative Revenue' : name === 'profit' ? 'Cumulative Profit' : 'Cards Installed',
+                              formatter={(value, name) => [
+                                name === 'Cumulative Revenue' ? `₹${Number(value).toLocaleString('en-IN')}` : `${value} Cards`,
+                                name,
                               ]}
                             />
-                            <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorSubRev)" name="revenue" />
-                            <Area type="monotone" dataKey="profit" stroke="#0284C7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSubProf)" name="profit" />
+                            <Area type="monotone" dataKey="revenue" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" name="Cumulative Revenue" />
+                            <Area type="monotone" dataKey="installs" stroke="#0284C7" strokeWidth={2.5} fillOpacity={1} fill="url(#colorInst)" name="Cards Installed" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -1890,26 +1854,9 @@ const DashboardPage = () => {
                   {/* =================================================================== */}
                   {/* VISUAL GRAPHS GRID (ROW 2: DONUT & LOAD DEMOGRAPHICS)              */}
                   {/* =================================================================== */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                      gap: '18px',
-                      padding: '0 20px 20px 20px',
-                    }}
-                  >
+                  <div className="partner-analytics-donut-grid partner-analytics-body" style={{ gap: '18px', paddingTop: 0 }}>
                     {/* GRAPH 3: Consumer Demographics Donut (PieChart) */}
-                    <div
-                      style={{
-                        backgroundColor: '#FFFFFF',
-                        border: '1.5px solid #E2E8F0',
-                        borderRadius: '14px',
-                        padding: '18px 20px',
-                        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                      }}
-                    >
+                    <div className="partner-graph-card">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                         <h4 style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>🥧 Consumer Demographics Breakdown</span>
@@ -3334,31 +3281,10 @@ const DashboardPage = () => {
               });
 
               return (
-                <div
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '16px',
-                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.05)',
-                    overflow: 'hidden',
-                    marginTop: '10px',
-                    marginBottom: '24px',
-                  }}
-                >
+                <div className="partner-analytics-hub">
                   {/* Top Hub Header */}
-                  <div
-                    style={{
-                      padding: '14px 18px',
-                      borderBottom: '1px solid #e2e8f0',
-                      backgroundColor: '#f8fafc',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="partner-analytics-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                       <div
                         style={{
                           width: '36px',
@@ -3374,7 +3300,7 @@ const DashboardPage = () => {
                       >
                         <BarChart3 size={18} />
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <h2 style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.2px' }}>
                             Visual Analytics & Commercial Intelligence
@@ -3388,36 +3314,26 @@ const DashboardPage = () => {
                               padding: '2px 8px',
                               borderRadius: '6px',
                               border: '1px solid #bae6fd',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             Live Data
                           </span>
                         </div>
-                        <p style={{ fontSize: '11.5px', color: '#64748b', margin: '2px 0 0' }}>
+                        <p style={{ fontSize: '11.5px', color: '#64748b', margin: '2px 0 0', lineHeight: 1.35 }}>
                           Procurement, Sub-Franchise Allotments, Direct Customer Installs & Margin Analytics
                         </p>
                       </div>
                     </div>
 
                     {/* Interactive Navigation Tabs */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        backgroundColor: '#ffffff',
-                        padding: '3px',
-                        borderRadius: '8px',
-                        border: '1px solid #e2e8f0',
-                        flexWrap: 'wrap',
-                      }}
-                    >
+                    <div className="partner-analytics-tabs">
                       <button
                         type="button"
                         onClick={() => setPartnerAnalyticsTab('VELOCITY')}
                         style={{
                           border: 'none',
-                          padding: '5px 12px',
+                          padding: '6px 14px',
                           borderRadius: '6px',
                           fontSize: '11.5px',
                           fontWeight: '700',
@@ -3426,12 +3342,12 @@ const DashboardPage = () => {
                           color: partnerAnalyticsTab === 'VELOCITY' ? '#ffffff' : '#64748b',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '7px',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <TrendingUp size={13} />
-                        <span>Financial Velocity</span>
+                        <TrendingUp size={14} style={{ flexShrink: 0 }} />
+                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'normal' }}>Financial Velocity</span>
                       </button>
 
                       <button
@@ -3439,7 +3355,7 @@ const DashboardPage = () => {
                         onClick={() => setPartnerAnalyticsTab('DISTRIBUTION')}
                         style={{
                           border: 'none',
-                          padding: '5px 12px',
+                          padding: '6px 14px',
                           borderRadius: '6px',
                           fontSize: '11.5px',
                           fontWeight: '700',
@@ -3448,12 +3364,12 @@ const DashboardPage = () => {
                           color: partnerAnalyticsTab === 'DISTRIBUTION' ? '#ffffff' : '#64748b',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '7px',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <Layers size={13} />
-                        <span>Supply Chain & Distribution</span>
+                        <Layers size={14} style={{ flexShrink: 0 }} />
+                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'normal' }}>Supply Chain & Distribution</span>
                       </button>
 
                       <button
@@ -3461,7 +3377,7 @@ const DashboardPage = () => {
                         onClick={() => setPartnerAnalyticsTab('LEDGER')}
                         style={{
                           border: 'none',
-                          padding: '5px 12px',
+                          padding: '6px 14px',
                           borderRadius: '6px',
                           fontSize: '11.5px',
                           fontWeight: '700',
@@ -3470,59 +3386,50 @@ const DashboardPage = () => {
                           color: partnerAnalyticsTab === 'LEDGER' ? '#ffffff' : '#64748b',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '7px',
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <FileText size={13} />
-                        <span>Sales Ledger ({rawAllotments.length + rawDirectInstalls.length})</span>
+                        <FileText size={14} style={{ flexShrink: 0 }} />
+                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'normal' }}>Sales Ledger ({rawAllotments.length + rawDirectInstalls.length})</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Hub Body */}
-                  <div style={{ padding: '20px' }}>
+                  <div className="partner-analytics-body">
                     {/* TAB 1: FINANCIAL VELOCITY & GROWTH CHARTS */}
                     {partnerAnalyticsTab === 'VELOCITY' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                         {/* Dual Graph Grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px' }}>
+                        <div className="partner-analytics-graph-grid">
                           {/* Graph 1: Grouped BarChart for Revenue, Margin Profit, and Buy Cost */}
-                          <div
-                            style={{
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: '12px',
-                              padding: '16px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
-                              <div>
-                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="partner-graph-card">
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                              <div style={{ minWidth: 0, flex: '1 1 auto' }}>
+                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                   <span>Period-Wise Revenue & Realized Profit</span>
-                                  <span style={{ fontSize: '10px', background: '#DCFCE7', color: '#16A34A', padding: '1px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                                  <span style={{ fontSize: '10px', background: '#DCFCE7', color: '#16A34A', padding: '1px 6px', borderRadius: '4px', fontWeight: '800', whiteSpace: 'nowrap' }}>
                                     BAR VELOCITY
                                   </span>
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px', lineHeight: 1.35 }}>
                                   Real DB comparison: Gross Sales vs True Net Margin vs HQ Acquisition Cost
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '700' }}>
-                                <span style={{ color: '#0284c7' }}>● Gross Rev</span>
-                                <span style={{ color: '#16a34a' }}>● Real Profit</span>
-                                <span style={{ color: '#64748b' }}>● HQ Cost</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '700', flexWrap: 'wrap' }}>
+                                <span style={{ color: '#0284c7', whiteSpace: 'nowrap' }}>● Gross Rev</span>
+                                <span style={{ color: '#16a34a', whiteSpace: 'nowrap' }}>● Real Profit</span>
+                                <span style={{ color: '#64748b', whiteSpace: 'nowrap' }}>● HQ Cost</span>
                               </div>
                             </div>
 
-                            <div style={{ width: '100%', height: 260 }}>
+                            <div style={{ width: '100%', height: 260, minWidth: 0 }}>
                               <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={financialBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                                <BarChart data={financialBarData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
                                   <XAxis dataKey="name" stroke="#64748B" fontSize={11} fontWeight={700} tickLine={false} />
-                                  <YAxis stroke="#64748B" fontSize={11} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
+                                  <YAxis stroke="#64748B" fontSize={10.5} width={38} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                                   <Tooltip content={<VisualFinancialTooltip />} />
                                   <Bar dataKey="Revenue" fill="#0284c7" radius={[4, 4, 0, 0]} name="Gross Revenue" />
                                   <Bar dataKey="Profit" fill="#16a34a" radius={[4, 4, 0, 0]} name="Net Margin Profit" />
@@ -3533,37 +3440,28 @@ const DashboardPage = () => {
                           </div>
 
                           {/* Graph 2: Cumulative Trajectory Curve */}
-                          <div
-                            style={{
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: '12px',
-                              padding: '16px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
-                              <div>
-                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="partner-graph-card">
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                              <div style={{ minWidth: 0, flex: '1 1 auto' }}>
+                                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                   <span>Cumulative Revenue & Margin Trajectory</span>
-                                  <span style={{ fontSize: '10px', background: '#E0F2FE', color: '#0284C7', padding: '1px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                                  <span style={{ fontSize: '10px', background: '#E0F2FE', color: '#0284C7', padding: '1px 6px', borderRadius: '4px', fontWeight: '800', whiteSpace: 'nowrap' }}>
                                     AREA RUN-RATE
                                   </span>
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px', lineHeight: 1.35 }}>
                                   Real growth trajectory across all sub-franchise allotments and direct installations
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '700' }}>
-                                <span style={{ color: '#0284C7' }}>● Cumulative Rev</span>
-                                <span style={{ color: '#16A34A' }}>● Cumulative Profit</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '700', flexWrap: 'wrap' }}>
+                                <span style={{ color: '#0284C7', whiteSpace: 'nowrap' }}>● Cumulative Rev</span>
+                                <span style={{ color: '#16A34A', whiteSpace: 'nowrap' }}>● Cumulative Profit</span>
                               </div>
                             </div>
 
-                            <div style={{ width: '100%', height: 260 }}>
+                            <div style={{ width: '100%', height: 260, minWidth: 0 }}>
                               <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={timelinePoints} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                                <AreaChart data={timelinePoints} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                                   <defs>
                                     <linearGradient id="partnerRevGrad" x1="0" y1="0" x2="0" y2="1">
                                       <stop offset="5%" stopColor="#0284C7" stopOpacity={0.35} />
@@ -3576,7 +3474,7 @@ const DashboardPage = () => {
                                   </defs>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
                                   <XAxis dataKey="label" stroke="#64748B" fontSize={10.5} tickLine={false} />
-                                  <YAxis stroke="#64748B" fontSize={11} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
+                                  <YAxis stroke="#64748B" fontSize={10.5} width={38} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
                                   <Tooltip
                                     formatter={(value, name) => [`₹${Number(value).toLocaleString('en-IN')}`, name]}
                                     contentStyle={{ backgroundColor: '#0F172A', borderRadius: '8px', color: '#FFFFFF', border: 'none', fontSize: '11.5px', fontWeight: '700' }}
@@ -3590,17 +3488,7 @@ const DashboardPage = () => {
                         </div>
 
                         {/* Quick Telemetry Strip */}
-                        <div
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-                            gap: '12px',
-                            backgroundColor: '#F1F5F9',
-                            padding: '14px',
-                            borderRadius: '12px',
-                            border: '1px solid #E2E8F0',
-                          }}
-                        >
+                        <div className="partner-analytics-telemetry">
                           <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
                             <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>HQ BUY PRICE (AVG)</div>
                             <div style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
@@ -3647,22 +3535,13 @@ const DashboardPage = () => {
                     {/* TAB 2: SUPPLY CHAIN & DISTRIBUTION DONUT CHARTS */}
                     {partnerAnalyticsTab === 'DISTRIBUTION' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '16px' }}>
+                        <div className="partner-analytics-donut-grid">
                           {/* Donut 1: Card Custody & Pipeline */}
-                          <div
-                            style={{
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: '12px',
-                              padding: '16px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                            }}
-                          >
+                          <div className="partner-graph-card">
                             <div style={{ marginBottom: '10px' }}>
-                              <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                 <span>Card Stock Custody & Pipeline</span>
-                                <span style={{ fontSize: '10px', background: '#E0F2FE', color: '#0284C7', padding: '1px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                                <span style={{ fontSize: '10px', background: '#E0F2FE', color: '#0284C7', padding: '1px 6px', borderRadius: '4px', fontWeight: '800', whiteSpace: 'nowrap' }}>
                                   INVENTORY PIPELINE
                                 </span>
                               </div>
@@ -3671,7 +3550,7 @@ const DashboardPage = () => {
                               </div>
                             </div>
 
-                            <div style={{ width: '100%', height: 230, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '100%', height: 230, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                   <Pie
@@ -3710,20 +3589,11 @@ const DashboardPage = () => {
                           </div>
 
                           {/* Donut 2: Revenue Contribution Channel Mix */}
-                          <div
-                            style={{
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: '12px',
-                              padding: '16px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                            }}
-                          >
+                          <div className="partner-graph-card">
                             <div style={{ marginBottom: '10px' }}>
-                              <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                 <span>Revenue Contribution by Channel</span>
-                                <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0284c7', padding: '1px 6px', borderRadius: '4px', fontWeight: '800' }}>
+                                <span style={{ fontSize: '10px', background: '#e0f2fe', color: '#0284c7', padding: '1px 6px', borderRadius: '4px', fontWeight: '800', whiteSpace: 'nowrap' }}>
                                   CHANNEL MIX
                                 </span>
                               </div>
@@ -3732,7 +3602,7 @@ const DashboardPage = () => {
                               </div>
                             </div>
 
-                            <div style={{ width: '100%', height: 230, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: '100%', height: 230, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                   <Pie

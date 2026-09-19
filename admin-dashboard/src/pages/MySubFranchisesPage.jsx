@@ -176,15 +176,29 @@ const MySubFranchisesPage = () => {
       <div
         className="card"
         style={{
-          padding: '14px 18px',
+          padding: '12px 14px',
           marginBottom: '18px',
           borderRadius: '12px',
           border: '1px solid #e2e8f0',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          {/* Status Tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Status Tabs with Horizontal Touch Scroll */}
+          <div
+            className="preset-pills-bar"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              paddingBottom: '2px',
+              maxWidth: '100%',
+              width: '100%',
+            }}
+          >
             {['ALL', 'ACTIVE', 'INACTIVE', 'PENDING_APPROVAL'].map((st) => (
               <button
                 key={st}
@@ -193,12 +207,14 @@ const MySubFranchisesPage = () => {
                 style={{
                   padding: '7px 14px',
                   borderRadius: '8px',
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   fontWeight: '700',
                   border: statusFilter === st ? '1.5px solid #9333ea' : '1px solid #e2e8f0',
                   backgroundColor: statusFilter === st ? '#faf5ff' : '#ffffff',
                   color: statusFilter === st ? '#7e22ce' : '#64748b',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
                 {st === 'ALL' ? 'All Partners' : st.replace(/_/g, ' ')}
@@ -207,8 +223,8 @@ const MySubFranchisesPage = () => {
           </div>
 
           {/* Search Input */}
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 260px', maxWidth: '380px' }}>
-            <div style={{ position: 'relative', width: '100%' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', flex: '1 1 260px' }}>
+            <div style={{ position: 'relative', width: '100%', minWidth: 0, flex: 1 }}>
               <Search size={15} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
                 type="text"
@@ -217,67 +233,86 @@ const MySubFranchisesPage = () => {
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '7px 12px 7px 34px',
+                  padding: '8px 12px 8px 34px',
                   borderRadius: '8px',
                   border: '1px solid #cbd5e1',
                   fontSize: '12.5px',
                   outline: 'none',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
-            <button type="submit" className="btn btn-secondary" style={{ padding: '7px 14px', fontSize: '12.5px', flexShrink: 0 }}>
+            <button type="submit" className="btn btn-secondary" style={{ padding: '8px 16px', fontSize: '12.5px', flexShrink: 0, height: '36px' }}>
               Search
             </button>
           </form>
         </div>
       </div>
 
-      {/* Sub-Franchise Table */}
+      {/* Sub-Franchise Table / Empty State */}
       <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="table" style={{ width: '100%', margin: 0, borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left' }}>PARTNER NAME & ID</th>
-                <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left' }}>ASSIGNED TERRITORY</th>
-                <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left' }}>CONTACT DETAILS</th>
-                <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left' }}>JOINING DATE</th>
-                <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'center' }}>ACCOUNT STATUS</th>
-                <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'right' }}>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                    <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 8px', display: 'block' }} />
-                    Loading Sub-Franchise network...
-                  </td>
+        {loading ? (
+          <div style={{ padding: '48px 20px', textAlign: 'center', color: '#64748b' }}>
+            <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 10px', display: 'block', color: '#9333ea' }} />
+            <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>Loading Sub-Franchise network...</div>
+          </div>
+        ) : subPartners.length === 0 ? (
+          <div style={{ padding: '48px 20px', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: '#faf5ff',
+                color: '#9333ea',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 14px',
+                border: '1px solid #f3e8ff',
+              }}
+            >
+              <Building2 size={28} />
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: '800', color: '#1e293b' }}>
+              No Sub-Franchises Registered Yet
+            </div>
+            <p style={{ fontSize: '12.5px', color: '#64748b', margin: '6px auto 18px', maxWidth: '380px', lineHeight: 1.45 }}>
+              Expand your field operations by appointing Sub-Franchise partners in your tehsils and towns.
+            </p>
+            <Link
+              to="/partners/new"
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '9px 18px' }}
+            >
+              <UserPlus size={15} />
+              <span>+ Add New Sub-Franchise</span>
+            </Link>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table className="table" style={{ width: '100%', margin: 0, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left', whiteSpace: 'nowrap' }}>PARTNER NAME & ID</th>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left', whiteSpace: 'nowrap' }}>ASSIGNED TERRITORY</th>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left', whiteSpace: 'nowrap' }}>CONTACT DETAILS</th>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'left', whiteSpace: 'nowrap' }}>JOINING DATE</th>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'center', whiteSpace: 'nowrap' }}>ACCOUNT STATUS</th>
+                  <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: '800', color: '#475569', textAlign: 'right', whiteSpace: 'nowrap' }}>ACTION</th>
                 </tr>
-              ) : subPartners.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: '44px 20px', textAlign: 'center' }}>
-                    <Building2 size={36} color="#94a3b8" style={{ margin: '0 auto 8px', display: 'block' }} />
-                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#1e293b' }}>No Sub-Franchises Registered Yet</div>
-                    <p style={{ fontSize: '12.5px', color: '#64748b', margin: '4px 0 14px' }}>
-                      Expand your field operations by appointing Sub-Franchise partners in your tehsils and towns.
-                    </p>
-                    <Link to="/partners/new" className="btn btn-primary" style={{ fontSize: '12.5px' }}>
-                      + Add New Sub-Franchise
-                    </Link>
-                  </td>
-                </tr>
-              ) : (
-                subPartners.map((sub) => (
+              </thead>
+              <tbody>
+                {subPartners.map((sub) => (
                   <tr key={sub._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: '800', fontSize: '13.5px', color: '#0f172a' }}>{sub.fullName}</div>
                       <div style={{ fontSize: '11px', color: '#7e22ce', fontFamily: 'monospace', fontWeight: '700', marginTop: '1px' }}>
                         {sub.franchiseId}
                       </div>
                     </td>
 
-                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#334155' }}>
                         <MapPin size={12} color="#0284c7" />
                         <span>{sub.district ? `${sub.district}, ${sub.state}` : sub.state || 'Assigned Territory'}</span>
@@ -285,22 +320,22 @@ const MySubFranchisesPage = () => {
                       {sub.city && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>City: {sub.city}</div>}
                     </td>
 
-                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f172a' }}>📞 {sub.mobileNumber}</div>
                       {sub.email && <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>{sub.email}</div>}
                     </td>
 
-                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                       <div style={{ fontSize: '12px', color: '#334155' }}>
                         {sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-IN') : 'N/A'}
                       </div>
                     </td>
 
-                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'center' }}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <StatusBadge status={sub.accountStatus || 'ACTIVE'} />
                     </td>
 
-                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right' }}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                         <Link
                           to={`/partners/${sub._id}`}
@@ -320,11 +355,11 @@ const MySubFranchisesPage = () => {
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

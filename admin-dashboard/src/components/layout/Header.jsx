@@ -9,7 +9,7 @@ const Header = ({ onToggleSidebar }) => {
   return (
     <header className="top-header">
       {/* Left Section: Hamburger & Status / Franchise Pill & Welcome */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: '1 1 auto' }}>
+      <div className="header-left-section" style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: '1 1 auto' }}>
         {/* Mobile Hamburger Button */}
         <button
           type="button"
@@ -20,8 +20,8 @@ const Header = ({ onToggleSidebar }) => {
           <Menu size={22} />
         </button>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+        <div className="header-brand-wrap" style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap' }}>
             <span
               className="header-live-badge"
               style={{
@@ -63,10 +63,10 @@ const Header = ({ onToggleSidebar }) => {
                 }}
                 title={`${partner.franchiseId} (${partner.district || partner.state})`}
               >
-                <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                <span className="franchise-id-text" style={{ fontFamily: 'monospace', fontWeight: 700 }}>
                   {partner.franchiseId}
                 </span>
-                <span style={{ color: '#64748b' }}>
+                <span className="franchise-territory-text" style={{ color: '#64748b' }}>
                   ({partner.district || partner.state})
                 </span>
               </span>
@@ -74,6 +74,7 @@ const Header = ({ onToggleSidebar }) => {
           </div>
 
           <div
+            className="header-title-wrap"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -81,9 +82,11 @@ const Header = ({ onToggleSidebar }) => {
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              minWidth: 0,
             }}
           >
             <span
+              className="header-brand-title"
               style={{
                 fontSize: '13.5px',
                 fontWeight: '800',
@@ -92,7 +95,7 @@ const Header = ({ onToggleSidebar }) => {
                 textTransform: 'uppercase',
               }}
             >
-              VIDHYUT SAATHI <span style={{ color: '#0284c7', fontWeight: '700' }}>ENERGY SAVERS</span>
+              VIDHYUT SAATHI <span className="header-brand-accent" style={{ color: '#0284c7', fontWeight: '700' }}>ENERGY SAVERS</span>
             </span>
           </div>
         </div>
