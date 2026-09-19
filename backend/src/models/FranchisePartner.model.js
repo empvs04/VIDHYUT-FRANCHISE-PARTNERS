@@ -84,6 +84,7 @@ const franchisePartnerSchema = new mongoose.Schema(
       type: String,
       required: [true, 'PIN code is required'],
       trim: true,
+      default: '400001',
       match: [/^\d{6}$/, 'Please enter a valid 6-digit PIN code'],
     },
     // Government ID & Proof Verification

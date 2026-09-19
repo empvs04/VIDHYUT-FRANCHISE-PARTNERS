@@ -182,12 +182,11 @@ export const partnerVerifyOTP = async (req, res, next) => {
     await verifyOTP(partner.mobileNumber, otp);
 
     const now = new Date();
-    user.lastLoginAt = now;
-    await user.save();
-
-    partner.lastLoginAt = now;
-    partner.lastActiveAt = now;
-    await partner.save();
+    await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: now } });
+    await FranchisePartner.updateOne(
+      { _id: partner._id },
+      { $set: { lastLoginAt: now, lastActiveAt: now } }
+    );
 
     const token = generateToken({
       userId: user._id,
