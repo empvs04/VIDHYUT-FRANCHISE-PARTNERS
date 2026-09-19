@@ -529,7 +529,7 @@ const RewardsRecognitionPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [targetScopeFilter, setTargetScopeFilter] = useState('ALL'); // ALL, STATE, DISTRICT, INDIVIDUAL, GLOBAL
-  
+
   // Simulator State
   const [simCards, setSimCards] = useState(120);
   const [simSubFranchises, setSimSubFranchises] = useState(4);
@@ -742,10 +742,10 @@ const RewardsRecognitionPage = () => {
       const enriched = baseList.map((p, index) => {
         const perf = Array.isArray(rawPerfList)
           ? rawPerfList.find(
-              (perfItem) =>
-                String(perfItem?._id || perfItem?.partnerId) === String(p?._id) ||
-                (p.franchiseId && perfItem?.franchiseId === p.franchiseId)
-            ) || {}
+            (perfItem) =>
+              String(perfItem?._id || perfItem?.partnerId) === String(p?._id) ||
+              (p.franchiseId && perfItem?.franchiseId === p.franchiseId)
+          ) || {}
           : {};
 
         // Real Installed Cards (from MongoDB Installations Collection)
@@ -1074,7 +1074,7 @@ const RewardsRecognitionPage = () => {
     // Franchise Partner: ONLY targets created by Company Admin specifically matching this Franchise Partner!
     return assignedTargets.filter((t) => {
       if (t.creatorRole === 'FRANCHISE_PARTNER' || t.targetAudience === 'SUB_FRANCHISE') return false; // Partner downline schemes excluded
-      
+
       // Individual Franchise Partner match
       if (t.scopeType === 'INDIVIDUAL') {
         return (
@@ -1194,6 +1194,27 @@ const RewardsRecognitionPage = () => {
       activeSchemesCount: downlinePartnerSchemes.length,
     };
   }, [mySubFranchises, downlinePartnerSchemes]);
+
+  // Parent District Partner info for Sub-Franchise view
+  const parentPartnerInfo = useMemo(() => {
+    if (!isSubFranchise) return null;
+    const parentId = String(activeRoadmapPartner?.parentPartnerId?._id || activeRoadmapPartner?.parentPartnerId || partner?.parentPartnerId?._id || partner?.parentPartnerId || user?.parentPartnerId || '');
+    const parentFId = activeRoadmapPartner?.parentPartnerId?.franchiseId || partner?.parentPartnerId?.franchiseId;
+    if (parentId || parentFId) {
+      const found = partners.find((p) => (parentId && String(p._id || p.id) === parentId) || (parentFId && p.franchiseId === parentFId));
+      if (found) return found;
+    }
+    if (activeRoadmapPartner?.parentPartnerId && typeof activeRoadmapPartner.parentPartnerId === 'object') {
+      return activeRoadmapPartner.parentPartnerId;
+    }
+    const distPartner = partners.find((p) => p.franchiseType === 'DISTRICT_FRANCHISE' || p.franchiseType === 'STATE_FRANCHISE');
+    return distPartner || {
+      fullName: 'Vikram Shinde (HQ)',
+      franchiseId: 'VS-MA-MUM-3382',
+      district: activeRoadmapPartner?.district || 'Mumbai Suburban',
+      state: activeRoadmapPartner?.state || 'Maharashtra'
+    };
+  }, [isSubFranchise, activeRoadmapPartner, partner, user, partners]);
 
   // Card Sales & Distribution to Sub-Franchise Partners (100% Real MongoDB Data)
   const subFranchiseSalesData = useMemo(() => {
@@ -1369,8 +1390,8 @@ const RewardsRecognitionPage = () => {
         const cardCount = Number(inst.installedCardCount || inst.cardSerialNumbers?.length || inst.cardIds?.length || 1);
         const serials = Array.isArray(inst.cardSerialNumbers) && inst.cardSerialNumbers.length > 0
           ? (inst.cardSerialNumbers.length === 1
-              ? inst.cardSerialNumbers[0]
-              : `${inst.cardSerialNumbers[0]} - ${inst.cardSerialNumbers[inst.cardSerialNumbers.length - 1]} (${inst.cardSerialNumbers.length} Cards)`)
+            ? inst.cardSerialNumbers[0]
+            : `${inst.cardSerialNumbers[0]} - ${inst.cardSerialNumbers[inst.cardSerialNumbers.length - 1]} (${inst.cardSerialNumbers.length} Cards)`)
           : 'Direct Card Unit';
         const loadKw = inst.connectedLoadKw ? `${inst.connectedLoadKw} kW` : '3.5 kW';
         const instDate = inst.installationDateTime || inst.createdAt
@@ -1505,8 +1526,8 @@ const RewardsRecognitionPage = () => {
         const cardCount = Number(inst.installedCardCount || inst.cardSerialNumbers?.length || inst.cardIds?.length || 1);
         const serials = Array.isArray(inst.cardSerialNumbers) && inst.cardSerialNumbers.length > 0
           ? (inst.cardSerialNumbers.length === 1
-              ? inst.cardSerialNumbers[0]
-              : `${inst.cardSerialNumbers[0]} - ${inst.cardSerialNumbers[inst.cardSerialNumbers.length - 1]} (${inst.cardSerialNumbers.length} Cards)`)
+            ? inst.cardSerialNumbers[0]
+            : `${inst.cardSerialNumbers[0]} - ${inst.cardSerialNumbers[inst.cardSerialNumbers.length - 1]} (${inst.cardSerialNumbers.length} Cards)`)
           : 'Sub-Partner Card Unit';
         const loadKw = inst.connectedLoadKw ? `${inst.connectedLoadKw} kW` : '5.5 kW';
         const instDate = inst.installationDateTime || inst.createdAt
@@ -1823,7 +1844,7 @@ const RewardsRecognitionPage = () => {
     return sourceList.slice(0, 8).map((p, idx) => {
       const installed = p.installedCount || 0;
       const purchased = p.assignedCount || p.purchasedCards || 0;
-      
+
       let unlockedReward = '🪙 Starter Badge';
       if (installed >= 400 || purchased >= 1000) unlockedReward = '✈️ Dubai Trip / Alto Car';
       else if (installed >= 150 || purchased >= 300) unlockedReward = '🏍️ Royal Enfield / EV Scooter';
@@ -1939,35 +1960,35 @@ const RewardsRecognitionPage = () => {
       (targetForm.scopeType === 'MY_SUB_FRANCHISES'
         ? `${targetForm.creatorPartnerName || 'Franchise Partner'} Sub-Franchise Incentive Drive`
         : targetForm.scopeType === 'STATE'
-        ? `${targetForm.targetState} State Milestone Reward`
-        : targetForm.scopeType === 'DISTRICT'
-        ? `${targetForm.targetDistrict || targetForm.targetState} District Benchmark`
-        : targetForm.scopeType === 'INDIVIDUAL' || targetForm.scopeType === 'INDIVIDUAL_SUB_FRANCHISE'
-        ? `${partnerName} Dedicated Challenge`
-        : 'All-India Universal Target');
+          ? `${targetForm.targetState} State Milestone Reward`
+          : targetForm.scopeType === 'DISTRICT'
+            ? `${targetForm.targetDistrict || targetForm.targetState} District Benchmark`
+            : targetForm.scopeType === 'INDIVIDUAL' || targetForm.scopeType === 'INDIVIDUAL_SUB_FRANCHISE'
+              ? `${partnerName} Dedicated Challenge`
+              : 'All-India Universal Target');
 
     const targetPayload = editingTarget
       ? {
-          ...editingTarget,
-          ...targetForm,
-          title: titleGenerated,
-          partnerName,
-          partnerFranchiseId,
-          targetValue: Number(targetForm.targetValue),
-          rewardPoints: Number(targetForm.rewardPoints) || 0,
-        }
+        ...editingTarget,
+        ...targetForm,
+        title: titleGenerated,
+        partnerName,
+        partnerFranchiseId,
+        targetValue: Number(targetForm.targetValue),
+        rewardPoints: Number(targetForm.rewardPoints) || 0,
+      }
       : {
-          id: `target-${Date.now()}`,
-          ...targetForm,
-          title: titleGenerated,
-          partnerName,
-          partnerFranchiseId,
-          targetValue: Number(targetForm.targetValue),
-          rewardPoints: Number(targetForm.rewardPoints) || 0,
-          status: 'ACTIVE',
-          dispatchedPartners: [],
-          createdAt: new Date().toISOString().split('T')[0],
-        };
+        id: `target-${Date.now()}`,
+        ...targetForm,
+        title: titleGenerated,
+        partnerName,
+        partnerFranchiseId,
+        targetValue: Number(targetForm.targetValue),
+        rewardPoints: Number(targetForm.rewardPoints) || 0,
+        status: 'ACTIVE',
+        dispatchedPartners: [],
+        createdAt: new Date().toISOString().split('T')[0],
+      };
 
     if (editingTarget) {
       setAssignedTargets((prev) =>
@@ -2075,22 +2096,19 @@ const RewardsRecognitionPage = () => {
           width: 100%;
         }
         .rewards-hero-card {
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0c4a6e 100%);
-          border-radius: 16px;
-          padding: 30px 32px;
-          color: #ffffff;
+          background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #eff6ff 100%);
+          border-radius: 20px;
+          padding: 28px 30px;
+          color: #0f172a;
           position: relative;
           overflow: hidden;
-          box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.35);
+          box-shadow: 0 14px 34px -10px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.03);
           margin-bottom: 28px;
           margin-left: -24px;
           margin-right: -24px;
           width: calc(100% + 48px);
           box-sizing: border-box;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          border-left: none;
-          border-right: none;
+          border: 1.5px solid #e2e8f0;
         }
         .rewards-hero-top {
           position: relative;
@@ -2107,6 +2125,7 @@ const RewardsRecognitionPage = () => {
           letter-spacing: -0.5px;
           margin: 0 0 10px 0;
           line-height: 1.2;
+          color: #0f172a;
         }
         .rewards-hero-actions {
           display: flex;
@@ -2117,37 +2136,63 @@ const RewardsRecognitionPage = () => {
         .rewards-kpi-grid {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 12px;
-          margin-top: 26px;
+          gap: 14px;
+          margin-top: 24px;
           align-items: stretch;
+          position: relative;
+          z-index: 1;
         }
         .rewards-kpi-card {
-          background-color: rgba(255, 255, 255, 0.08);
+          background: #ffffff;
           border-radius: 14px;
           padding: 16px 14px;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          backdrop-filter: blur(10px);
+          border: 1.5px solid var(--card-border, #e2e8f0);
           cursor: pointer;
-          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
           user-select: none;
           position: relative;
-          overflow: hidden;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           text-align: left;
           height: 100%;
-          min-height: 140px;
+          min-height: 144px;
           box-sizing: border-box;
+          box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02);
         }
         .rewards-kpi-card:hover {
-          background-color: rgba(255, 255, 255, 0.16);
-          border-color: rgba(234, 88, 12, 0.7);
-          transform: translateY(-4px);
-          box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.4), 0 0 16px rgba(234, 88, 12, 0.25);
+          transform: translateY(-3px);
+          border-color: var(--card-border-hover, #0284c7);
+          box-shadow: 0 12px 26px -6px rgba(15, 23, 42, 0.08), 0 0 16px var(--card-glow, rgba(2, 132, 199, 0.2));
+          background: #ffffff;
         }
         .rewards-kpi-card:active {
-          transform: translateY(-1px) scale(0.98);
+          transform: translateY(-1px) scale(0.99);
+        }
+        .rewards-kpi-card-blue {
+          --card-border: #bae6fd;
+          --card-border-hover: #0284c7;
+          --card-glow: rgba(2, 132, 199, 0.22);
+        }
+        .rewards-kpi-card-green {
+          --card-border: #bbf7d0;
+          --card-border-hover: #16a34a;
+          --card-glow: rgba(22, 163, 74, 0.22);
+        }
+        .rewards-kpi-card-indigo {
+          --card-border: #c7d2fe;
+          --card-border-hover: #4f46e5;
+          --card-glow: rgba(79, 70, 229, 0.22);
+        }
+        .rewards-kpi-card-amber {
+          --card-border: #fde68a;
+          --card-border-hover: #d97706;
+          --card-glow: rgba(217, 119, 6, 0.22);
+        }
+        .rewards-kpi-card-purple {
+          --card-border: #e9d5ff;
+          --card-border-hover: #9333ea;
+          --card-glow: rgba(147, 51, 234, 0.22);
         }
         .rewards-tabs-container {
           display: flex;
@@ -2421,45 +2466,47 @@ const RewardsRecognitionPage = () => {
       {/* ============================================================ */}
       {/* 1. TOP PAGE HEADER (Ultra-Lucrative VIP Banner at very Top)   */}
       {/* ============================================================ */}
-      <div style={{ marginTop: '0px', marginBottom: '18px' }}>
-        {/* Top Greeting Ribbon / Line 1: Royal Gold Ribbon */}
+      <div style={{ marginTop: '0px', marginBottom: '20px' }}>
+        {/* Top Greeting Ribbon / Line 1: Refined White Frosted Glass Ribbon */}
         <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '10px',
-            padding: '7px 18px',
+            padding: '6px 14px',
             borderRadius: '9999px',
-            background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #ffedd5 100%)',
-            border: '1.5px solid #f59e0b',
-            marginBottom: '8px',
-            boxShadow: '0 4px 18px -2px rgba(245, 158, 11, 0.28), 0 0 0 1px rgba(251, 191, 36, 0.35)',
+            backgroundColor: '#ffffff',
+            border: '1.5px solid #e2e8f0',
+            marginBottom: '10px',
+            boxShadow: '0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)',
             flexWrap: 'wrap',
           }}
         >
+          {/* Congratulations Pill */}
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #ea580c 0%, #f59e0b 100%)',
-              color: '#ffffff',
-              boxShadow: '0 2px 6px rgba(234, 88, 12, 0.35)',
+              gap: '5px',
+              padding: '3px 9px',
+              borderRadius: '20px',
+              backgroundColor: '#fff7ed',
+              border: '1px solid #ffedd5',
+              fontSize: '11px',
+              fontWeight: '800',
+              color: '#ea580c',
+              letterSpacing: '0.4px',
+              textTransform: 'uppercase',
             }}
           >
-            <Sparkles size={14} color="#ffffff" />
+            <Sparkles size={12} color="#ea580c" />
+            <span>Congratulations</span>
           </div>
 
-          <span style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
-            Congratulations
-          </span>
-
+          {/* Partner Name */}
           <span
             style={{
-              fontSize: '15px',
+              fontSize: '14px',
               fontWeight: '900',
               color: '#0f172a',
               letterSpacing: '-0.2px',
@@ -2468,42 +2515,47 @@ const RewardsRecognitionPage = () => {
             {formatPartnerTitleName(activeRoadmapPartner?.fullName || user?.fullName || 'Partner')}
           </span>
 
+          <span style={{ color: '#cbd5e1', fontSize: '13px' }}>•</span>
+
+          {/* Franchise Type Role Badge */}
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              fontSize: '12px',
-              fontWeight: '800',
+              fontSize: '11.5px',
+              fontWeight: '700',
               color: '#0369a1',
-              backgroundColor: '#e0f2fe',
-              padding: '3px 11px',
+              backgroundColor: '#f0f9ff',
+              padding: '3px 10px',
               borderRadius: '20px',
               border: '1px solid #bae6fd',
             }}
           >
-            <Building2 size={12} />
+            <Building2 size={12} color="#0284c7" />
             {getPartnerTypeTitle(activeRoadmapPartner?.franchiseType)}
           </span>
 
+          {/* Location Badge */}
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              fontSize: '12px',
+              fontSize: '11.5px',
               fontWeight: '700',
               color: '#15803d',
               backgroundColor: '#f0fdf4',
-              padding: '3px 11px',
+              padding: '3px 10px',
               borderRadius: '20px',
               border: '1px solid #bbf7d0',
             }}
           >
-            <MapPin size={12} />
+            <MapPin size={12} color="#16a34a" />
             {getPartnerLocationLabel(activeRoadmapPartner)}
           </span>
 
+          {/* VIP Leader Badge */}
           <span
             style={{
               display: 'inline-flex',
@@ -2511,12 +2563,13 @@ const RewardsRecognitionPage = () => {
               gap: '4px',
               fontSize: '11px',
               fontWeight: '800',
-              color: '#7c2d12',
-              backgroundColor: '#fed7aa',
-              padding: '2px 8px',
-              borderRadius: '12px',
+              color: '#b45309',
+              backgroundColor: '#fffbeb',
+              padding: '3px 9px',
+              borderRadius: '20px',
+              border: '1px solid #fde68a',
               textTransform: 'uppercase',
-              letterSpacing: '0.4px',
+              letterSpacing: '0.3px',
             }}
           >
             ⭐ VIP Saathi Leader
@@ -2525,7 +2578,7 @@ const RewardsRecognitionPage = () => {
           {/* Admin Partner Switcher */}
           {isSuperAdmin && partners.length > 1 && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-              <span style={{ fontSize: '11px', fontWeight: '800', color: '#92400e', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>
                 View Partner:
               </span>
               <select
@@ -2534,9 +2587,9 @@ const RewardsRecognitionPage = () => {
                 style={{
                   padding: '3px 8px',
                   borderRadius: '8px',
-                  border: '1.5px solid #f59e0b',
+                  border: '1px solid #cbd5e1',
                   fontSize: '12px',
-                  fontWeight: '800',
+                  fontWeight: '700',
                   backgroundColor: '#ffffff',
                   color: '#0f172a',
                   cursor: 'pointer',
@@ -2553,24 +2606,22 @@ const RewardsRecognitionPage = () => {
           )}
         </div>
 
-        {/* Next Line: MY REWARDS & RECOGNITIONS PROGRAMME BY VIDHYUT SAATHI */}
+        {/* Line 2: MY REWARDS & RECOGNITIONS PROGRAMME BY VIDHYUT SAATHI */}
         <div>
           <h1
             style={{
-              fontSize: '28px',
+              fontSize: '26px',
               fontWeight: '950',
               letterSpacing: '-0.5px',
               margin: '2px 0 6px 0',
               lineHeight: '1.2',
               textTransform: 'uppercase',
-              background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 40%, #c2410c 75%, #d97706 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: '#0f172a',
             }}
           >
-            MY REWARDS & RECOGNITIONS PROGRAMME BY VIDHYUT SAATHI
+            MY REWARDS & RECOGNITIONS PROGRAMME <span style={{ color: '#ea580c' }}>BY VIDHYUT SAATHI</span>
           </h1>
-          <p style={{ fontSize: '14px', color: '#64748b', margin: 0, maxWidth: '850px', lineHeight: '1.5' }}>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: 0, maxWidth: '850px', lineHeight: '1.5', fontWeight: '500' }}>
             {isSuperAdmin
               ? 'National Network Performance, State-wise & District-wise partner milestones, vehicle/cash incentives and downline recognition engine.'
               : 'Track your live customer installation milestones, stock purchase targets, vehicle/gold rewards, and manage sub-franchise incentives.'}
@@ -2579,19 +2630,19 @@ const RewardsRecognitionPage = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* 2. BIG HERO CARD (Below the Top Header)                      */}
+      {/* 2. BIG HERO CARD (Below the Top Header - LIGHT THEME)         */}
       {/* ============================================================ */}
       <div className="rewards-hero-card">
-        {/* Glow Effects */}
+        {/* Soft Ambient Radial Backdrop */}
         <div
           style={{
             position: 'absolute',
             top: '-50px',
             right: '-30px',
-            width: '280px',
-            height: '280px',
+            width: '320px',
+            height: '320px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(234, 88, 12, 0.25) 0%, rgba(2, 132, 199, 0.05) 70%, transparent 100%)',
+            background: 'radial-gradient(circle, rgba(234, 88, 12, 0.08) 0%, rgba(2, 132, 199, 0.04) 70%, transparent 100%)',
             pointerEvents: 'none',
           }}
         />
@@ -2605,22 +2656,23 @@ const RewardsRecognitionPage = () => {
                 gap: '8px',
                 padding: '6px 14px',
                 borderRadius: '30px',
-                backgroundColor: 'rgba(234, 88, 12, 0.18)',
-                border: '1px solid rgba(234, 88, 12, 0.4)',
+                backgroundColor: '#fff7ed',
+                border: '1.5px solid #fdba74',
+                boxShadow: '0 2px 8px rgba(234, 88, 12, 0.12)',
                 marginBottom: '10px',
               }}
             >
-              <Trophy size={15} color="#fbbf24" />
-              <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#fed7aa', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+              <Trophy size={15} color="#ea580c" />
+              <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#9a3412', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
                 HONOR & MILESTONES DASHBOARD
               </span>
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', margin: '0 0 4px 0', letterSpacing: '-0.3px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', color: '#0f172a', margin: '0 0 4px 0', letterSpacing: '-0.4px' }}>
               {isSuperAdmin
                 ? 'National Network Performance & Incentive Engine'
                 : `Live Performance Overview — ${activeRoadmapPartner?.firmName || activeRoadmapPartner?.fullName || 'Partner'}`}
             </h2>
-            <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
+            <p style={{ fontSize: '13.5px', color: '#64748b', margin: 0, fontWeight: '500' }}>
               {isSuperAdmin
                 ? 'Review territory-level milestones and dispatch rewards to qualifying partners.'
                 : 'Monitor your verified installations, points pool, and unlocked reward categories in real time.'}
@@ -2644,7 +2696,7 @@ const RewardsRecognitionPage = () => {
                   fontSize: '13.5px',
                   fontWeight: '800',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.4)',
+                  boxShadow: '0 4px 14px rgba(234, 88, 12, 0.3)',
                   transition: 'all 0.2s ease',
                 }}
               >
@@ -2659,173 +2711,223 @@ const RewardsRecognitionPage = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#ffffff',
-                padding: '11px 18px',
+                backgroundColor: '#ffffff',
+                border: '1.5px solid #cbd5e1',
+                color: '#1e293b',
+                padding: '10px 18px',
                 borderRadius: '12px',
                 fontSize: '13px',
-                fontWeight: '700',
+                fontWeight: '800',
                 cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                transition: 'all 0.2s ease',
               }}
             >
-              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={15} color="#475569" className={loading ? 'animate-spin' : ''} />
               <span>Sync Live Stats</span>
             </button>
           </div>
         </div>
 
-        {/* Hero 5 KPI Metrics: Equal Size, Equal Alignment, Single Row */}
+        {/* Hero 5 KPI Metrics: Equal Size, Clean Minimal Light Cards */}
         <div className="rewards-kpi-grid">
-          {/* Card 1: Total Number of Cards Sold to Sub-Franchise Partners */}
+          {/* Card 1: Total Cards Sold (Franchise) / Total Received Stock (Sub-Franchise) */}
           <div
-            className="rewards-kpi-card"
+            className="rewards-kpi-card rewards-kpi-card-blue"
             onClick={() => {
               setSalesSearchQuery('');
               setActiveKpiModal('CARDS_SOLD_BREAKDOWN');
             }}
-            title="Click to open Sub-Franchise Card Sales, Rate & Distribution Breakdown"
+            title={isSubFranchise ? 'Click to view Received Stock Allocation & Ledger' : 'Click to open Sub-Franchise Card Sales, Rate & Distribution Breakdown'}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#94a3b8', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <CreditCard size={13} color="#38bdf8" />
-                <span>Total Cards Sold</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <CreditCard size={13} color="#0284c7" />
+                </div>
+                <span style={{ color: '#475569' }}>{isSubFranchise ? 'Total Received Stock' : 'Total Cards Sold'}</span>
               </div>
-              <ArrowUpRight size={12} color="#38bdf8" style={{ opacity: 0.8, flexShrink: 0 }} />
+              <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
             </div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginTop: '6px', height: '24px', display: 'flex', alignItems: 'center' }}>
-                {subFranchiseSalesData.totalCardsSold} <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '4px', fontWeight: '700' }}>Cards Sold</span>
+
+            <div style={{ margin: '6px 0' }}>
+              <div style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', height: '28px', display: 'flex', alignItems: 'center', letterSpacing: '-0.4px' }}>
+                {isSubFranchise ? (activeRoadmapPartner?.assignedCount || activeRoadmapPartner?.purchasedCards || partner?.assignedCount || 16) : subFranchiseSalesData.totalCardsSold}
+                <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: '600' }}>
+                  {isSubFranchise ? 'Cards Stock' : 'Cards Sold'}
+                </span>
               </div>
-              <div style={{ fontSize: '10.5px', color: '#38bdf8', marginTop: '2px', fontWeight: '700', height: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                ⚡ To {subFranchiseSalesData.totalSubPartners} Sub-Partners • ₹{subFranchiseSalesData.averageRate}/card
+              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '5px', fontWeight: '600', padding: '3px 7px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isSubFranchise
+                  ? `⚡ In-Hand: ${Math.max(0, (activeRoadmapPartner?.assignedCount || partner?.assignedCount || 16) - directInstallationsData.totalInstalledCards)} Units Available`
+                  : `⚡ To ${subFranchiseSalesData.totalSubPartners} Sub-Partners • ₹${subFranchiseSalesData.averageRate}/card`}
               </div>
             </div>
-            <div style={{ fontSize: '9.5px', color: '#38bdf8', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>⚡ View Sales & Rate Log</span>
-              <span style={{ fontSize: '11px' }}>↗</span>
+
+            <div style={{ fontSize: '10px', color: '#0284c7', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between', letterSpacing: '0.2px' }}>
+              <span>{isSubFranchise ? '⚡ View Stock Log' : '⚡ View Sales & Rate Log'}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>↗</span>
             </div>
           </div>
 
-          {/* Card 2: Total Number of Installations by Current Franchise Partner */}
+          {/* Card 2: Total Installations */}
           <div
-            className="rewards-kpi-card"
+            className="rewards-kpi-card rewards-kpi-card-green"
             onClick={() => {
               setInstSearchQuery('');
               setActiveKpiModal('DIRECT_INSTALLATIONS_BREAKDOWN');
             }}
-            title="Click to view Current Franchise Partner Direct Installations & Customers Breakdown"
+            title="Click to view Direct Customer Installations & Verification Breakdown"
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#94a3b8', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <Zap size={13} color="#10b981" />
-                <span>Total Installations</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Zap size={13} color="#16a34a" />
+                </div>
+                <span style={{ color: '#475569' }}>{isSubFranchise ? 'My Installations' : 'Total Installations'}</span>
               </div>
-              <ArrowUpRight size={12} color="#10b981" style={{ opacity: 0.8, flexShrink: 0 }} />
+              <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
             </div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginTop: '6px', height: '24px', display: 'flex', alignItems: 'center' }}>
-                {directInstallationsData.totalInstalledCards} <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '4px', fontWeight: '700' }}>Cards Installed</span>
+
+            <div style={{ margin: '6px 0' }}>
+              <div style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', height: '28px', display: 'flex', alignItems: 'center', letterSpacing: '-0.4px' }}>
+                {directInstallationsData.totalInstalledCards}
+                <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: '600' }}>Cards Installed</span>
               </div>
-              <div style={{ fontSize: '10.5px', color: '#34d399', marginTop: '2px', fontWeight: '700', height: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '5px', fontWeight: '600', padding: '3px 7px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 ⚡ Direct • {directInstallationsData.totalCustomers} Customers
               </div>
             </div>
-            <div style={{ fontSize: '9.5px', color: '#10b981', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+            <div style={{ fontSize: '10px', color: '#16a34a', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between', letterSpacing: '0.2px' }}>
               <span>⚡ View Installation Log</span>
-              <span style={{ fontSize: '11px' }}>↗</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>↗</span>
             </div>
           </div>
 
-          {/* Card 3: New Sub Franchise Creation / Total Sub Franchises */}
+          {/* Card 3: Total Sub-Franchises / Parent District HQ */}
           <div
-            className="rewards-kpi-card"
+            className="rewards-kpi-card rewards-kpi-card-indigo"
             onClick={() => {
               setSubSearchQuery('');
               setActiveKpiModal('SUB_FRANCHISE_NETWORK_BREAKDOWN');
             }}
-            title="Click to view Sub-Franchise Partner Creation & Downline Network"
+            title={isSubFranchise ? 'Click to view Parent District Partner HQ & Network' : 'Click to view Sub-Franchise Partner Creation & Downline Network'}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#94a3b8', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <Users size={13} color="#818cf8" />
-                <span>Total Sub-Franchises</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isSubFranchise ? <Building2 size={13} color="#4f46e5" /> : <Users size={13} color="#4f46e5" />}
+                </div>
+                <span style={{ color: '#475569' }}>{isSubFranchise ? 'Parent District HQ' : 'Total Sub-Franchises'}</span>
               </div>
-              <ArrowUpRight size={12} color="#818cf8" style={{ opacity: 0.8, flexShrink: 0 }} />
+              <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
             </div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginTop: '6px', height: '24px', display: 'flex', alignItems: 'center' }}>
-                {mySubFranchises.length} <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '4px', fontWeight: '700' }}>Sub-Partners</span>
+
+            <div style={{ margin: '6px 0' }}>
+              <div style={{ fontSize: isSubFranchise ? '15px' : '22px', fontWeight: '950', color: '#0f172a', height: '28px', display: 'flex', alignItems: 'center', letterSpacing: '-0.4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {isSubFranchise ? (parentPartnerInfo?.fullName || 'District Partner HQ') : mySubFranchises.length}
+                {!isSubFranchise && <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: '600' }}>Sub-Partners</span>}
               </div>
-              <div style={{ fontSize: '10.5px', color: '#a5b4fc', marginTop: '2px', fontWeight: '700', height: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                👥 Downline • {subFranchiseSalesData.totalCardsSold} Cards Supplied
+              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '5px', fontWeight: '600', padding: '3px 7px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isSubFranchise
+                  ? `🏢 ID: ${parentPartnerInfo?.franchiseId || 'VS-MA-MUM-3382'}`
+                  : `👥 Downline • ${subFranchiseSalesData.totalCardsSold} Cards Supplied`}
               </div>
             </div>
-            <div style={{ fontSize: '9.5px', color: '#818cf8', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>⚡ View Sub-Franchises</span>
-              <span style={{ fontSize: '11px' }}>↗</span>
+
+            <div style={{ fontSize: '10px', color: '#4f46e5', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between', letterSpacing: '0.2px' }}>
+              <span>{isSubFranchise ? '⚡ View District Network' : '⚡ View Sub-Franchises'}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>↗</span>
             </div>
           </div>
 
-          {/* Card 4: Total Number of Sub-Franchise Installations */}
+          {/* Card 4: Sub-Franchise Installs / Customer Ledger */}
           <div
-            className="rewards-kpi-card"
+            className="rewards-kpi-card rewards-kpi-card-amber"
             onClick={() => {
-              setSubInstSearchQuery('');
-              setActiveKpiModal('SUB_FRANCHISE_INSTALLATIONS_BREAKDOWN');
+              if (isSubFranchise) {
+                setInstSearchQuery('');
+                setActiveKpiModal('DIRECT_INSTALLATIONS_BREAKDOWN');
+              } else {
+                setSubInstSearchQuery('');
+                setActiveKpiModal('SUB_FRANCHISE_INSTALLATIONS_BREAKDOWN');
+              }
             }}
-            title="Click to view Sub-Franchise Customer Installations & Deployment Breakdown"
+            title={isSubFranchise ? 'Click to view Active Customer Connections' : 'Click to view Sub-Franchise Customer Installations & Deployment Breakdown'}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#94a3b8', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <Flame size={13} color="#f59e0b" />
-                <span>Sub-Franchise Installs</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isSubFranchise ? <Users size={13} color="#d97706" /> : <Flame size={13} color="#d97706" />}
+                </div>
+                <span style={{ color: '#475569' }}>{isSubFranchise ? 'Customer Network' : 'Sub-Franchise Installs'}</span>
               </div>
-              <ArrowUpRight size={12} color="#f59e0b" style={{ opacity: 0.8, flexShrink: 0 }} />
+              <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
             </div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginTop: '6px', height: '24px', display: 'flex', alignItems: 'center' }}>
-                {subFranchiseInstallationsData.totalInstalledCards} <span style={{ fontSize: '11px', color: '#94a3b8', marginLeft: '4px', fontWeight: '700' }}>Cards Installed</span>
+
+            <div style={{ margin: '6px 0' }}>
+              <div style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', height: '28px', display: 'flex', alignItems: 'center', letterSpacing: '-0.4px' }}>
+                {isSubFranchise ? directInstallationsData.totalCustomers : subFranchiseInstallationsData.totalInstalledCards}
+                <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: '600' }}>
+                  {isSubFranchise ? 'Active Clients' : 'Cards Installed'}
+                </span>
               </div>
-              <div style={{ fontSize: '10.5px', color: '#fbbf24', marginTop: '2px', fontWeight: '700', height: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                ⚡ By {subFranchiseInstallationsData.totalSubPartners || mySubFranchises.length} Sub-Partners • {subFranchiseInstallationsData.totalCustomers} Cust.
+              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '5px', fontWeight: '600', padding: '3px 7px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isSubFranchise
+                  ? '⚡ 100% Deployed & Active Meters'
+                  : `⚡ By ${subFranchiseInstallationsData.totalSubPartners || mySubFranchises.length} Sub-Partners • ${subFranchiseInstallationsData.totalCustomers} Cust.`}
               </div>
             </div>
-            <div style={{ fontSize: '9.5px', color: '#f59e0b', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>⚡ View Sub-Install Log</span>
-              <span style={{ fontSize: '11px' }}>↗</span>
+
+            <div style={{ fontSize: '10px', color: '#d97706', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between', letterSpacing: '0.2px' }}>
+              <span>{isSubFranchise ? '⚡ View Customer Ledger' : '⚡ View Sub-Install Log'}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>↗</span>
             </div>
           </div>
 
-          {/* Card 5: All Network Installations (Direct Franchise Partner + All Sub-Franchise Partners) */}
+          {/* Card 5: All Installations (Total) / Active Milestones */}
           <div
-            className="rewards-kpi-card rewards-kpi-card-last"
+            className="rewards-kpi-card rewards-kpi-card-purple rewards-kpi-card-last"
             onClick={() => {
-              setAllInstSearchQuery('');
-              setAllInstTypeFilter('ALL');
-              setActiveKpiModal('ALL_NETWORK_INSTALLATIONS_BREAKDOWN');
+              if (isSubFranchise) {
+                const el = document.getElementById('my-rewards-roadmap-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              } else {
+                setAllInstSearchQuery('');
+                setAllInstTypeFilter('ALL');
+                setActiveKpiModal('ALL_NETWORK_INSTALLATIONS_BREAKDOWN');
+              }
             }}
-            title="Click to view Combined All Installations (Direct + All Sub-Franchise Partners)"
+            title={isSubFranchise ? 'Click to view your Active Rewards & Recognition Roadmap' : 'Click to view Combined All Installations (Direct + All Sub-Franchise Partners)'}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#94a3b8', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <Layers size={13} color="#c084fc" />
-                <span>All Installations (Total)</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {isSubFranchise ? <Trophy size={13} color="#7c3aed" /> : <Layers size={13} color="#7c3aed" />}
+                </div>
+                <span style={{ color: '#475569' }}>{isSubFranchise ? 'Active Milestone' : 'All Installations (Total)'}</span>
               </div>
-              <ArrowUpRight size={12} color="#c084fc" style={{ opacity: 0.8, flexShrink: 0 }} />
+              <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
             </div>
-            <div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginTop: '6px', height: '24px', display: 'flex', alignItems: 'center' }}>
-                {allNetworkInstallationsData.totalInstalledCards} <span style={{ fontSize: '11px', color: '#cbd5e1', marginLeft: '4px', fontWeight: '700' }}>Cards Installed</span>
+
+            <div style={{ margin: '6px 0' }}>
+              <div style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', height: '28px', display: 'flex', alignItems: 'center', letterSpacing: '-0.4px' }}>
+                {isSubFranchise ? `${directInstallationsData.totalInstalledCards} / 25` : allNetworkInstallationsData.totalInstalledCards}
+                <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: '600' }}>
+                  {isSubFranchise ? 'Installed' : 'Cards Installed'}
+                </span>
               </div>
-              <div style={{ fontSize: '10.5px', color: '#e9d5ff', marginTop: '2px', fontWeight: '700', height: '18px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                ⚡ {allNetworkInstallationsData.directInstalledCards} Direct + {allNetworkInstallationsData.subInstalledCards} Sub-Franchise
+              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '5px', fontWeight: '600', padding: '3px 7px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {isSubFranchise
+                  ? '🎯 Sub-Franchise Incentive Scheme'
+                  : `⚡ ${allNetworkInstallationsData.directInstalledCards} Direct + ${allNetworkInstallationsData.subInstalledCards} Sub-Franchise`}
               </div>
             </div>
-            <div style={{ fontSize: '9.5px', color: '#c084fc', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>⚡ View All Installations</span>
-              <span style={{ fontSize: '11px' }}>↗</span>
+
+            <div style={{ fontSize: '10px', color: '#7c3aed', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between', letterSpacing: '0.2px' }}>
+              <span>{isSubFranchise ? '⚡ View Rewards Roadmap' : '⚡ View All Installations'}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>↗</span>
             </div>
           </div>
         </div>
@@ -4028,7 +4130,7 @@ const RewardsRecognitionPage = () => {
                     <RechartsLegend verticalAlign="top" height={36} />
                     <ReferenceLine y={100} stroke="#ca8a04" strokeDasharray="3 3" label={{ value: 'Gold Sovereign (100)', fill: '#ca8a04', fontSize: 10 }} />
                     <ReferenceLine y={150} stroke="#ea580c" strokeDasharray="3 3" label={{ value: 'Royal Enfield (150)', fill: '#ea580c', fontSize: 10 }} />
-                    
+
                     {winnerGraphMode === 'DUAL_RACE' && (
                       <>
                         <Bar dataKey="cardsInstalled" name="⚡ Cards Installed" fill="#f59e0b" radius={[6, 6, 0, 0]} />
@@ -5715,8 +5817,8 @@ const RewardsRecognitionPage = () => {
               maxWidth: (activeKpiModal === 'CARDS_SOLD_BREAKDOWN' || activeKpiModal === 'DIRECT_INSTALLATIONS_BREAKDOWN' || activeKpiModal === 'SUB_FRANCHISE_NETWORK_BREAKDOWN' || activeKpiModal === 'SUB_FRANCHISE_INSTALLATIONS_BREAKDOWN' || activeKpiModal === 'ALL_NETWORK_INSTALLATIONS_BREAKDOWN')
                 ? '1220px'
                 : activeKpiModal === 'POINTS_POOL' || activeKpiModal === 'ACTIVE_TARGETS'
-                ? '980px'
-                : '820px',
+                  ? '980px'
+                  : '820px',
               width: (activeKpiModal === 'CARDS_SOLD_BREAKDOWN' || activeKpiModal === 'DIRECT_INSTALLATIONS_BREAKDOWN' || activeKpiModal === 'SUB_FRANCHISE_NETWORK_BREAKDOWN' || activeKpiModal === 'SUB_FRANCHISE_INSTALLATIONS_BREAKDOWN' || activeKpiModal === 'ALL_NETWORK_INSTALLATIONS_BREAKDOWN') ? '96vw' : '90vw',
               borderRadius: '20px',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
@@ -7299,21 +7401,21 @@ const RewardsRecognitionPage = () => {
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
                     {(isSuperAdmin
                       ? [
-                          { id: 'ALL', label: `All Goals (${pageStats.totalTargetsCount})` },
-                          { id: 'INSTALL_ONLY', label: `⚡ Cards Installation Goals (${pageStats.installTargetsCount})` },
-                          { id: 'PURCHASE_ONLY', label: `📦 Cards Stock Purchase Goals (${pageStats.purchaseTargetsCount})` },
-                          { id: 'STATE', label: `🏛️ State (${pageStats.stateTargetsCount})` },
-                          { id: 'DISTRICT', label: `📍 District (${pageStats.districtTargetsCount})` },
-                          { id: 'INDIVIDUAL', label: `👤 By Name (${pageStats.indivTargetsCount})` },
-                          { id: 'GLOBAL', label: `🌐 Global (${pageStats.globalTargetsCount})` },
-                        ]
+                        { id: 'ALL', label: `All Goals (${pageStats.totalTargetsCount})` },
+                        { id: 'INSTALL_ONLY', label: `⚡ Cards Installation Goals (${pageStats.installTargetsCount})` },
+                        { id: 'PURCHASE_ONLY', label: `📦 Cards Stock Purchase Goals (${pageStats.purchaseTargetsCount})` },
+                        { id: 'STATE', label: `🏛️ State (${pageStats.stateTargetsCount})` },
+                        { id: 'DISTRICT', label: `📍 District (${pageStats.districtTargetsCount})` },
+                        { id: 'INDIVIDUAL', label: `👤 By Name (${pageStats.indivTargetsCount})` },
+                        { id: 'GLOBAL', label: `🌐 Global (${pageStats.globalTargetsCount})` },
+                      ]
                       : isSubFranchise
-                      ? [
+                        ? [
                           { id: 'ALL', label: `My Assigned Targets (${myApplicableTargets.length})` },
                           { id: 'INSTALL_ONLY', label: `⚡ Installation Goals (${myApplicableTargets.filter((t) => (t.metricType || 'INSTALLED_CARDS') === 'INSTALLED_CARDS').length})` },
                           { id: 'PURCHASE_ONLY', label: `📦 Stock Buy Goals (${myApplicableTargets.filter((t) => t.metricType === 'PURCHASED_CARDS').length})` },
                         ]
-                      : [
+                        : [
                           { id: 'ALL', label: `All Applicable Goals (${myApplicableTargets.length || assignedTargets.length})` },
                           { id: 'INSTALL_ONLY', label: `⚡ Cards Installation Goals (${pageStats.installTargetsCount})` },
                           { id: 'PURCHASE_ONLY', label: `📦 Cards Stock Purchase Goals (${pageStats.purchaseTargetsCount})` },
@@ -7414,36 +7516,36 @@ const RewardsRecognitionPage = () => {
                                       target.targetAudience === 'SUB_FRANCHISE' || target.creatorRole === 'FRANCHISE_PARTNER'
                                         ? '#f3e8ff'
                                         : target.scopeType === 'STATE'
-                                        ? '#fef3c7'
-                                        : target.scopeType === 'DISTRICT'
-                                        ? '#e0f2fe'
-                                        : target.scopeType === 'INDIVIDUAL'
-                                        ? '#faf5ff'
-                                        : '#dcfce7',
+                                          ? '#fef3c7'
+                                          : target.scopeType === 'DISTRICT'
+                                            ? '#e0f2fe'
+                                            : target.scopeType === 'INDIVIDUAL'
+                                              ? '#faf5ff'
+                                              : '#dcfce7',
                                     color:
                                       target.targetAudience === 'SUB_FRANCHISE' || target.creatorRole === 'FRANCHISE_PARTNER'
                                         ? '#7c3aed'
                                         : target.scopeType === 'STATE'
-                                        ? '#92400e'
-                                        : target.scopeType === 'DISTRICT'
-                                        ? '#0369a1'
-                                        : target.scopeType === 'INDIVIDUAL'
-                                        ? '#7e22ce'
-                                        : '#15803d',
+                                          ? '#92400e'
+                                          : target.scopeType === 'DISTRICT'
+                                            ? '#0369a1'
+                                            : target.scopeType === 'INDIVIDUAL'
+                                              ? '#7e22ce'
+                                              : '#15803d',
                                     border: '1px solid rgba(0,0,0,0.06)',
                                   }}
                                 >
                                   {target.targetAudience === 'SUB_FRANCHISE' || target.creatorRole === 'FRANCHISE_PARTNER'
                                     ? `👥 Sub-Franchise Target (${target.creatorPartnerName || 'Franchise Partner'})`
                                     : isSuperAdmin
-                                    ? target.scopeType === 'STATE'
-                                      ? `🏛️ ${target.targetState} State`
-                                      : target.scopeType === 'DISTRICT'
-                                      ? `📍 ${target.targetDistrict || 'District'}, ${target.targetState}`
-                                      : target.scopeType === 'INDIVIDUAL'
-                                      ? `👤 ${target.partnerName || 'Individual Partner'}`
-                                      : '🌐 All-India'
-                                    : '⚡ Company Milestone Goal'}
+                                      ? target.scopeType === 'STATE'
+                                        ? `🏛️ ${target.targetState} State`
+                                        : target.scopeType === 'DISTRICT'
+                                          ? `📍 ${target.targetDistrict || 'District'}, ${target.targetState}`
+                                          : target.scopeType === 'INDIVIDUAL'
+                                            ? `👤 ${target.partnerName || 'Individual Partner'}`
+                                            : '🌐 All-India'
+                                      : '⚡ Company Milestone Goal'}
                                 </span>
 
                                 <span
@@ -7554,8 +7656,8 @@ const RewardsRecognitionPage = () => {
                   const starPartner = isSuperAdmin
                     ? pageStats.topStar
                     : isSubFranchise
-                    ? activeRoadmapPartner || subPartnersList[0] || pageStats.topStar
-                    : subFranchiseViewData.topSubStar || pageStats.topStar;
+                      ? activeRoadmapPartner || subPartnersList[0] || pageStats.topStar
+                      : subFranchiseViewData.topSubStar || pageStats.topStar;
 
                   if (!starPartner) {
                     return (
@@ -7569,8 +7671,8 @@ const RewardsRecognitionPage = () => {
                   const runnerUpsList = isSuperAdmin
                     ? partners.slice(1, 4)
                     : isSubFranchise
-                    ? subPartnersList.filter((p) => String(p._id) !== String(starPartner._id)).slice(0, 3)
-                    : subFranchiseViewData.subList.slice(1, 4);
+                      ? subPartnersList.filter((p) => String(p._id) !== String(starPartner._id)).slice(0, 3)
+                      : subFranchiseViewData.subList.slice(1, 4);
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -7789,7 +7891,7 @@ const RewardsRecognitionPage = () => {
                   const displayQualifiers = isSuperAdmin
                     ? allQualifiersList
                     : isSubFranchise
-                    ? myApplicableTargets.map((t) => {
+                      ? myApplicableTargets.map((t) => {
                         const progressVal = getPartnerProgressForTarget(activeRoadmapPartner, t);
                         const isQual = progressVal >= (t.targetValue || 0);
                         const isDispatched = (t.dispatchedPartners || []).includes(activeRoadmapPartner?._id);
@@ -7802,7 +7904,7 @@ const RewardsRecognitionPage = () => {
                           isQualified: isQual,
                         };
                       })
-                    : subFranchiseViewData.qualifiers;
+                      : subFranchiseViewData.qualifiers;
 
                   const totalQualified = displayQualifiers.filter((q) => q.isQualified !== false && q.progressVal >= (q.target.targetValue || 0)).length;
 
@@ -7953,8 +8055,8 @@ const RewardsRecognitionPage = () => {
                   const currentTotalPoints = isSuperAdmin
                     ? pageStats.totalPoints
                     : isSubFranchise
-                    ? activeRoadmapPartner?.rewardPoints || (activeRoadmapPartner?.installedCount || 0) * 100
-                    : subFranchiseViewData.totalPoints;
+                      ? activeRoadmapPartner?.rewardPoints || (activeRoadmapPartner?.installedCount || 0) * 100
+                      : subFranchiseViewData.totalPoints;
                   const currentSubList = isSuperAdmin ? partners : subPartnersList.length > 0 ? subPartnersList : partners;
 
                   return (
@@ -8053,8 +8155,8 @@ const RewardsRecognitionPage = () => {
                   const displayMilestoneList = isSuperAdmin
                     ? centuryAchieversList
                     : isSubFranchise
-                    ? subPartnersList.length > 0 ? subPartnersList : [activeRoadmapPartner]
-                    : subFranchiseViewData.milestoneAchievers;
+                      ? subPartnersList.length > 0 ? subPartnersList : [activeRoadmapPartner]
+                      : subFranchiseViewData.milestoneAchievers;
 
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -8703,89 +8805,89 @@ const RewardsRecognitionPage = () => {
                 <div className="rewards-presets-grid">
                   {(targetForm.metricType === 'PURCHASED_CARDS'
                     ? [
-                        {
-                          id: 'preset-buy-scooter',
-                          icon: '🛵',
-                          title: 'Electric Scooter (Ola / Ather)',
-                          subtitle: 'Buy 300 Cards + ₹25,000 Cash Bonus',
-                          target: 300,
-                          points: 4000,
-                          fullName: 'Electric Scooter (Ola S1 / Ather) + ₹25,000 Cash Bonus',
-                          category: 'VEHICLE_CASH',
-                        },
-                        {
-                          id: 'preset-buy-goldbar',
-                          icon: '🥇',
-                          title: '10-Gram 24K Gold Bar',
-                          subtitle: 'Buy 150 Cards + Digital POS Terminal',
-                          target: 150,
-                          points: 2500,
-                          fullName: '10-Gram 24K Gold Bar + Digital POS Terminal',
-                          category: 'GOLD',
-                        },
-                        {
-                          id: 'preset-buy-car',
-                          icon: '🚗',
-                          title: 'Maruti Alto K10 / ₹3.5L Cash',
-                          subtitle: 'Buy 1,000 Cards Bulk Stock Mega Bonanza',
-                          target: 1000,
-                          points: 15000,
-                          fullName: 'Maruti Suzuki Alto K10 / ₹3,50,000 Bulk Cash Bonus',
-                          category: 'VEHICLE_CASH',
-                        },
-                        {
-                          id: 'preset-buy-ipad',
-                          icon: '📱',
-                          title: 'Apple iPad + Free Standee Display Kit',
-                          subtitle: 'Buy 50 Cards Initial Stock Procurement',
-                          target: 50,
-                          points: 1200,
-                          fullName: 'Apple iPad 10th Gen + Free Marketing Standee Kit',
-                          category: 'GADGET',
-                        },
-                      ]
+                      {
+                        id: 'preset-buy-scooter',
+                        icon: '🛵',
+                        title: 'Electric Scooter (Ola / Ather)',
+                        subtitle: 'Buy 300 Cards + ₹25,000 Cash Bonus',
+                        target: 300,
+                        points: 4000,
+                        fullName: 'Electric Scooter (Ola S1 / Ather) + ₹25,000 Cash Bonus',
+                        category: 'VEHICLE_CASH',
+                      },
+                      {
+                        id: 'preset-buy-goldbar',
+                        icon: '🥇',
+                        title: '10-Gram 24K Gold Bar',
+                        subtitle: 'Buy 150 Cards + Digital POS Terminal',
+                        target: 150,
+                        points: 2500,
+                        fullName: '10-Gram 24K Gold Bar + Digital POS Terminal',
+                        category: 'GOLD',
+                      },
+                      {
+                        id: 'preset-buy-car',
+                        icon: '🚗',
+                        title: 'Maruti Alto K10 / ₹3.5L Cash',
+                        subtitle: 'Buy 1,000 Cards Bulk Stock Mega Bonanza',
+                        target: 1000,
+                        points: 15000,
+                        fullName: 'Maruti Suzuki Alto K10 / ₹3,50,000 Bulk Cash Bonus',
+                        category: 'VEHICLE_CASH',
+                      },
+                      {
+                        id: 'preset-buy-ipad',
+                        icon: '📱',
+                        title: 'Apple iPad + Free Standee Display Kit',
+                        subtitle: 'Buy 50 Cards Initial Stock Procurement',
+                        target: 50,
+                        points: 1200,
+                        fullName: 'Apple iPad 10th Gen + Free Marketing Standee Kit',
+                        category: 'GADGET',
+                      },
+                    ]
                     : [
-                        {
-                          id: 'preset-bike',
-                          icon: '🏍️',
-                          title: 'Royal Enfield Hunter 350',
-                          subtitle: 'Install 150 Cards (Or ₹1.5L Cash)',
-                          target: 150,
-                          points: 5000,
-                          fullName: 'Royal Enfield Hunter 350 / ₹1,50,000 Cash Bonus',
-                          category: 'VEHICLE_CASH',
-                        },
-                        {
-                          id: 'preset-gold',
-                          icon: '🪙',
-                          title: '8-Gram 24K Gold Sovereign Coin',
-                          subtitle: 'Install 50 Cards (BIS Hallmarked)',
-                          target: 50,
-                          points: 2500,
-                          fullName: '8-Gram 24K Gold Sovereign Coin (BIS Hallmark)',
-                          category: 'GOLD',
-                        },
-                        {
-                          id: 'preset-dubai',
-                          icon: '🏖️',
-                          title: 'Dubai Leadership Gala Tour',
-                          subtitle: 'Install 400 Cards (All-Expenses 4D/3N)',
-                          target: 400,
-                          points: 10000,
-                          fullName: 'All-Expenses Paid 4D/3N Dubai Leadership Tour',
-                          category: 'TOUR',
-                        },
-                        {
-                          id: 'preset-ipad',
-                          icon: '📱',
-                          title: 'Apple iPad + Smart POS Terminal',
-                          subtitle: 'Install 35 Cards Onboarding Sprint',
-                          target: 35,
-                          points: 1500,
-                          fullName: 'Apple iPad 10th Gen + Smart POS Terminal',
-                          category: 'GADGET',
-                        },
-                      ]
+                      {
+                        id: 'preset-bike',
+                        icon: '🏍️',
+                        title: 'Royal Enfield Hunter 350',
+                        subtitle: 'Install 150 Cards (Or ₹1.5L Cash)',
+                        target: 150,
+                        points: 5000,
+                        fullName: 'Royal Enfield Hunter 350 / ₹1,50,000 Cash Bonus',
+                        category: 'VEHICLE_CASH',
+                      },
+                      {
+                        id: 'preset-gold',
+                        icon: '🪙',
+                        title: '8-Gram 24K Gold Sovereign Coin',
+                        subtitle: 'Install 50 Cards (BIS Hallmarked)',
+                        target: 50,
+                        points: 2500,
+                        fullName: '8-Gram 24K Gold Sovereign Coin (BIS Hallmark)',
+                        category: 'GOLD',
+                      },
+                      {
+                        id: 'preset-dubai',
+                        icon: '🏖️',
+                        title: 'Dubai Leadership Gala Tour',
+                        subtitle: 'Install 400 Cards (All-Expenses 4D/3N)',
+                        target: 400,
+                        points: 10000,
+                        fullName: 'All-Expenses Paid 4D/3N Dubai Leadership Tour',
+                        category: 'TOUR',
+                      },
+                      {
+                        id: 'preset-ipad',
+                        icon: '📱',
+                        title: 'Apple iPad + Smart POS Terminal',
+                        subtitle: 'Install 35 Cards Onboarding Sprint',
+                        target: 35,
+                        points: 1500,
+                        fullName: 'Apple iPad 10th Gen + Smart POS Terminal',
+                        category: 'GADGET',
+                      },
+                    ]
                   ).map((preset) => {
                     const isSelected = targetForm.rewardName === preset.fullName;
                     return (
