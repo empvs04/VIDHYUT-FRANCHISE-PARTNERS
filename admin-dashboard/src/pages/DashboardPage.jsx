@@ -6281,14 +6281,14 @@ const DashboardPage = () => {
         {/* Partner-Wise List */}
         <div style={{ padding: '12px 18px', maxHeight: '250px', overflowY: 'auto' }}>
           {companyProfits && companyProfits.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px' }}>
               {companyProfits.map((item) => (
                 <div
                   key={item.partnerId}
                   onClick={() => setSelectedCompanyProfitModal(item)}
                   style={{
-                    padding: '10px 14px',
-                    borderRadius: '10px',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
                     backgroundColor: '#FFFFFF',
                     border: '1px solid #E2E8F0',
                     display: 'flex',
@@ -6296,13 +6296,13 @@ const DashboardPage = () => {
                     justifyContent: 'space-between',
                     cursor: 'pointer',
                     transition: 'all 0.18s ease',
-                    gap: '10px',
+                    gap: '12px',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#F0FDF4';
-                    e.currentTarget.style.borderColor = '#86EFAC';
+                    e.currentTarget.style.backgroundColor = '#F8FAFC';
+                    e.currentTarget.style.borderColor = '#087DB5';
                     e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 3px 10px rgba(22, 163, 74, 0.08)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(8, 125, 181, 0.08)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = '#FFFFFF';
@@ -6310,56 +6310,65 @@ const DashboardPage = () => {
                     e.currentTarget.style.transform = 'none';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
+                  title="Click to view company commercial breakdown"
                 >
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: '800', fontSize: '13px', color: '#0F172A' }}>
+                  <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexWrap: 'nowrap' }}>
+                      <span style={{ fontWeight: '700', fontSize: '13px', color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {item.fullName}
                       </span>
                       <span
                         style={{
-                          fontSize: '10px',
+                          fontSize: '9.5px',
                           fontWeight: '700',
                           fontFamily: 'monospace',
-                          color: '#2563EB',
+                          color: '#087DB5',
                           backgroundColor: '#EFF6FF',
-                          padding: '1px 5px',
+                          padding: '1px 6px',
                           borderRadius: '4px',
                           border: '1px solid #BFDBFE',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
                         }}
                       >
                         {item.franchiseId}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                      <span>📍 {item.district ? `${item.district}, ` : ''}{item.state}</span>
-                      <span style={{ color: '#0F172A', fontWeight: '700' }}>
-                        • {item.totalCardsSold} Cards @ ₹{item.avgSellingPrice.toLocaleString('en-IN')}/card
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <MapPin size={11} color="#087DB5" style={{ flexShrink: 0 }} />
+                      <span style={{ fontWeight: '500', color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.district ? `${item.district}, ` : ''}{item.state}
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '10px', color: '#64748B', marginTop: '1px' }}>
-                      Revenue: ₹{item.totalRevenue.toLocaleString('en-IN')} • {item.transactionCount || 1} Distributions
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#475569', marginTop: '2px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: '600', color: '#1E293B', backgroundColor: '#F1F5F9', padding: '1px 6px', borderRadius: '4px' }}>
+                        {item.totalCardsSold} Cards
+                      </span>
+                      <span style={{ color: '#64748B' }}>@ ₹{item.avgSellingPrice.toLocaleString('en-IN')}/card</span>
+                      <span style={{ color: '#CBD5E1' }}>•</span>
+                      <span style={{ color: '#64748B' }}>Rev: ₹{item.totalRevenue.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
-                    <div style={{ fontSize: '9.5px', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px', flexShrink: 0 }}>
+                    <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                       Company Profit
                     </div>
-                    <div style={{ fontWeight: '900', fontSize: '15px', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                    <div style={{ fontWeight: '800', fontSize: '15px', color: '#16A34A', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                       +₹{item.companyNetProfit.toLocaleString('en-IN')}
                     </div>
                     <span
                       style={{
                         fontSize: '9.5px',
-                        fontWeight: '800',
+                        fontWeight: '700',
                         color: '#15803D',
                         backgroundColor: '#DCFCE7',
                         padding: '1px 6px',
                         borderRadius: '4px',
                         border: '1px solid #BBF7D0',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       +{item.marginPercent}% Margin
