@@ -5737,8 +5737,8 @@ const DashboardPage = () => {
                     key={p._id}
                     onClick={() => navigate(`/partners/${p._id}`)}
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: '10px',
+                      padding: '10px 14px',
+                      borderRadius: '12px',
                       border: '1px solid #E2E8F0',
                       backgroundColor: '#FFFFFF',
                       cursor: 'pointer',
@@ -5746,14 +5746,14 @@ const DashboardPage = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '10px',
+                      gap: '12px',
                       flexShrink: 0,
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#F0FDF4';
+                      e.currentTarget.style.borderColor = '#087DB5';
+                      e.currentTarget.style.backgroundColor = '#F0F9FF';
                       e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 3px 10px rgba(16, 185, 129, 0.1)';
+                      e.currentTarget.style.boxShadow = '0 3px 10px rgba(8, 125, 181, 0.08)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = '#E2E8F0';
@@ -5766,61 +5766,66 @@ const DashboardPage = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '8px',
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '10px',
                           background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-                          color: '#2563EB',
+                          color: '#087DB5',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: '700',
-                          fontSize: '12px',
+                          fontSize: '13px',
                           flexShrink: 0,
                         }}
                       >
                         {p.fullName?.charAt(0)?.toUpperCase() || 'P'}
                       </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: '600', fontSize: '13px', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flexWrap: 'nowrap' }}>
+                          <span style={{ fontWeight: '600', fontSize: '13px', color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                             {p.fullName}
                           </span>
                           <span
                             style={{
                               fontSize: '9.5px',
-                              fontWeight: '600',
+                              fontWeight: '700',
                               fontFamily: 'monospace',
-                              color: '#2563EB',
+                              color: '#087DB5',
                               backgroundColor: '#EFF6FF',
-                              padding: '1px 5px',
+                              padding: '1px 6px',
                               borderRadius: '4px',
                               border: '1px solid #BFDBFE',
+                              flexShrink: 0,
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {p.franchiseId}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748B', marginTop: '1px' }}>
-                          <MapPin size={11} color="#2563EB" />
-                          <span style={{ fontWeight: '500', color: '#475569' }}>
-                            {p.district || p.city || 'District'}, {p.state}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <MapPin size={11} color="#087DB5" style={{ flexShrink: 0 }} />
+                          <span style={{ fontWeight: '500', color: '#64748B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {p.district || p.state || 'District'}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '3px', flexShrink: 0 }}>
                       <span
                         style={{
                           fontSize: '9.5px',
                           fontWeight: '600',
-                          padding: '1px 6px',
+                          padding: '2px 7px',
                           borderRadius: '6px',
                           background: meta.badgeBg || '#F1F5F9',
                           border: `1px solid ${meta.badgeBorder || '#E2E8F0'}`,
                           color: meta.badgeColor || '#475569',
                           whiteSpace: 'nowrap',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
                         }}
                       >
                         {meta.icon} {meta.label.replace(' Partner', '')}
@@ -5829,8 +5834,8 @@ const DashboardPage = () => {
                         const activeDate = p.lastActiveAt || p.lastLoginAt || p.userId?.lastLoginAt;
                         if (!activeDate) {
                           return (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#94A3B8', fontWeight: '500' }} title="No login session recorded yet">
-                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#CBD5E1', display: 'inline-block' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10px', color: '#94A3B8', fontWeight: '500', whiteSpace: 'nowrap' }} title="No login session recorded yet">
+                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#CBD5E1', display: 'inline-block', flexShrink: 0 }} />
                               <span>First Login Pending</span>
                             </div>
                           );
@@ -5845,15 +5850,16 @@ const DashboardPage = () => {
                               alignItems: 'center',
                               gap: '4px',
                               fontSize: '10px',
-                              color: isRecent ? '#059669' : '#0284C7',
+                              color: isRecent ? '#059669' : '#087DB5',
                               fontWeight: '600',
+                              whiteSpace: 'nowrap',
                             }}
                             title={`Latest Active Session: ${!isNaN(dateObj.getTime()) ? dateObj.toLocaleString('en-IN') : activeDate}`}
                           >
                             {isRecent ? (
-                              <span className="live-pulse-indicator" style={{ width: '5px', height: '5px' }} />
+                              <span className="live-pulse-indicator" style={{ width: '5px', height: '5px', flexShrink: 0 }} />
                             ) : (
-                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#38BDF8', display: 'inline-block' }} />
+                              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#38BDF8', display: 'inline-block', flexShrink: 0 }} />
                             )}
                             <span>{formatted}</span>
                           </div>
