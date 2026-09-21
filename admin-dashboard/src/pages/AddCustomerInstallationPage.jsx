@@ -29,6 +29,8 @@ import {
   ShieldAlert,
   X,
   RotateCcw,
+  Sparkles,
+  Award,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -132,6 +134,10 @@ const AddCustomerInstallationPage = () => {
   const [capturedPreview, setCapturedPreview] = useState(null);
   const [cameraError, setCameraError] = useState('');
   const [cameraStarting, setCameraStarting] = useState(false);
+
+  // Lucrative Post-Installation Success Celebration Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successData, setSuccessData] = useState(null);
 
   // Initial Sync from partner context
   useEffect(() => {
@@ -810,14 +816,64 @@ const AddCustomerInstallationPage = () => {
 
       if (res.data?.data) {
         const { installation, customer } = res.data.data;
-        showToast(`🎉 Installation recorded successfully! ID: ${installation.installationId}`, 'success');
-        navigate(`/customers/${customer._id || installation.customerId}`);
+        setSuccessData({
+          installation,
+          customer,
+          selectedCards: [...formData.selectedCards],
+          pricePerCard: formData.pricePerCard,
+          city: formData.city,
+          district: formData.district,
+          state: formData.state,
+          pinCode: formData.pinCode,
+          connectedLoadKw: formData.connectedLoadKw,
+        });
+        setShowSuccessModal(true);
+        showToast(`🎉 Congratulations ${customer.fullName}! Installation completed successfully.`, 'success');
       }
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to complete card installation.', 'error');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Reset form for next onboarding
+  const handleResetForNewInstallation = () => {
+    setShowSuccessModal(false);
+    setSuccessData(null);
+    setCurrentStep(1);
+    setFormData({
+      customerType: 'RESIDENTIAL',
+      fullName: '',
+      mobileNumber: '',
+      alternateMobileNumber: '',
+      email: '',
+      houseOrShopNumber: '',
+      street: '',
+      locality: '',
+      city: '',
+      district: partner?.district || '',
+      state: partner?.state || 'Maharashtra',
+      pinCode: '',
+      landmark: '',
+      connectedLoadKw: '',
+      monthlyElectricityBill: '',
+      highestElectricityBill12Months: '',
+      electricityBoard: '',
+      consumerAccountNumber: '',
+      meterNumber: '',
+      sanctionedLoad: '',
+      phase: 'SINGLE_PHASE',
+      selectedCards: [],
+      pricePerCard: '2500',
+      notes: '',
+      mcbPhoto: '',
+      billPhoto: '',
+      installedCardPhoto: '',
+      locationVerificationId: '',
+    });
+    setLocationVerification(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Filtered Cards for Step 4
@@ -2582,6 +2638,278 @@ const AddCustomerInstallationPage = () => {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* LUCRATIVE INSTALLATION CELEBRATION CONGRATULATIONS MODAL     */}
+      {/* ============================================================ */}
+      {showSuccessModal && successData && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.88)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999999,
+            padding: '16px',
+            animation: 'fadeIn 0.25s ease-out',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              maxWidth: '580px',
+              width: '100%',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px -12px rgba(234, 88, 12, 0.35), 0 0 0 1.5px rgba(234, 88, 12, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              position: 'relative',
+            }}
+          >
+            {/* Top Festive Header Ribbon */}
+            <div
+              style={{
+                background: 'linear-gradient(135deg, #ea580c 0%, #f97316 45%, #eab308 100%)',
+                color: '#ffffff',
+                padding: '28px 24px 22px',
+                textAlign: 'center',
+                position: 'relative',
+                boxShadow: 'inset 0 -10px 20px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              {/* Close Cross Button */}
+              <button
+                type="button"
+                onClick={() => navigate(`/customers/${successData.customer._id || successData.installation.customerId}`)}
+                style={{
+                  position: 'absolute',
+                  top: '14px',
+                  right: '14px',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  border: 'none',
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              {/* Glowing Trophy / Sparkle Icon */}
+              <div
+                style={{
+                  width: '74px',
+                  height: '74px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #fff7ed 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 14px',
+                  border: '3px solid rgba(255, 255, 255, 0.8)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25), 0 0 20px rgba(253, 224, 71, 0.6)',
+                }}
+              >
+                <Sparkles size={40} color="#ea580c" />
+              </div>
+
+              {/* Congratulations Tag */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 14px',
+                  borderRadius: '20px',
+                  background: 'rgba(255, 255, 255, 0.22)',
+                  backdropFilter: 'blur(6px)',
+                  border: '1px solid rgba(255, 255, 255, 0.4)',
+                  fontSize: '11.5px',
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1.2px',
+                  marginBottom: '10px',
+                }}
+              >
+                <Award size={14} />
+                <span>OFFICIALLY ONBOARDED</span>
+              </div>
+
+              {/* Main Headline */}
+              <h2
+                style={{
+                  margin: '0 0 6px 0',
+                  fontSize: '24px',
+                  fontWeight: 950,
+                  letterSpacing: '-0.3px',
+                  lineHeight: '1.2',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                }}
+              >
+                Congratulations {successData.customer.fullName}!
+              </h2>
+              <p
+                style={{
+                  margin: '0',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  color: '#fffbeb',
+                  lineHeight: '1.4',
+                }}
+              >
+                Your Installation is Done and You are Now a Part of <strong>Vidhyut Saathi</strong>!
+              </p>
+            </div>
+
+            {/* Modal Body: Lucrative Summary Certificate Card */}
+            <div style={{ padding: '22px 24px 24px' }}>
+              <div
+                style={{
+                  background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
+                  borderRadius: '16px',
+                  border: '1.5px solid #e2e8f0',
+                  padding: '16px 18px',
+                  marginBottom: '18px',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+                }}
+              >
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '13px' }}>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>Customer ID</div>
+                    <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>{successData.customer.customerId || 'VS-CUST-AUTO'}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>Installation ID</div>
+                    <div style={{ fontWeight: 800, color: '#0284c7', marginTop: '2px' }}>{successData.installation.installationId}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>Active Units Linked</div>
+                    <div style={{ fontWeight: 800, color: '#16a34a', marginTop: '2px' }}>
+                      ⚡ {successData.selectedCards.length} Vidhyut Card(s)
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>Connected Load</div>
+                    <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>{successData.connectedLoadKw} kW</div>
+                  </div>
+                  <div style={{ gridColumn: 'span 2', borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '2px' }}>
+                    <div style={{ color: '#64748b', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>Installation Address & Territory</div>
+                    <div style={{ fontWeight: 700, color: '#334155', marginTop: '2px' }}>
+                      📍 {successData.city}, {successData.district}, {successData.state} - {successData.pinCode}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Energy Saathi Mission Welcome Note */}
+              <div
+                style={{
+                  background: '#f0fdf4',
+                  border: '1px solid #bbf7d0',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '20px',
+                }}
+              >
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#dcfce7', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <CheckCircle2 size={18} />
+                </div>
+                <div style={{ fontSize: '12.5px', color: '#166534', lineHeight: '1.4' }}>
+                  <strong>Smart Energy Mission:</strong> Customer card warranty, energy optimization, and live monitoring are now synchronized with HQ.
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/customers/${successData.customer._id || successData.installation.customerId}`)}
+                  style={{
+                    width: '100%',
+                    padding: '13px 20px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '14.5px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <span>View Customer Profile & Ledger</span>
+                  <ArrowRight size={17} />
+                </button>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/installations')}
+                    style={{
+                      flex: 1,
+                      padding: '11px',
+                      borderRadius: '10px',
+                      background: '#ffffff',
+                      color: '#475569',
+                      border: '1.5px solid #cbd5e1',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <span>All Installations</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetForNewInstallation}
+                    style={{
+                      flex: 1,
+                      padding: '11px',
+                      borderRadius: '10px',
+                      background: '#fff7ed',
+                      color: '#c2410c',
+                      border: '1.5px solid #fdba74',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <UserPlus size={15} />
+                    <span>➕ New Customer</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
