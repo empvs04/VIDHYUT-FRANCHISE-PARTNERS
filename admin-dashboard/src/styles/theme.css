@@ -772,15 +772,52 @@ body {
 
 .stepper-scroll-wrap::-webkit-scrollbar {
   display: none;
-  /* Chrome, Safari */
 }
 
-.filter-form-responsive {
-  display: flex;
-  flex-wrap: wrap;
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  align-items: center;
+  margin-bottom: 18px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+.customer-filter-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.customer-filter-form .filter-input-search {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+.customer-filter-form .filter-select-type {
+  flex: 0 1 180px;
+  min-width: 150px;
+}
+
+.customer-filter-form .filter-select-source {
+  flex: 0 1 270px;
+  min-width: 240px;
+}
+
+.customer-filter-form .filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
@@ -955,29 +992,45 @@ body {
   }
 
   /* Mobile Filter Toolbar */
-  .filter-form-responsive {
+  .filter-form-responsive,
+  .customer-filter-form {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
   }
 
-  .filter-form-responsive .search-input-wrap {
+  .filter-form-responsive .search-input-wrap,
+  .customer-filter-form .filter-input-search,
+  .customer-filter-form .filter-select-type,
+  .customer-filter-form .filter-select-source {
     width: 100% !important;
-    flex: none !important;
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
   }
 
   .filter-form-responsive .filter-select-wrap {
     width: 100% !important;
   }
 
-  .filter-form-responsive .filter-actions-wrap {
-    display: flex;
-    gap: 8px;
-    width: 100%;
+  .filter-form-responsive .filter-actions-wrap,
+  .customer-filter-form .filter-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
   }
 
-  .filter-form-responsive .filter-actions-wrap .btn {
-    flex: 1;
+  .filter-form-responsive .filter-actions-wrap .btn,
+  .customer-filter-form .filter-actions .btn-search,
+  .customer-filter-form .filter-actions .btn-reset {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+
+  .customer-filter-form .filter-actions .btn-refresh {
+    width: 40px !important;
+    flex: none !important;
+    justify-content: center !important;
   }
 
   .toast-container {

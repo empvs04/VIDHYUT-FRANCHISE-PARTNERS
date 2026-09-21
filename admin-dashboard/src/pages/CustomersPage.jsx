@@ -175,14 +175,7 @@ const CustomersPage = () => {
       </div>
 
       {/* Metrics Row (Interactive Filters with Top-Border Colors) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          gap: '12px',
-          marginBottom: '18px',
-        }}
-      >
+      <div className="stat-grid">
         <StatCard
           title="Total Registered Customers"
           value={stats.total}
@@ -250,24 +243,9 @@ const CustomersPage = () => {
           boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
         }}
       >
-        <form
-          onSubmit={handleSearchSubmit}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '10px',
-            width: '100%',
-          }}
-        >
+        <form onSubmit={handleSearchSubmit} className="customer-filter-form">
           {/* 1. Search Input */}
-          <div
-            style={{
-              position: 'relative',
-              flex: '1 1 240px',
-              minWidth: '220px',
-            }}
-          >
+          <div className="filter-input-search" style={{ position: 'relative' }}>
             <Search
               size={15}
               style={{
@@ -297,7 +275,7 @@ const CustomersPage = () => {
           </div>
 
           {/* 2. Customer Type Dropdown */}
-          <div style={{ flex: '0 1 180px', minWidth: '150px' }}>
+          <div className="filter-select-type">
             <select
               className="select"
               value={customerType}
@@ -321,7 +299,7 @@ const CustomersPage = () => {
 
           {/* 3. Source Dropdown (Direct vs Sub-Franchise) */}
           {isParentPartner && (
-            <div style={{ flex: '0 1 270px', minWidth: '240px' }}>
+            <div className="filter-select-source">
               <select
                 className="select"
                 value={source}
@@ -345,10 +323,10 @@ const CustomersPage = () => {
           )}
 
           {/* 4. Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div className="filter-actions">
             <button
               type="submit"
-              className="btn btn-primary"
+              className="btn btn-primary btn-search"
               style={{
                 height: '38px',
                 padding: '0 16px',
@@ -367,7 +345,7 @@ const CustomersPage = () => {
             {(search || customerType || district || source !== 'ALL') && (
               <button
                 type="button"
-                className="btn btn-outline"
+                className="btn btn-outline btn-reset"
                 onClick={() => {
                   setSearch('');
                   setCustomerType('');
@@ -394,7 +372,7 @@ const CustomersPage = () => {
 
             <button
               type="button"
-              className="btn btn-outline"
+              className="btn btn-outline btn-refresh"
               onClick={() => fetchCustomers(pagination.page)}
               title="Refresh customer list"
               style={{

@@ -1876,7 +1876,7 @@ const AddCustomerInstallationPage = () => {
         )}
 
         {/* ===================================================
-            STEP 6: LIVE PHOTO CAPTURE ONLY (GALLERY DISABLED)
+            STEP 6: LIVE PHOTO CAPTURE ONLY
             =================================================== */}
         {currentStep === 6 && (
           <div>
@@ -1887,7 +1887,7 @@ const AddCustomerInstallationPage = () => {
               <div>
                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 6: Live Camera Photo Verification</h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                  🔴 <strong>Live Camera Only:</strong> Take on-site live snapshots. Gallery upload is disabled.
+                  🔴 <strong>Live Camera Only:</strong> Take on-site live snapshots.
                 </p>
               </div>
             </div>
@@ -1936,7 +1936,6 @@ const AddCustomerInstallationPage = () => {
                       <Camera size={20} />
                     </div>
                     <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
-                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>Gallery Upload Disabled</span>
                   </button>
                 )}
               </div>
@@ -1984,7 +1983,6 @@ const AddCustomerInstallationPage = () => {
                       <Camera size={20} />
                     </div>
                     <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
-                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>Gallery Upload Disabled</span>
                   </button>
                 )}
               </div>
@@ -2032,7 +2030,6 @@ const AddCustomerInstallationPage = () => {
                       <Camera size={20} />
                     </div>
                     <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
-                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>Gallery Upload Disabled</span>
                   </button>
                 )}
               </div>
