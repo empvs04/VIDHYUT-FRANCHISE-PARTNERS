@@ -481,6 +481,69 @@ export const createInstallation = async (data, user, partner) => {
 
   await CardHistory.insertMany(historyRecords, { ordered: false });
 
+  // L. Dispatch In-App Notification to Parent Franchise Partner (if installed by Sub-Franchise)
+  const timeFormatted = new Date(installationDateTime).toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+  const dateFormatted = new Date(installationDateTime).toLocaleDateString('en-IN');
+
+  if (executingPartner && executingPartner.parentPartnerId) {
+    FranchisePartner.findById(executingPartner.parentPartnerId)
+      .populate('userId')
+      .then(async (parentPartner) => {
+        if (parentPartner && parentPartner.userId) {
+          const parentUserId = parentPartner.userId._id || parentPartner.userId;
+          await createNotification({
+            recipientUserId: parentUserId,
+            recipientPartnerId: parentPartner._id,
+            type: NOTIFICATION_TYPES.INSTALLATION_SUBMITTED,
+            title: `⚡ Sub-Franchise Installation: ${installedCardCount} Card(s) by ${executingPartner.fullName}`,
+            message: `Aapke sub-franchise partner ${executingPartner.fullName} (${executingPartner.franchiseId || 'Sub-Partner'}) ne ${dateFormatted} ko ${timeFormatted} baje customer ${customer.fullName} ke yahan ${installedCardCount} card(s) install kar diye hain. (Installation ID: ${newInstallation.installationId})`,
+            entityType: ENTITY_TYPES.INSTALLATION,
+            entityId: newInstallation.installationId,
+            metadata: {
+              installationId: newInstallation.installationId,
+              subPartnerId: executingPartner._id,
+              subPartnerName: executingPartner.fullName,
+              subPartnerFranchiseId: executingPartner.franchiseId,
+              installedCardCount,
+              cardSerialNumbers: cards.map((c) => c.serialNumber),
+              customerName: customer.fullName,
+              customerId: customer.customerId,
+              customerCity: customer.address?.city || customer.city || address?.city || '',
+              installedAt: installationDateTime,
+              timeFormatted: `${timeFormatted}, ${dateFormatted}`,
+            },
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Sub-franchise installation notification dispatch note:', err?.message);
+      });
+  }
+
+  // Notify Super Admins
+  notifySuperAdmins({
+    type: NOTIFICATION_TYPES.INSTALLATION_SUBMITTED,
+    title: `⚡ New Installation: ${installedCardCount} Card(s) by ${executingPartner ? executingPartner.fullName : 'Admin'}`,
+    message: `${executingPartner ? `${executingPartner.fullName} (${executingPartner.franchiseId})` : 'Admin'} recorded ${installedCardCount} card(s) installed for customer ${customer.fullName} at ${timeFormatted} on ${dateFormatted}. (ID: ${newInstallation.installationId})`,
+    entityType: ENTITY_TYPES.INSTALLATION,
+    entityId: newInstallation.installationId,
+    metadata: {
+      installationId: newInstallation.installationId,
+      partnerName: executingPartner?.fullName,
+      partnerFranchiseId: executingPartner?.franchiseId,
+      installedCardCount,
+      cardSerialNumbers: cards.map((c) => c.serialNumber),
+      customerName: customer.fullName,
+      customerId: customer.customerId,
+      installedAt: installationDateTime,
+      timeFormatted: `${timeFormatted}, ${dateFormatted}`,
+    },
+  }).catch(() => {});
+
   return {
     installation: newInstallation,
     customer,

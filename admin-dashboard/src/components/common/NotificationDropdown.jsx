@@ -222,6 +222,7 @@ const NotificationDropdown = () => {
               notifications.map((notif) => {
                 const isMismatch = notif.type === 'TERRITORY_MISMATCH';
                 const isTargetOrReward = notif.type?.includes('TARGET') || notif.type?.includes('REWARD') || notif.entityType === 'TARGET' || notif.entityType === 'REWARD';
+                const isInstallation = notif.type?.includes('INSTALLATION') || notif.entityType === 'INSTALLATION';
 
                 return (
                   <div
@@ -230,7 +231,13 @@ const NotificationDropdown = () => {
                     style={{
                       padding: '12px 16px',
                       borderBottom: '1px solid #f1f5f9',
-                      borderLeft: isMismatch ? '4px solid #dc2626' : isTargetOrReward ? '4px solid #ea580c' : 'none',
+                      borderLeft: isMismatch
+                        ? '4px solid #dc2626'
+                        : isTargetOrReward
+                        ? '4px solid #ea580c'
+                        : isInstallation
+                        ? '4px solid #16a34a'
+                        : 'none',
                       display: 'flex',
                       gap: '12px',
                       cursor: 'pointer',
@@ -240,6 +247,8 @@ const NotificationDropdown = () => {
                         ? '#fff5f5'
                         : isTargetOrReward
                         ? '#fffbeb'
+                        : isInstallation
+                        ? '#f0fdf4'
                         : '#f0f9ff',
                       transition: 'background 0.15s',
                     }}
@@ -247,7 +256,7 @@ const NotificationDropdown = () => {
                     <div style={{ marginTop: '2px' }}>{getNotificationIcon(notif.type)}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: '13px', fontWeight: notif.isRead ? 600 : 700, color: isMismatch ? '#991b1b' : isTargetOrReward ? '#9a3412' : '#0f172a' }}>
+                        <span style={{ fontSize: '13px', fontWeight: notif.isRead ? 600 : 700, color: isMismatch ? '#991b1b' : isTargetOrReward ? '#9a3412' : isInstallation ? '#166534' : '#0f172a' }}>
                           {notif.title}
                         </span>
                         {!notif.isRead && (
