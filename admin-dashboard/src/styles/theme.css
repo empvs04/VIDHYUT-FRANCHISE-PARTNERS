@@ -767,6 +767,7 @@ body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   /* Firefox */
+  scroll-behavior: smooth;
 }
 
 .stepper-scroll-wrap::-webkit-scrollbar {
@@ -2863,5 +2864,191 @@ body {
 
   .cards-inventory-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+.wizard-gps-capture-box {
+  text-align: center;
+  padding: 20px 14px;
+  background: #f8fafc;
+  border: 2px dashed #0284c7;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.wizard-gps-btn {
+  width: 100% !important;
+  max-width: 380px !important;
+  margin: 0 auto !important;
+  padding: 11px 16px !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  box-sizing: border-box !important;
+  border-radius: 9px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  line-height: 1.3 !important;
+  text-align: center !important;
+}
+
+@media (max-width: 480px) {
+  .wizard-gps-capture-box {
+    padding: 16px 10px !important;
+  }
+  .wizard-gps-btn {
+    font-size: 12.5px !important;
+    padding: 10px 8px !important;
+    gap: 4px !important;
+  }
+}
+
+/* Step 3: Smart Card Recommendation Formula Card */
+.wizard-formula-card {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  padding: 16px 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.wizard-formula-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.wizard-formula-tag {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.95;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wizard-formula-total-badge {
+  background: rgba(255, 255, 255, 0.22);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  backdrop-filter: blur(6px);
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.wizard-formula-title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 4px 0 14px 0;
+  color: #ffffff;
+}
+
+.wizard-formula-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+}
+
+.wizard-formula-chip {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+  backdrop-filter: blur(4px);
+  min-width: 0;
+}
+
+.wizard-formula-chip.active-phase {
+  background: rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(110, 231, 183, 0.6);
+}
+
+.wizard-formula-chip-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wizard-formula-chip-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .wizard-formula-card {
+    padding: 14px 14px;
+    border-radius: 10px;
+  }
+  .wizard-formula-title {
+    font-size: 17px;
+  }
+  .wizard-formula-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .wizard-formula-card {
+    padding: 12px 10px;
+  }
+  .wizard-formula-header {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .wizard-formula-tag {
+    font-size: 10px;
+    letter-spacing: 0.4px;
+  }
+  .wizard-formula-total-badge {
+    font-size: 11.5px;
+    padding: 3px 10px;
+  }
+  .wizard-formula-title {
+    font-size: 15.5px;
+  }
+  .wizard-formula-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .wizard-formula-chip {
+    padding: 6px 8px;
+  }
+  .wizard-formula-chip-label {
+    font-size: 10px;
+  }
+  .wizard-formula-chip-val {
+    font-size: 12px;
   }
 }

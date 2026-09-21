@@ -54,6 +54,22 @@ const AddCustomerInstallationPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
+  // Stepper Auto-Scroll on Mobile & Small Screens
+  const stepperScrollRef = useRef(null);
+  const stepRefs = useRef({});
+
+  useEffect(() => {
+    const container = stepperScrollRef.current;
+    const activeEl = stepRefs.current[currentStep];
+    if (container && activeEl) {
+      const scrollLeftTarget = activeEl.offsetLeft - (container.clientWidth / 2) + (activeEl.clientWidth / 2);
+      container.scrollTo({
+        left: Math.max(0, scrollLeftTarget),
+        behavior: 'smooth',
+      });
+    }
+  }, [currentStep]);
+
   // Territory Options
   const [statesList, setStatesList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
@@ -940,7 +956,7 @@ const AddCustomerInstallationPage = () => {
         </div>
 
         {/* Step Tabs Grid / Scrollable Row */}
-        <div className="stepper-scroll-wrap">
+        <div className="stepper-scroll-wrap" ref={stepperScrollRef}>
           {STEPS.map((step) => {
             const isCompleted = currentStep > step.id;
             const isCurrent = currentStep === step.id;
@@ -948,6 +964,9 @@ const AddCustomerInstallationPage = () => {
             return (
               <div
                 key={step.id}
+                ref={(el) => {
+                  stepRefs.current[step.id] = el;
+                }}
                 onClick={() => {
                   if (isCompleted) setCurrentStep(step.id);
                 }}
@@ -1343,31 +1362,31 @@ const AddCustomerInstallationPage = () => {
             </div>
 
             {/* Step 2 Embedded Live GPS Geolocation & Territory Verification */}
-            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0f2fe', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '18px', width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '14px', width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ width: '32px', height: '32px', minWidth: '32px', borderRadius: '8px', background: '#e0f2fe', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
                   <MapPin size={18} />
                 </div>
-                <div>
-                  <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h4 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
                     Live GPS Geolocation & Territory Verification *
                   </h4>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0', lineHeight: 1.35 }}>
                     Verify on-site installation coordinates against authorized franchise territory.
                   </p>
                 </div>
               </div>
 
               {!locationVerification ? (
-                <div style={{ textAlign: 'center', padding: '18px 14px', background: '#f8fafc', border: '2px dashed #0284c7', borderRadius: '10px', marginBottom: '10px' }}>
+                <div className="wizard-gps-capture-box">
                   <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
                     <MapPin size={22} />
                   </div>
 
-                  <h5 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  <h5 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', lineHeight: 1.3 }}>
                     Capture Live Field GPS Coordinates
                   </h5>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 14px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 14px', lineHeight: 1.4 }}>
                     Click below to capture real-time GPS telemetry from this device. {!isSuperAdmin && partner ? `Your location must be in ${partner.district}, ${partner.state}.` : ''}
                   </p>
 
@@ -1375,10 +1394,9 @@ const AddCustomerInstallationPage = () => {
                     type="button"
                     disabled={gpsLoading}
                     onClick={handleCaptureGPS}
-                    className="btn btn-primary"
-                    style={{ padding: '10px 20px', fontSize: '13.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: 'auto', maxWidth: '100%' }}
+                    className="btn btn-primary wizard-gps-btn"
                   >
-                    {gpsLoading ? <RefreshCw size={16} className="animate-spin" /> : <Navigation size={16} />}
+                    {gpsLoading ? <RefreshCw size={15} className="animate-spin" style={{ flexShrink: 0 }} /> : <Navigation size={15} style={{ flexShrink: 0 }} />}
                     <span>{gpsLoading ? 'Acquiring GPS Fix & Geocoding...' : '📍 Capture Live GPS Location'}</span>
                   </button>
 
@@ -1536,37 +1554,40 @@ const AddCustomerInstallationPage = () => {
             </div>
 
             {/* Smart Card Recommendation Calculation Box */}
-            <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: 'white', padding: '16px 18px', borderRadius: '12px', marginBottom: '18px', boxShadow: 'var(--shadow-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9, fontWeight: 700 }}>
-                    ⚡ Smart Card Recommendation Formula
-                  </div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, marginTop: '3px' }}>
-                    {recommendedCardCount > 0 ? `${recommendedCardCount} Card${recommendedCardCount > 1 ? 's' : ''} Recommended` : 'Enter load or bill to calculate cards'}
-                  </div>
+            <div className="wizard-formula-card">
+              <div className="wizard-formula-header">
+                <div className="wizard-formula-tag">
+                  ⚡ Smart Card Recommendation Formula
                 </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.22)', padding: '6px 14px', borderRadius: '8px', backdropFilter: 'blur(4px)', fontSize: '13px', fontWeight: 800 }}>
+                <div className="wizard-formula-total-badge">
                   Total: {recommendedCardCount} Card{recommendedCardCount !== 1 ? 's' : ''}
                 </div>
               </div>
 
-              {/* Dynamic Factors Breakdown Chips */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <span>⚡ <strong>Load ({connectedLoadNum} kW):</strong> {cardsByLoad} card{cardsByLoad !== 1 ? 's' : ''}</span>
+              <div className="wizard-formula-title">
+                {recommendedCardCount > 0 ? `${recommendedCardCount} Card${recommendedCardCount > 1 ? 's' : ''} Recommended` : 'Enter load or bill to calculate cards'}
+              </div>
+
+              {/* Dynamic Factors Breakdown Chips (2x2 grid on mobile, 4-col on desktop) */}
+              <div className="wizard-formula-grid">
+                <div className="wizard-formula-chip">
+                  <span className="wizard-formula-chip-label">⚡ Load ({connectedLoadNum} kW)</span>
+                  <span className="wizard-formula-chip-val">{cardsByLoad} card{cardsByLoad !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <span>💵 <strong>Avg Bill (₹{avgMonthlyBillNum.toLocaleString()}):</strong> {cardsByAvgBill} card{cardsByAvgBill !== 1 ? 's' : ''}</span>
+                <div className="wizard-formula-chip">
+                  <span className="wizard-formula-chip-label">💵 Avg Bill (₹{avgMonthlyBillNum.toLocaleString()})</span>
+                  <span className="wizard-formula-chip-val">{cardsByAvgBill} card{cardsByAvgBill !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                  <span>📈 <strong>Peak Bill (₹{highestBillNum.toLocaleString()}):</strong> {cardsByHighestBill} card{cardsByHighestBill !== 1 ? 's' : ''}</span>
+                <div className="wizard-formula-chip">
+                  <span className="wizard-formula-chip-label">📈 Peak Bill (₹{highestBillNum.toLocaleString()})</span>
+                  <span className="wizard-formula-chip-val">{cardsByHighestBill} card{cardsByHighestBill !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ background: isThreePhase ? 'rgba(16, 185, 129, 0.35)' : 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px', border: isThreePhase ? '1px solid rgba(110, 231, 183, 0.6)' : 'none' }}>
-                  <span>🔌 <strong>Phase:</strong> {isThreePhase ? '+1 Extra (3-Phase)' : '+0 (1-Phase)'}</span>
+                <div className={`wizard-formula-chip ${isThreePhase ? 'active-phase' : ''}`}>
+                  <span className="wizard-formula-chip-label">🔌 Phase</span>
+                  <span className="wizard-formula-chip-val">{isThreePhase ? '+1 Extra (3-Phase)' : '+0 (1-Phase)'}</span>
                 </div>
               </div>
             </div>
