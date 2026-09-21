@@ -472,7 +472,16 @@ const AddCustomerInstallationPage = () => {
     reader.readAsDataURL(file);
   };
 
-  // Step 6: Live Camera Controller Functions
+  // Step 6: Live Camera Controller Functions & Auto-Attachment
+  useEffect(() => {
+    if (cameraModalOpen && cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch((err) => {
+        console.warn('Video auto-play warning:', err);
+      });
+    }
+  }, [cameraModalOpen, cameraStream]);
+
   const startLiveCamera = async (field, title, facing = 'environment') => {
     setCameraField(field);
     setCameraFieldTitle(title);
@@ -494,8 +503,8 @@ const AddCustomerInstallationPage = () => {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: facing },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
         },
         audio: false,
       });
@@ -528,20 +537,25 @@ const AddCustomerInstallationPage = () => {
   const snapLivePhoto = () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
     const canvas = canvasRef.current || document.createElement('canvas');
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
     setCapturedPreview(dataUrl);
   };
 
   const retakeLivePhoto = () => {
     setCapturedPreview(null);
-    if (videoRef.current && cameraStream) {
-      videoRef.current.srcObject = cameraStream;
+    if (videoRef.current && cameraStream && cameraStream.active) {
+      if (videoRef.current.srcObject !== cameraStream) {
+        videoRef.current.srcObject = cameraStream;
+      }
       videoRef.current.play().catch(() => {});
+    } else if (cameraField) {
+      startLiveCamera(cameraField, cameraFieldTitle, cameraFacingMode);
     }
   };
 
@@ -2377,177 +2391,147 @@ const AddCustomerInstallationPage = () => {
       )}
 
       {/* ============================================================ */}
-      {/* LIVE CAMERA CAPTURE VIEWFINDER MODAL (GALLERY DISABLED)     */}
+      {/* FULL-SCREEN LIVE CAMERA CAPTURE VIEWFINDER                   */}
       {/* ============================================================ */}
       {cameraModalOpen && (
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.92)',
-            backdropFilter: 'blur(10px)',
+            width: '100vw',
+            height: '100dvh',
+            backgroundColor: '#000000',
+            zIndex: 999999,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 99999,
-            padding: '16px',
-            animation: 'fadeIn 0.2s ease-out',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            animation: 'fadeIn 0.15s ease-out',
           }}
         >
+          {/* Fullscreen Video / Photo Viewfinder (Persistent Video Element) */}
           <div
             style={{
-              backgroundColor: '#0f172a',
-              borderRadius: '20px',
-              maxWidth: '560px',
+              position: 'absolute',
+              inset: 0,
               width: '100%',
+              height: '100%',
               overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 2px #0284c7',
+              backgroundColor: '#000000',
               display: 'flex',
-              flexDirection: 'column',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {/* Camera Header */}
-            <div
+            {/* Live Video - Kept permanently mounted so stream never dies */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
               style={{
-                padding: '14px 20px',
-                background: '#1e293b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
               }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
-                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '14px', letterSpacing: '0.3px' }}>
-                  Live Camera • {cameraFieldTitle}
+            />
+
+            {/* Captured Freeze-Frame Overlay */}
+            {capturedPreview && (
+              <img
+                src={capturedPreview}
+                alt="Live Capture Preview"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  zIndex: 10,
+                }}
+              />
+            )}
+
+            {/* Viewfinder Target Framing Guide */}
+            {!capturedPreview && !cameraError && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '70px 20px 140px 20px',
+                  border: '2px dashed rgba(255, 255, 255, 0.5)',
+                  borderRadius: '16px',
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'center',
+                  paddingTop: '16px',
+                  zIndex: 5,
+                }}
+              >
+                <span
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    color: '#ffffff',
+                    fontSize: '11.5px',
+                    fontWeight: 800,
+                    padding: '5px 14px',
+                    borderRadius: '20px',
+                    letterSpacing: '0.5px',
+                    backdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  📸 ALIGN {cameraFieldTitle} IN FRAME
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={toggleCameraFacingMode}
-                  title="Switch Front/Rear Camera"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: '#ffffff',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                  }}
-                >
-                  <RotateCcw size={13} />
-                  <span>Switch</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={closeLiveCamera}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: 'none',
-                    color: '#cbd5e1',
-                    borderRadius: '8px',
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            )}
 
-            {/* Camera Viewport / Freeze Frame Preview */}
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                aspectRatio: '4 / 3',
-                backgroundColor: '#020617',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              {capturedPreview ? (
-                <img
-                  src={capturedPreview}
-                  alt="Live Capture Preview"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              )}
-
-              {/* Viewfinder Target Framing Guide */}
-              {!capturedPreview && !cameraError && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: '16px',
-                    border: '2px dashed rgba(255, 255, 255, 0.45)',
-                    borderRadius: '12px',
-                    pointerEvents: 'none',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'center',
-                    paddingTop: '10px',
-                  }}
-                >
-                  <span
-                    style={{
-                      background: 'rgba(0, 0, 0, 0.65)',
-                      color: '#ffffff',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: '4px',
-                      letterSpacing: '0.5px',
-                    }}
+            {/* Error state */}
+            {cameraError && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 30,
+                  background: 'rgba(15, 23, 42, 0.95)',
+                  padding: '24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  color: '#fecaca',
+                }}
+              >
+                <AlertTriangle size={48} color="#ef4444" style={{ marginBottom: '14px' }} />
+                <h4 style={{ color: '#ffffff', fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>Camera Access Issue</h4>
+                <p style={{ fontSize: '14px', maxWidth: '340px', lineHeight: 1.5, margin: '0 0 20px', color: '#cbd5e1' }}>{cameraError}</p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => startLiveCamera(cameraField, cameraFieldTitle, cameraFacingMode)}
+                    className="btn btn-primary"
+                    style={{ padding: '10px 18px', fontSize: '13.5px', fontWeight: 700 }}
                   >
-                    ALIGN {cameraFieldTitle?.toUpperCase()} IN FRAME
-                  </span>
-                </div>
-              )}
-
-              {/* Error state */}
-              {cameraError && (
-                <div style={{ padding: '24px', textAlign: 'center', color: '#fecaca', zIndex: 10 }}>
-                  <AlertTriangle size={36} color="#ef4444" style={{ margin: '0 auto 10px' }} />
-                  <p style={{ fontSize: '13.5px', fontWeight: 600, margin: '0 0 14px' }}>{cameraError}</p>
+                    <RefreshCw size={15} /> Retry Camera
+                  </button>
                   <label
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '6px',
-                      padding: '8px 16px',
+                      padding: '10px 18px',
                       background: '#0284c7',
                       color: 'white',
                       borderRadius: '8px',
-                      fontSize: '13px',
+                      fontSize: '13.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
                     }}
                   >
                     <Camera size={16} />
-                    <span>Open Native Camera</span>
+                    <span>Native Camera</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -2560,97 +2544,193 @@ const AddCustomerInstallationPage = () => {
                     />
                   </label>
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+
+          {/* Floating Top Header Controls */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 20,
+              padding: '16px 20px',
+              background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ef4444',
+                  boxShadow: '0 0 8px #ef4444',
+                  animation: 'pulse 1.5s infinite',
+                }}
+              />
+              <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '14.5px', textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}>
+                {cameraFieldTitle}
+              </span>
             </div>
 
-            {/* Hidden Canvas for High-Resolution Frame Rendering */}
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={toggleCameraFacingMode}
+                title="Switch Camera (Front / Rear)"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <RotateCcw size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={closeLiveCamera}
+                title="Close Camera"
+                style={{
+                  background: 'rgba(0, 0, 0, 0.55)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
 
-            {/* Camera Controls Footer */}
-            <div
-              style={{
-                padding: '16px 20px',
-                background: '#1e293b',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '14px',
-                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-              }}
-            >
-              {!capturedPreview ? (
+          {/* Spacer */}
+          <div style={{ flex: 1, pointerEvents: 'none' }} />
+
+          {/* Hidden Canvas for High-Resolution Frame Rendering */}
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+          {/* Floating Bottom Viewfinder Controls */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 20,
+              padding: '20px 20px 36px',
+              background: 'linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.5) 60%, rgba(0, 0, 0, 0) 100%)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+            }}
+          >
+            {!capturedPreview ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
                   disabled={cameraStarting || !!cameraError}
                   onClick={snapLivePhoto}
                   style={{
-                    padding: '12px 32px',
-                    borderRadius: '40px',
-                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    width: '74px',
+                    height: '74px',
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    border: '5px solid rgba(255, 255, 255, 0.4)',
+                    boxShadow: '0 0 24px rgba(255, 255, 255, 0.5), 0 4px 14px rgba(0, 0, 0, 0.6)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.1s ease',
+                  }}
+                  onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.92)')}
+                  onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                >
+                  <div
+                    style={{
+                      width: '56px',
+                      height: '56px',
+                      borderRadius: '50%',
+                      background: '#0284c7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                    }}
+                  >
+                    <Camera size={26} />
+                  </div>
+                </button>
+                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '12px', fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                  Tap button to capture photo
+                </span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '14px', width: '100%', maxWidth: '420px' }}>
+                <button
+                  type="button"
+                  onClick={retakeLivePhoto}
+                  style={{
+                    flex: 1,
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.18)',
                     color: '#ffffff',
-                    border: '2px solid rgba(255, 255, 255, 0.3)',
-                    fontSize: '15px',
+                    border: '1px solid rgba(255, 255, 255, 0.35)',
+                    fontSize: '14.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                >
+                  <RotateCcw size={16} />
+                  <span>Retake Photo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmLivePhoto}
+                  style={{
+                    flex: 1.4,
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '14.5px',
                     fontWeight: 800,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 16px rgba(2, 132, 199, 0.4)',
+                    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)',
                   }}
                 >
-                  <Camera size={20} />
-                  <span>Capture Live Snapshot</span>
+                  <CheckCircle2 size={18} />
+                  <span>Use This Photo</span>
                 </button>
-              ) : (
-                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-                  <button
-                    type="button"
-                    onClick={retakeLivePhoto}
-                    style={{
-                      flex: 1,
-                      padding: '11px',
-                      borderRadius: '10px',
-                      background: 'rgba(255, 255, 255, 0.12)',
-                      color: '#ffffff',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      fontSize: '13.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <RotateCcw size={15} />
-                    <span>Retake Photo</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={confirmLivePhoto}
-                    style={{
-                      flex: 1.5,
-                      padding: '11px',
-                      borderRadius: '10px',
-                      background: '#10b981',
-                      color: '#ffffff',
-                      border: 'none',
-                      fontSize: '14px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
-                    }}
-                  >
-                    <CheckCircle2 size={16} />
-                    <span>Confirm & Use Photo</span>
-                  </button>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
