@@ -154,16 +154,10 @@ const Sidebar = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="hamburger-btn"
-            style={{
-              position: 'absolute',
-              right: '10px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-muted)',
-            }}
+            className="sidebar-close-btn"
+            aria-label="Close Navigation Sidebar"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
@@ -553,6 +547,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Sidebar Footer: User Status Card & Logout */}
         <div
+          className="sidebar-footer"
           style={{
             padding: '12px',
             borderTop: '1px solid #f1f5f9',

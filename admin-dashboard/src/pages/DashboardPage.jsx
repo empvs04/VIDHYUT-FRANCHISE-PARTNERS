@@ -627,8 +627,8 @@ const DashboardPage = () => {
 
   const { displayCompanyProfit, profitSubtitle } = useMemo(() => {
     if (companyProfitPeriod === 'ALL_TIME') {
-      const profit = metrics?.companyTotalNetProfit != null 
-        ? metrics.companyTotalNetProfit 
+      const profit = metrics?.companyTotalNetProfit != null
+        ? metrics.companyTotalNetProfit
         : allCompanyTxns.reduce((s, t) => s + (t.netProfit || 0), 0);
       const margin = metrics?.companyOverallMarginPercent || 32;
       return {
@@ -6455,42 +6455,47 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Overall Total Profit Badge */}
+          {/* Overall Total Profit Badge (Centered) */}
           <div
+            className="company-profit-total-box"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              justifyContent: 'center',
+              textAlign: 'center',
+              gap: '14px',
               backgroundColor: '#FFFFFF',
-              padding: '6px 14px',
+              padding: '8px 16px',
               borderRadius: '10px',
               border: '1.5px solid #BBF7D0',
               boxShadow: '0 2px 6px rgba(22, 163, 74, 0.08)',
+              margin: '0 auto',
             }}
           >
-            <div>
-              <div style={{ fontSize: '9.5px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <div style={{ fontSize: '10px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.4px', textAlign: 'center' }}>
                 Total Company Profit
               </div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#15803D', marginTop: '1px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <div style={{ fontSize: '19px', fontWeight: '900', color: '#15803D', marginTop: '1px', fontFamily: "'Plus Jakarta Sans', sans-serif", textAlign: 'center' }}>
                 ₹{(metrics?.companyTotalNetProfit || 0).toLocaleString('en-IN')}
               </div>
             </div>
-            <div style={{ borderLeft: '1.5px solid #DCFCE7', paddingLeft: '10px' }}>
-              <div style={{ fontSize: '9px', fontWeight: '800', color: '#166534', textTransform: 'uppercase' }}>
+            <div style={{ borderLeft: '1.5px solid #DCFCE7', paddingLeft: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <div style={{ fontSize: '9.5px', fontWeight: '800', color: '#166534', textTransform: 'uppercase', textAlign: 'center' }}>
                 Net Return
               </div>
               <span
                 style={{
-                  fontSize: '11.5px',
+                  fontSize: '12px',
                   fontWeight: '800',
                   color: '#15803D',
                   backgroundColor: '#DCFCE7',
-                  padding: '1px 7px',
+                  padding: '2px 8px',
                   borderRadius: '6px',
                   display: 'inline-block',
                   marginTop: '1px',
                   border: '1px solid #BBF7D0',
+                  textAlign: 'center',
                 }}
               >
                 +{metrics?.companyOverallMarginPercent || 0}% ROI Margin
@@ -6524,7 +6529,7 @@ const DashboardPage = () => {
               minHeight: '86px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
               <div style={{ fontSize: '10px', fontWeight: '800', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                 Cards Distributed
               </div>
@@ -6542,7 +6547,10 @@ const DashboardPage = () => {
                   outline: 'none',
                   cursor: 'pointer',
                   height: '24px',
-                  maxWidth: '125px',
+                  width: '115px',
+                  minWidth: '115px',
+                  maxWidth: '115px',
+                  boxSizing: 'border-box',
                 }}
               >
                 {companyCardsMonthOptions.map((opt) => (
@@ -6574,7 +6582,7 @@ const DashboardPage = () => {
               minHeight: '86px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
               <div style={{ fontSize: '10px', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                 Total Revenue Received
               </div>
@@ -6592,7 +6600,10 @@ const DashboardPage = () => {
                   outline: 'none',
                   cursor: 'pointer',
                   height: '24px',
-                  maxWidth: '125px',
+                  width: '115px',
+                  minWidth: '115px',
+                  maxWidth: '115px',
+                  boxSizing: 'border-box',
                 }}
               >
                 <option value="ALL_TIME">All Time</option>
@@ -6625,7 +6636,7 @@ const DashboardPage = () => {
               minHeight: '86px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
               <div style={{ fontSize: '10px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                 Company Total Net Profit
               </div>
@@ -6643,7 +6654,10 @@ const DashboardPage = () => {
                   outline: 'none',
                   cursor: 'pointer',
                   height: '24px',
-                  maxWidth: '125px',
+                  width: '115px',
+                  minWidth: '115px',
+                  maxWidth: '115px',
+                  boxSizing: 'border-box',
                 }}
               >
                 <option value="ALL_TIME">All Time</option>

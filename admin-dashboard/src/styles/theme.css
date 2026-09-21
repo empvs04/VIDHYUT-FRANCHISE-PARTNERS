@@ -820,6 +820,26 @@ body {
   flex-shrink: 0;
 }
 
+.sidebar-close-btn {
+  display: none;
+  background: #f1f5f9;
+  border: none;
+  color: #475569;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
 @media (max-width: 768px) {
   :root {
     --sidebar-width: 0px !important;
@@ -829,20 +849,77 @@ body {
     display: inline-flex;
   }
 
+  .sidebar-close-btn {
+    display: flex !important;
+  }
+
   .sidebar {
-    width: 260px !important;
-    min-width: 260px !important;
-    max-width: 260px !important;
-    transform: translateX(-100%);
-    box-shadow: var(--shadow-lg);
+    width: 285px !important;
+    min-width: 285px !important;
+    max-width: 86vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    transform: translateX(-100%) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 9999 !important;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   .sidebar.mobile-open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9998;
+    transition: opacity 0.2s ease;
   }
 
   .sidebar-backdrop.mobile-open {
-    display: block;
+    display: block !important;
+  }
+
+  .sidebar .brand-box {
+    height: 76px !important;
+    padding: 10px 14px !important;
+    justify-content: space-between !important;
+  }
+
+  .sidebar .nav-menu {
+    padding: 10px 8px !important;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+  }
+
+  .sidebar .nav-item {
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+    border-radius: 9px !important;
+    gap: 10px !important;
+  }
+
+  .sidebar .nav-section-title {
+    padding: 14px 10px 4px !important;
+    font-size: 10px !important;
+    letter-spacing: 0.8px !important;
+  }
+
+  .sidebar-footer {
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom)) !important;
+    background-color: #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
+    flex-shrink: 0 !important;
   }
 
   .main-content {
@@ -2134,7 +2211,7 @@ body {
     align-items: stretch !important;
   }
 
-  .partner-analytics-header > div:first-child {
+  .partner-analytics-header>div:first-child {
     width: 100% !important;
   }
 
@@ -2184,7 +2261,7 @@ body {
     padding: 10px !important;
   }
 
-  .partner-analytics-telemetry > div {
+  .partner-analytics-telemetry>div {
     padding: 8px 10px !important;
   }
 }
@@ -2283,12 +2360,12 @@ body {
     padding: 12px 14px !important;
   }
 
-  .partner-search-card > div:first-child {
+  .partner-search-card>div:first-child {
     min-width: 0 !important;
     width: 100% !important;
   }
 
-  .partner-search-card > div:last-child {
+  .partner-search-card>div:last-child {
     max-width: 100% !important;
     width: 100% !important;
     flex: 1 1 auto !important;
@@ -2955,6 +3032,7 @@ body {
   .wizard-gps-capture-box {
     padding: 16px 10px !important;
   }
+
   .wizard-gps-btn {
     font-size: 12.5px !important;
     padding: 10px 8px !important;
@@ -3063,9 +3141,11 @@ body {
     padding: 14px 14px;
     border-radius: 10px;
   }
+
   .wizard-formula-title {
     font-size: 17px;
   }
+
   .wizard-formula-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -3076,31 +3156,39 @@ body {
   .wizard-formula-card {
     padding: 12px 10px;
   }
+
   .wizard-formula-header {
     flex-direction: row;
     justify-content: space-between;
   }
+
   .wizard-formula-tag {
     font-size: 10px;
     letter-spacing: 0.4px;
   }
+
   .wizard-formula-total-badge {
     font-size: 11.5px;
     padding: 3px 10px;
   }
+
   .wizard-formula-title {
     font-size: 15.5px;
   }
+
   .wizard-formula-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
+
   .wizard-formula-chip {
     padding: 6px 8px;
   }
+
   .wizard-formula-chip-label {
     font-size: 10px;
   }
+
   .wizard-formula-chip-val {
     font-size: 12px;
   }
