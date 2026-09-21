@@ -2182,7 +2182,7 @@ const RewardsRecognitionPage = () => {
           width: calc(100% + 48px);
           margin-left: -24px;
           margin-right: -24px;
-          margin-top: 10px;
+          margin-top: 0px;
           margin-bottom: 0px;
           height: 38px;
           background: linear-gradient(90deg, #ea580c 0%, #f97316 35%, #fb923c 70%, #ea580c 100%);
@@ -2862,170 +2862,36 @@ const RewardsRecognitionPage = () => {
       `}</style>
 
       {/* ============================================================ */}
-      {/* 1. TOP HEADER (COMPACT 2-LINE LIGHT THEME)                    */}
+      {/* 1. TOP HEADER (CLEAN SINGLE TITLE BAR)                       */}
       {/* ============================================================ */}
       <div
+        className="rewards-hero-header-section"
         style={{
+          width: 'calc(100% + 48px)',
+          marginLeft: '-24px',
+          marginRight: '-24px',
+          marginTop: '-24px',
+          padding: '8px 24px 8px 24px',
+          backgroundColor: '#ffffff',
           display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          marginBottom: '10px',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          marginBottom: '0px',
         }}
       >
-        {/* Line 1: Congratulations Pill + Partner Name + Badges */}
-        <div
+        <h1
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '8px',
+            fontSize: '24px',
+            fontWeight: '950',
+            letterSpacing: '-0.5px',
+            margin: '0',
+            lineHeight: '1.2',
+            textTransform: 'uppercase',
+            color: '#0f172a',
           }}
         >
-          {/* Orange Congratulations Pill */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              backgroundColor: '#fff7ed',
-              border: '1.5px solid #fdba74',
-              color: '#c2410c',
-              fontSize: '11px',
-              fontWeight: '900',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}
-          >
-            <Sparkles size={12} color="#ea580c" />
-            <span>Congratulations</span>
-          </div>
-
-          {/* Partner Name */}
-          <span
-            style={{
-              fontSize: '15px',
-              fontWeight: '900',
-              color: '#0f172a',
-              letterSpacing: '-0.2px',
-            }}
-          >
-            {formatPartnerTitleName(activeRoadmapPartner?.fullName || user?.fullName || 'Partner')}
-          </span>
-
-          <span style={{ color: '#cbd5e1', fontSize: '13px' }}>•</span>
-
-          {/* Franchise Type Role Badge */}
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '5px',
-              fontSize: '11.5px',
-              fontWeight: '700',
-              color: '#0369a1',
-              backgroundColor: '#f0f9ff',
-              padding: '3px 10px',
-              borderRadius: '20px',
-              border: '1px solid #bae6fd',
-            }}
-          >
-            <Building2 size={12} color="#0284c7" />
-            {getPartnerTypeTitle(activeRoadmapPartner?.franchiseType)}
-          </span>
-
-          {/* Location Badge */}
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '11.5px',
-              fontWeight: '700',
-              color: '#15803d',
-              backgroundColor: '#f0fdf4',
-              padding: '3px 10px',
-              borderRadius: '20px',
-              border: '1px solid #bbf7d0',
-            }}
-          >
-            <MapPin size={12} color="#16a34a" />
-            {getPartnerLocationLabel(activeRoadmapPartner)}
-          </span>
-
-          {/* VIP Leader Badge */}
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontSize: '11px',
-              fontWeight: '800',
-              color: '#b45309',
-              backgroundColor: '#fffbeb',
-              padding: '3px 9px',
-              borderRadius: '20px',
-              border: '1px solid #fde68a',
-              textTransform: 'uppercase',
-              letterSpacing: '0.3px',
-            }}
-          >
-            ⭐ VIP Saathi Leader
-          </span>
-
-          {/* Admin Partner Switcher */}
-          {isSuperAdmin && partners.length > 1 && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginLeft: 'auto' }}>
-              <span style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase' }}>
-                View Partner:
-              </span>
-              <select
-                value={activeRoadmapPartner?._id || activeRoadmapPartner?.id || ''}
-                onChange={(e) => setSelectedPartnerId(e.target.value)}
-                style={{
-                  padding: '3px 8px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  backgroundColor: '#ffffff',
-                  color: '#0f172a',
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-              >
-                {partners.map((p) => (
-                  <option key={p._id || p.id} value={p._id || p.id}>
-                    {p.fullName} ({p.franchiseId})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-
-        {/* Line 2: MY REWARDS & RECOGNITIONS PROGRAMME BY VIDHYUT SAATHI */}
-        <div>
-          <h1
-            style={{
-              fontSize: '26px',
-              fontWeight: '950',
-              letterSpacing: '-0.5px',
-              margin: '2px 0 6px 0',
-              lineHeight: '1.2',
-              textTransform: 'uppercase',
-              color: '#0f172a',
-            }}
-          >
-            MY REWARDS & RECOGNITIONS PROGRAMME <span style={{ color: '#ea580c' }}>BY VIDHYUT SAATHI</span>
-          </h1>
-          <p style={{ fontSize: '14px', color: '#64748b', margin: 0, maxWidth: '850px', lineHeight: '1.5', fontWeight: '500' }}>
-            {isSuperAdmin
-              ? 'National Network Performance, State-wise & District-wise partner milestones, vehicle/cash incentives and downline recognition engine.'
-              : 'Track your live customer installation milestones, stock purchase targets, vehicle/gold rewards, and manage sub-franchise incentives.'}
-          </p>
-        </div>
+          MY REWARDS & RECOGNITIONS PROGRAMME <span style={{ color: '#ea580c' }}>BY VIDHYUT SAATHI</span>
+        </h1>
       </div>
 
       {/* ============================================================ */}
@@ -3263,7 +3129,7 @@ const RewardsRecognitionPage = () => {
 
         {/* Hero 4 KPI Metrics: Equal Size, Clean Minimal Light Cards */}
         <div className="rewards-kpi-grid">
-          {/* Card 1: Total Installations */}
+          {/* Card 1: Direct Installations */}
           <div
             className="rewards-kpi-card rewards-kpi-card-green"
             onClick={() => {
@@ -3277,7 +3143,7 @@ const RewardsRecognitionPage = () => {
                 <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Zap size={13} color="#16a34a" />
                 </div>
-                <span style={{ color: '#475569' }}>{isSubFranchise ? 'My Installations' : 'Total Installations'}</span>
+                <span style={{ color: '#475569' }}>{isSubFranchise ? 'My Installations' : 'Direct Installations'}</span>
               </div>
               <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
             </div>
