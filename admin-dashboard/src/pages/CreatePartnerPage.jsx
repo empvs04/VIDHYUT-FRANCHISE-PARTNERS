@@ -47,7 +47,7 @@ const CreatePartnerPage = () => {
     fullName: '',
     mobileNumber: '',
     email: '',
-    franchiseType: 'NON_EXCLUSIVE_DISTRICT',
+    franchiseType: authPartner ? 'SUB_FRANCHISE' : 'NON_EXCLUSIVE_DISTRICT',
     parentPartnerId: authPartner ? authPartner._id : '',
     state: authPartner ? authPartner.state : 'Maharashtra',
     district: authPartner ? authPartner.district : '',
@@ -109,6 +109,19 @@ const CreatePartnerPage = () => {
     };
     fetchStates();
   }, []);
+
+  // Auto-sync franchise type, territory, and parent when partner is logged in
+  useEffect(() => {
+    if (!isSuperAdmin && authPartner) {
+      setFormData((prev) => ({
+        ...prev,
+        franchiseType: 'SUB_FRANCHISE',
+        parentPartnerId: authPartner._id || prev.parentPartnerId,
+        state: authPartner.state || prev.state,
+        district: authPartner.district || prev.district,
+      }));
+    }
+  }, [authPartner, isSuperAdmin]);
 
   // Fetch districts for selected state from backend API
   useEffect(() => {
@@ -528,13 +541,22 @@ const CreatePartnerPage = () => {
       return;
     }
 
+    const isSubCreation = !isSuperAdmin && authPartner;
+    const finalFranchiseType = isSubCreation ? 'SUB_FRANCHISE' : formData.franchiseType;
+    const finalParentId = isSubCreation ? authPartner._id : (formData.parentPartnerId || null);
+    const finalState = isSubCreation ? authPartner.state : formData.state;
+    const finalDistrict = isSubCreation ? (authPartner.district || formData.district) : formData.district;
+
     const payload = {
       ...formData,
+      franchiseType: finalFranchiseType,
+      parentPartnerId: finalParentId,
+      state: finalState,
+      district: finalDistrict,
       mobileNumber: formData.mobileNumber.trim(),
       email: formData.email.trim().toLowerCase(),
       pinCode: formData.pinCode.trim(),
-      parentPartnerId: formData.parentPartnerId || null,
-      authorizedDistricts: formData.franchiseType === 'STATE_FRANCHISE' && formData.authorizedDistrictsInput
+      authorizedDistricts: finalFranchiseType === 'STATE_FRANCHISE' && formData.authorizedDistrictsInput
         ? formData.authorizedDistrictsInput.split(',').map((d) => d.trim()).filter(Boolean)
         : [],
       otherDocuments: [
@@ -766,40 +788,45 @@ const CreatePartnerPage = () => {
           </div>
 
           <div className="form-grid-2">
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                Franchise Type <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select
-                className="select"
-                value={formData.franchiseType}
-                onChange={(e) => setFormData({ ...formData, franchiseType: e.target.value, parentPartnerId: '' })}
-              >
-                <option value="NON_EXCLUSIVE_DISTRICT">Non Exclusive District Franchise Model</option>
-                <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive District Franchise Model</option>
-                <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive District Franchise Model</option>
-              </select>
-            </div>
+            {isSuperAdmin && (
+              <>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                    Franchise Type <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    className="select"
+                    value={formData.franchiseType}
+                    onChange={(e) => setFormData({ ...formData, franchiseType: e.target.value, parentPartnerId: '' })}
+                  >
+                    <option value="NON_EXCLUSIVE_DISTRICT">Non Exclusive District Franchise Model</option>
+                    <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive District Franchise Model</option>
+                    <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive District Franchise Model</option>
+                    <option value="STATE_FRANCHISE">State Franchise Partner</option>
+                    <option value="SUB_FRANCHISE">Sub Franchise Partner</option>
+                  </select>
+                </div>
 
-            {formData.franchiseType !== 'STATE_FRANCHISE' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
-                  Parent Partner
-                </label>
-                <select
-                  className="select"
-                  value={formData.parentPartnerId}
-                  onChange={(e) => setFormData({ ...formData, parentPartnerId: e.target.value })}
-                  disabled={!isSuperAdmin && authPartner}
-                >
-                  <option value="">None (Direct under Vidhyut Saathi Super Admin)</option>
-                  {eligibleParents.map((p) => (
-                    <option key={p._id} value={p._id}>
-                      {p.fullName} — {p.franchiseId} ({p.district || p.state})
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {formData.franchiseType !== 'STATE_FRANCHISE' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                      Parent Partner
+                    </label>
+                    <select
+                      className="select"
+                      value={formData.parentPartnerId}
+                      onChange={(e) => setFormData({ ...formData, parentPartnerId: e.target.value })}
+                    >
+                      <option value="">None (Direct under Vidhyut Saathi Super Admin)</option>
+                      {eligibleParents.map((p) => (
+                        <option key={p._id} value={p._id}>
+                          {p.fullName} — {p.franchiseId} ({p.district || p.state})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
             )}
 
             <div>

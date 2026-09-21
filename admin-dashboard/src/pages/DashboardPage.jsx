@@ -745,7 +745,7 @@ const DashboardPage = () => {
           api.get('/transactions/stats/summary').catch(() => ({ data: { data: null } })),
           api.get('/cards/stats').catch(() => ({ data: { data: null } })),
           api.get('/cards/ranges', { params: { status: 'ASSIGNED' } }).catch(() => ({ data: { data: [] } })),
-          api.get('/dashboard/partner-summary').catch(() => ({ data: { data: null } })),
+          api.get('/dashboard/partner-summary', { skipCache: true }).catch(() => ({ data: { data: null } })),
         ]);
 
         if (txnRes.data?.data) setTxnStats(txnRes.data.data);
@@ -786,7 +786,7 @@ const DashboardPage = () => {
   const fetchPartnerSummaryForAdmin = async (partnerId) => {
     try {
       setLoading(true);
-      const res = await api.get('/dashboard/partner-summary', { params: partnerId ? { partnerId } : {} });
+      const res = await api.get('/dashboard/partner-summary', { params: partnerId ? { partnerId } : {}, skipCache: true });
       if (res.data?.data) {
         setPartnerSummary(res.data.data);
       }

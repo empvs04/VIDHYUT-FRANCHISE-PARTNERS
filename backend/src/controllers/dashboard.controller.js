@@ -286,10 +286,18 @@ export const getAdminMetrics = async (req, res, next) => {
       getFranchiseRevenueAgg({ $gte: startOfThisMonth, $lte: endOfToday }),
       // Last Month Total Revenue (excluding sub-franchises)
       getFranchiseRevenueAgg({ $gte: startOfLastMonth, $lte: endOfLastMonth }),
-      Transaction.find({ createdAt: { $gte: startOfToday, $lte: endOfToday }, status: { $ne: TRANSACTION_STATUS.CANCELLED } })
+      Transaction.find({
+        createdAt: { $gte: startOfToday, $lte: endOfToday },
+        status: { $ne: TRANSACTION_STATUS.CANCELLED },
+        sellerPartnerId: null,
+      })
         .sort({ createdAt: -1 })
         .limit(10)
-        .populate('buyerPartnerId', 'fullName franchiseId franchiseType district state')
+        .populate({
+          path: 'buyerPartnerId',
+          match: { franchiseType: { $ne: FRANCHISE_TYPES.SUB_FRANCHISE } },
+          select: 'fullName franchiseId franchiseType district state',
+        })
         .populate('sellerPartnerId', 'fullName franchiseId'),
       // 5. Recent Sub-Franchises added by Franchise Partners
       FranchisePartner.find({ franchiseType: FRANCHISE_TYPES.SUB_FRANCHISE })
@@ -534,7 +542,7 @@ export const getAdminMetrics = async (req, res, next) => {
 
     companyTransactions.forEach((txn) => {
       const buyer = txn.buyerPartnerId;
-      if (!buyer) return;
+      if (!buyer || buyer.franchiseType === FRANCHISE_TYPES.SUB_FRANCHISE) return;
 
       const buyerId = buyer._id.toString();
       const paidQty = txn.paidQuantity > 0 ? txn.paidQuantity : (txn.quantity || 0);
@@ -974,39 +982,33 @@ export const getPartnerSummary = async (req, res, next) => {
       });
     }
 
-    // Query latest card allotment batch for this partner
-    const latestAssignedCard = await Card.findOne({
-      currentOwnerId: partner._id,
-      assignedAt: { $exists: true, $ne: null },
+    // Query latest card allotment batch for this partner — use Transaction record
+    // so that admin edits always produce a fresh allotmentId with the correct card count
+    const latestTxn = await Transaction.findOne({
+      buyerPartnerId: partner._id,
+      status: { $nin: ['CANCELLED'] },
     })
-      .sort({ assignedAt: -1 })
-      .select('assignedAt serialNumber assignedBy notes')
-      .populate('assignedBy', 'name role email');
+      .sort({ updatedAt: -1 })
+      .select('transactionId cardIds cardSerialNumbers quantity paidQuantity freeQuantity updatedAt createdAt notes')
+      .lean();
 
     let latestAllotment = null;
-    if (latestAssignedCard && latestAssignedCard.assignedAt) {
-      const assignedTime = new Date(latestAssignedCard.assignedAt).getTime();
-      const windowStart = new Date(assignedTime - 20000); // 20s window
-      const windowEnd = new Date(assignedTime + 20000);
+    if (latestTxn && (latestTxn.cardIds?.length > 0 || latestTxn.quantity > 0)) {
+      const totalCards = Math.max(latestTxn.quantity || 0, latestTxn.cardIds?.length || 0);
+      const serials = latestTxn.cardSerialNumbers || [];
+      const updatedTs = new Date(latestTxn.updatedAt).getTime();
 
-      const batchCards = await Card.find({
-        currentOwnerId: partner._id,
-        assignedAt: { $gte: windowStart, $lte: windowEnd },
-      })
-        .select('serialNumber assignedAt notes')
-        .sort({ serialNumber: 1 });
-
-      if (batchCards.length > 0) {
-        latestAllotment = {
-          allotmentId: `ALLOT_${partner._id}_${assignedTime}_${batchCards.length}`,
-          cardCount: batchCards.length,
-          firstSerial: batchCards[0].serialNumber,
-          lastSerial: batchCards[batchCards.length - 1].serialNumber,
-          assignedAt: latestAssignedCard.assignedAt,
-          assignedBy: latestAssignedCard.assignedBy?.name || 'Central HQ Administrator',
-          notes: batchCards[0].notes || 'Consignment allocation from Central Headquarters',
-        };
-      }
+      // allotmentId encodes the transaction ID + updatedAt timestamp
+      // → admin edit changes updatedAt → new ID → dashboard shows fresh celebration
+      latestAllotment = {
+        allotmentId: `TXN_${latestTxn.transactionId}_${updatedTs}`,
+        cardCount: totalCards,
+        firstSerial: serials[0] || null,
+        lastSerial: serials[serials.length - 1] || null,
+        assignedAt: latestTxn.updatedAt || latestTxn.createdAt,
+        assignedBy: 'Central HQ Administrator',
+        notes: latestTxn.notes || 'Consignment allocation from Central Headquarters',
+      };
     }
 
     // Query sub-franchise transfer transactions count

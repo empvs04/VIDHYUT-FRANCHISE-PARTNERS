@@ -140,7 +140,7 @@ const DistributeCardsPage = () => {
     }
     const fetchDistricts = async () => {
       try {
-        const res = await api.get(`/territories/districts/${selectedState}`);
+        const res = await api.get(`/territories/districts`, { params: { state: selectedState } });
         if (res.data?.data) {
           setDistrictsList(res.data.data);
         }

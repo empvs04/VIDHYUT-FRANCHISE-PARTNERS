@@ -778,10 +778,28 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
     transaction.cancelReason = cancelReason || notes || 'Cancelled by Admin';
   } else if (status && status !== transaction.status) {
     transaction.status = status;
-    if (status === TRANSACTION_STATUS.CONFIRMED && !transaction.confirmedAt) {
-      transaction.confirmedAt = new Date();
-      transaction.confirmedBy = user._id;
+    if (status === TRANSACTION_STATUS.CONFIRMED) {
+      if (!transaction.confirmedAt) {
+        transaction.confirmedAt = new Date();
+        transaction.confirmedBy = user._id;
+      }
+      await Card.updateMany(
+        { _id: { $in: transaction.cardIds }, status: CARD_STATUS.PENDING_TRANSFER },
+        { $set: { status: CARD_STATUS.TRANSFERRED } }
+      );
     }
+  }
+
+  // Determine desired total quantity from inputs
+  let desiredTotalQuantity = null;
+  if (typeof paidQuantity === 'number' && typeof freeQuantity === 'number' && (paidQuantity + freeQuantity > 0)) {
+    desiredTotalQuantity = paidQuantity + freeQuantity;
+  } else if (typeof paidQuantity === 'number' && paidQuantity > 0) {
+    desiredTotalQuantity = paidQuantity + (transaction.freeQuantity || 0);
+  } else if (typeof freeQuantity === 'number' && (paidQuantity !== undefined || transaction.paidQuantity !== undefined)) {
+    desiredTotalQuantity = (typeof paidQuantity === 'number' ? paidQuantity : (transaction.paidQuantity || 0)) + freeQuantity;
+  } else if (typeof quantity === 'number' && quantity > 0) {
+    desiredTotalQuantity = quantity;
   }
 
   // 2. Card Allocation & Serial Synchronization
@@ -898,17 +916,19 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
     transaction.cardSerialNumbers = newSerials;
     transaction.cardIds = allFinalCards.map((c) => c._id);
     transaction.quantity = newSerials.length;
-  } else if (typeof quantity === 'number' && quantity > 0 && quantity !== transaction.quantity) {
-    // Direct numerical quantity adjustment
-    if (quantity < transaction.quantity) {
+  }
+
+  // Synchronize numerical quantity if desiredTotalQuantity was specified and differs from current cardIds length
+  if (desiredTotalQuantity !== null && desiredTotalQuantity !== transaction.cardIds.length) {
+    if (desiredTotalQuantity < transaction.cardIds.length) {
       const cardsInTxn = await Card.find({ _id: { $in: transaction.cardIds } });
       const uninstalledCards = cardsInTxn.filter((c) => c.status !== CARD_STATUS.INSTALLED);
-      const cardsToReclaimCount = transaction.quantity - quantity;
+      const cardsToReclaimCount = transaction.cardIds.length - desiredTotalQuantity;
 
       if (uninstalledCards.length < cardsToReclaimCount) {
         throw new ApiError(
           400,
-          `Cannot reduce quantity to ${quantity}: Too many cards are already installed.`
+          `Cannot reduce quantity to ${desiredTotalQuantity}: Too many cards are already installed.`
         );
       }
 
@@ -927,7 +947,7 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
             currentOwnerType: revertOwnerType,
             currentOwnerId: revertOwnerId,
             status: revertStatus,
-            notes: `Reclaimed during admin quantity adjustment (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+            notes: `Reclaimed during admin quantity adjustment (${transaction.cardIds.length} -> ${desiredTotalQuantity}). Txn: ${transaction.transactionId}`,
           },
         }
       );
@@ -944,7 +964,7 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
         newStatus: revertStatus,
         performedBy: user._id,
         performedByRole: user.role,
-        reason: `Reclaimed during admin quantity adjustment (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+        reason: `Reclaimed during admin quantity adjustment (${transaction.cardIds.length} -> ${desiredTotalQuantity}). Txn: ${transaction.transactionId}`,
         metadata: { transactionId: transaction.transactionId },
         timestamp: new Date(),
       }));
@@ -953,12 +973,12 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
       transaction.cardIds = transaction.cardIds.filter(
         (id) => !reclaimIds.some((rId) => String(rId) === String(id))
       );
-      transaction.cardSerialNumbers = transaction.cardSerialNumbers.filter(
+      transaction.cardSerialNumbers = (transaction.cardSerialNumbers || []).filter(
         (s) => !reclaimSerials.includes(s)
       );
-      transaction.quantity = quantity;
-    } else if (quantity > transaction.quantity) {
-      const cardsToAddCount = quantity - transaction.quantity;
+      transaction.quantity = transaction.cardIds.length;
+    } else if (desiredTotalQuantity > transaction.cardIds.length) {
+      const cardsToAddCount = desiredTotalQuantity - transaction.cardIds.length;
       let availableCards = await Card.find({
         currentOwnerType: seller ? CARD_OWNER_TYPES.FRANCHISE_PARTNER : CARD_OWNER_TYPES.HEADQUARTERS,
         currentOwnerId: seller ? seller._id : null,
@@ -1003,7 +1023,7 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
             currentOwnerId: buyer._id,
             status: newOwnerStatus,
             assignedAt: new Date(),
-            notes: `Assigned to ${buyer.fullName} during admin quantity increase (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+            notes: `Assigned to ${buyer.fullName} during admin quantity increase (${transaction.cardIds.length} -> ${desiredTotalQuantity}). Txn: ${transaction.transactionId}`,
           },
         }
       );
@@ -1020,36 +1040,36 @@ export const adminUpdateTransaction = async (transactionId, updateData, user) =>
         newStatus: newOwnerStatus,
         performedBy: user._id,
         performedByRole: user.role,
-        reason: `Allocated during admin quantity increase (${transaction.quantity} -> ${quantity}). Txn: ${transaction.transactionId}`,
+        reason: `Allocated during admin quantity increase (${transaction.cardIds.length} -> ${desiredTotalQuantity}). Txn: ${transaction.transactionId}`,
         metadata: { transactionId: transaction.transactionId },
         timestamp: new Date(),
       }));
       await CardHistory.insertMany(addHistory, { ordered: false });
 
-      transaction.cardIds.push(...availableCards.map((c) => c._id));
-      transaction.cardSerialNumbers.push(...availableCards.map((c) => c.serialNumber));
-      transaction.quantity = quantity;
+      transaction.cardIds = (transaction.cardIds || []).concat(availableCards.map((c) => c._id));
+      transaction.cardSerialNumbers = (transaction.cardSerialNumbers || []).concat(availableCards.map((c) => c.serialNumber));
+      transaction.quantity = transaction.cardIds.length;
     }
   }
 
   // 3. Pricing, Free Cards, and Calculations (Total Quantity = Paid + Free)
+  transaction.quantity = transaction.cardIds.length;
+
   if (typeof pricePerCard === 'number' && pricePerCard >= 0) {
     transaction.pricePerCard = pricePerCard;
   }
   if (typeof freeQuantity === 'number' && freeQuantity >= 0) {
-    transaction.freeQuantity = freeQuantity;
+    transaction.freeQuantity = Math.min(freeQuantity, transaction.quantity);
   }
   if (typeof paidQuantity === 'number' && paidQuantity >= 0) {
     transaction.paidQuantity = paidQuantity;
+  } else {
+    transaction.paidQuantity = Math.max(0, transaction.quantity - (transaction.freeQuantity || 0));
   }
 
-  // Ensure Total Quantity is strictly Paid + Free (e.g. 500 Paid + 30 Free = 530 Total)
-  if (typeof transaction.paidQuantity === 'number' && typeof transaction.freeQuantity === 'number') {
-    if (transaction.paidQuantity + transaction.freeQuantity > 0) {
-      transaction.quantity = transaction.paidQuantity + transaction.freeQuantity;
-    }
-  } else if (typeof transaction.freeQuantity === 'number') {
-    transaction.paidQuantity = Math.max(0, transaction.quantity - transaction.freeQuantity);
+  // Ensure Total Quantity is strictly Paid + Free
+  if ((transaction.paidQuantity || 0) + (transaction.freeQuantity || 0) !== transaction.quantity) {
+    transaction.paidQuantity = Math.max(0, transaction.quantity - (transaction.freeQuantity || 0));
   }
 
   if (typeof totalAmount === 'number' && totalAmount >= 0) {

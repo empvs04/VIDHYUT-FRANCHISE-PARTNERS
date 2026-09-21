@@ -36,33 +36,11 @@ export const enforceTerritoryScope = (req, res, next) => {
 
   // District Franchise validation
   if (user.role === USER_ROLES.DISTRICT_FRANCHISE) {
-    if (requestedState && requestedState.toLowerCase() !== partner.state.toLowerCase()) {
-      return next(
-        new ApiError(
-          403,
-          `Territory violation: You are only authorized to operate within ${partner.state}.`
-        )
-      );
-    }
-
-    if (requestedDistrict && requestedDistrict.toLowerCase() !== partner.district.toLowerCase()) {
-      return next(
-        new ApiError(
-          403,
-          `Territory violation: You are only authorized to operate within ${partner.district} district. Cannot operate in ${requestedDistrict}.`
-        )
-      );
-    }
-
-    // District Franchise can ONLY create Sub-Franchise partners
-    if (req.body.franchiseType && req.body.franchiseType !== 'SUB_FRANCHISE') {
-      return next(
-        new ApiError(
-          403,
-          'District Franchise Partners are only permitted to create Sub-Franchise partners within their district.'
-        )
-      );
-    }
+    // Automatically enforce Sub-Franchise type, parent, state and district
+    req.body.franchiseType = 'SUB_FRANCHISE';
+    req.body.parentPartnerId = partner._id;
+    req.body.state = partner.state;
+    req.body.district = partner.district;
   }
 
   // Sub-Franchise partners are not allowed to create other partners

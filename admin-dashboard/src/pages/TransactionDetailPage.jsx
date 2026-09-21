@@ -1145,7 +1145,7 @@ const TransactionDetailPage = () => {
                     3. Pricing & Free Breakdown
                   </label>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
                     {/* Rate Per Card */}
                     <div>
                       <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700' }}>
@@ -1195,7 +1195,7 @@ const TransactionDetailPage = () => {
 
                     {/* Free Cards */}
                     <div>
-                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700', color: '#15803D' }}>
+                      <label className="form-label" style={{ fontSize: '11.5px', fontWeight: '700', color: '#15803D', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
                         🎁 Free Cards (Complimentary)
                       </label>
                       <input

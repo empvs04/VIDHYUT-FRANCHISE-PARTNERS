@@ -235,7 +235,16 @@ const installationSchema = new mongoose.Schema(
     },
     createdByPartnerType: {
       type: String,
-      enum: ['SUPER_ADMIN', 'STATE_FRANCHISE', 'DISTRICT_FRANCHISE', 'SUB_FRANCHISE'],
+      enum: [
+        'SUPER_ADMIN',
+        'STATE_FRANCHISE',
+        'DISTRICT_FRANCHISE',
+        'SUB_FRANCHISE',
+        'NON_EXCLUSIVE_DISTRICT',
+        'STANDARD_EXCLUSIVE_DISTRICT',
+        'PREMIUM_EXCLUSIVE_DISTRICT',
+        'FRANCHISE_PARTNER',
+      ],
       default: 'DISTRICT_FRANCHISE',
       index: true,
     },

@@ -221,7 +221,7 @@ const InstallationsPage = () => {
       </div>
 
       {/* Metrics Row */}
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: '20px' }}>
+      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <StatCard
           title="Total Installations Logged"
           value={stats.totalInstallations}
@@ -234,8 +234,9 @@ const InstallationsPage = () => {
             setConfirmationStatus('');
             setSelectedState('');
             setSelectedDistrict('');
+            setPartnerTypeFilter('');
           }}
-          isActive={!customerType && !confirmationStatus && !selectedState}
+          isActive={!customerType && !confirmationStatus && !selectedState && !partnerTypeFilter}
           activeLabel="All"
           loading={loading}
         />
@@ -270,45 +271,57 @@ const InstallationsPage = () => {
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="card" style={{ padding: '16px', marginBottom: '20px' }}>
-        <form onSubmit={handleSearchSubmit} className="filter-form-responsive" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+      <div className="card" style={{ padding: '16px 20px', marginBottom: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <form onSubmit={handleSearchSubmit} className="filter-form-responsive" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
           {/* Text Search */}
-          <div className="search-input-wrap" style={{ flex: '1 1 240px', minWidth: '220px' }}>
-            <Search size={18} />
+          <div style={{ position: 'relative', flex: '1 1 260px', minWidth: '220px' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
             <input
               type="text"
               className="form-control"
-              placeholder="Search ID, Serial (e.g. VS000021), Partner, Customer..."
+              placeholder="Search ID, Serial (e.g. VS000401), Partner, Customer..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ height: '42px', paddingLeft: '40px' }}
+              style={{ height: '42px', paddingLeft: '38px', paddingRight: search ? '32px' : '12px', borderRadius: '8px', fontSize: '13px' }}
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
 
           {/* Super Admin Partner Type Filter */}
           {isSuperAdmin && (
-            <div style={{ width: '170px', minWidth: '150px' }}>
+            <div style={{ flex: '0 0 auto', minWidth: '175px' }}>
               <select
                 className="form-control"
                 value={partnerTypeFilter}
                 onChange={(e) => setPartnerTypeFilter(e.target.value)}
-                style={{ height: '42px' }}
+                style={{ height: '42px', borderRadius: '8px', fontSize: '13px' }}
               >
                 <option value="">All Partner Levels</option>
-                <option value="STATE_FRANCHISE">State Franchise</option>
+                <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive District</option>
+                <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive District</option>
+                <option value="NON_EXCLUSIVE_DISTRICT">Non-Exclusive District</option>
                 <option value="DISTRICT_FRANCHISE">District Franchise</option>
                 <option value="SUB_FRANCHISE">Sub-Franchise</option>
+                <option value="STATE_FRANCHISE">State Franchise</option>
               </select>
             </div>
           )}
 
           {/* State Filter */}
-          <div style={{ width: '160px', minWidth: '140px' }}>
+          <div style={{ flex: '0 0 auto', minWidth: '150px' }}>
             <select
               className="form-control"
               value={selectedState}
               onChange={(e) => setSelectedState(e.target.value)}
-              style={{ height: '42px' }}
+              style={{ height: '42px', borderRadius: '8px', fontSize: '13px' }}
             >
               <option value="">All States ({statesList.length})</option>
               {statesList.map((st) => (
@@ -320,15 +333,15 @@ const InstallationsPage = () => {
           </div>
 
           {/* District Filter */}
-          <div style={{ width: '160px', minWidth: '140px' }}>
+          <div style={{ flex: '0 0 auto', minWidth: '150px' }}>
             <select
               className="form-control"
               value={selectedDistrict}
               onChange={(e) => setSelectedDistrict(e.target.value)}
-              style={{ height: '42px' }}
+              style={{ height: '42px', borderRadius: '8px', fontSize: '13px' }}
               disabled={!selectedState}
             >
-              <option value="">{selectedState ? `All in ${selectedState}` : 'Select State'}</option>
+              <option value="">{selectedState ? `All in ${selectedState}` : 'All Districts'}</option>
               {districtsList.map((dist) => (
                 <option key={dist} value={dist}>
                   {dist}
@@ -338,12 +351,12 @@ const InstallationsPage = () => {
           </div>
 
           {/* Customer Type Filter */}
-          <div style={{ width: '150px', minWidth: '130px' }}>
+          <div style={{ flex: '0 0 auto', minWidth: '135px' }}>
             <select
               className="form-control"
               value={customerType}
               onChange={(e) => setCustomerType(e.target.value)}
-              style={{ height: '42px' }}
+              style={{ height: '42px', borderRadius: '8px', fontSize: '13px' }}
             >
               <option value="">All Types</option>
               <option value="RESIDENTIAL">Residential</option>
@@ -352,13 +365,14 @@ const InstallationsPage = () => {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto' }}>
             <button
               type="submit"
               className="btn btn-primary"
-              style={{ height: '42px', padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              style={{ height: '42px', padding: '0 18px', display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '8px', fontWeight: 600, fontSize: '13px' }}
             >
-              <Search size={16} />
+              <Search size={15} />
               <span>Filter</span>
             </button>
 
@@ -375,7 +389,7 @@ const InstallationsPage = () => {
                   setPartnerTypeFilter('');
                   fetchInstallations(1);
                 }}
-                style={{ height: '42px', padding: '0 14px' }}
+                style={{ height: '42px', padding: '0 14px', borderRadius: '8px', fontSize: '13px' }}
               >
                 Reset
               </button>
@@ -386,9 +400,9 @@ const InstallationsPage = () => {
               className="btn btn-outline"
               onClick={() => fetchInstallations(pagination.page)}
               title="Refresh list"
-              style={{ height: '42px', padding: '0 14px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ height: '42px', width: '42px', padding: '0', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
             </button>
           </div>
         </form>
@@ -427,17 +441,17 @@ const InstallationsPage = () => {
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="desktop-table-only card" style={{ padding: '0', overflow: 'hidden', marginBottom: '20px' }}>
-            <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="desktop-table-only card" style={{ padding: '0', overflowX: 'auto', marginBottom: '24px', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <table className="data-table" style={{ width: '100%', minWidth: '1180px', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Installation ID</th>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Installed By (Partner)</th>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Customer & Location</th>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Connected Load</th>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Cards Installed</th>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Proof Photos</th>
-                  <th style={{ padding: '14px 16px', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Audit Action</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border-color)' }}>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '13%', whiteSpace: 'nowrap' }}>Installation ID</th>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '20%', whiteSpace: 'nowrap' }}>Installed By (Partner)</th>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '22%', whiteSpace: 'nowrap' }}>Customer & Location</th>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '11%', whiteSpace: 'nowrap' }}>Connected Load</th>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '14%', whiteSpace: 'nowrap' }}>Cards Installed</th>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '10%', whiteSpace: 'nowrap' }}>Proof Photos</th>
+                  <th style={{ padding: '14px 18px', fontSize: '11.5px', fontWeight: 700, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', width: '10%', textAlign: 'right', whiteSpace: 'nowrap' }}>Audit Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -451,99 +465,116 @@ const InstallationsPage = () => {
                   const photoCount = [hasMcb, hasCard, hasBill, hasSign].filter(Boolean).length;
 
                   return (
-                    <tr key={ins._id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.15s' }}>
+                    <tr key={ins._id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.15s ease' }}>
                       {/* 1. Installation ID & Date */}
-                      <td style={{ padding: '14px 16px', fontWeight: 700, color: 'var(--color-primary-dark)' }}>
-                        <div style={{ fontFamily: 'monospace', fontSize: '13px' }}>{ins.installationId}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 400, marginTop: '3px' }}>
-                          📅 {new Date(ins.installationDateTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', fontFamily: 'monospace', fontSize: '13px', fontWeight: 700, color: '#0369a1', background: '#f0f9ff', padding: '3px 8px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                          {ins.installationId}
                         </div>
-                        <div style={{ marginTop: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', color: '#64748b', marginTop: '6px' }}>
+                          <Calendar size={12} style={{ color: '#94a3b8' }} />
+                          <span>{new Date(ins.installationDateTime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        </div>
+                        <div style={{ marginTop: '5px' }}>
                           {getCustomerTypeBadge(ins.customerType)}
                         </div>
                       </td>
 
                       {/* 2. Installed By Partner & Hierarchy */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                        <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px' }}>
                           {partnerDoc?.fullName || 'Direct HQ'}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#0284C7', fontWeight: 600, fontFamily: 'monospace', marginTop: '1px' }}>
-                          {partnerDoc?.franchiseId} {partnerDoc?.mobileNumber && `• ${partnerDoc.mobileNumber}`}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', color: '#0284c7', fontWeight: 600, fontFamily: 'monospace', marginTop: '2px' }}>
+                          <span>{partnerDoc?.franchiseId}</span>
+                          {partnerDoc?.mobileNumber && (
+                            <>
+                              <span style={{ color: '#cbd5e1' }}>•</span>
+                              <span style={{ color: '#64748b', fontFamily: 'inherit', fontWeight: 500 }}>{partnerDoc.mobileNumber}</span>
+                            </>
+                          )}
                         </div>
-                        <div style={{ marginTop: '4px' }}>
+                        <div style={{ marginTop: '6px' }}>
                           {partnerDoc?.franchiseType && <FranchiseTypeBadge type={partnerDoc.franchiseType} />}
                         </div>
                         {/* If Sub-Franchise, show Parent District Franchise */}
                         {parentPartner && (
-                          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', display: 'inline-block' }}>
-                            Upline: <strong>{parentPartner.fullName}</strong> ({parentPartner.franchiseId})
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#475569', marginTop: '5px', background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                            <span style={{ color: '#94a3b8', fontWeight: 700 }}>↳</span>
+                            <span>Upline:</span>
+                            <strong>{parentPartner.fullName}</strong>
+                            <span style={{ color: '#64748b', fontSize: '10.5px' }}>({parentPartner.franchiseId})</span>
                           </div>
                         )}
                       </td>
 
                       {/* 3. Customer & Address */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13.5px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                        <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px' }}>
                           {ins.customerId?.fullName || 'Customer'}
                         </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          📱 {ins.customerId?.mobileNumber}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                          <User size={12} style={{ color: '#94a3b8' }} />
+                          <span>{ins.customerId?.mobileNumber}</span>
                         </div>
-                        <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
-                          📍 {ins.installationAddress?.houseOrShopNumber ? `${ins.installationAddress.houseOrShopNumber}, ` : ''}
-                          {ins.installationAddress?.district}, {ins.installationAddress?.state}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', fontSize: '11.5px', color: '#64748b', marginTop: '4px', lineHeight: 1.35 }}>
+                          <MapPin size={12} style={{ flexShrink: 0, marginTop: '2px', color: '#94a3b8' }} />
+                          <span>
+                            {ins.installationAddress?.houseOrShopNumber ? `${ins.installationAddress.houseOrShopNumber}, ` : ''}
+                            {ins.installationAddress?.district}, {ins.installationAddress?.state}
+                          </span>
                         </div>
                         {ins.latitude && (
-                          <div style={{ marginTop: '3px' }}>
+                          <div style={{ marginTop: '5px' }}>
                             <span
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '3px',
+                                gap: '4px',
                                 fontSize: '10.5px',
                                 color: ins.territoryMatch !== false ? '#15803d' : '#b91c1c',
                                 background: ins.territoryMatch !== false ? '#dcfce7' : '#fee2e2',
-                                padding: '1px 6px',
-                                borderRadius: '4px',
-                                fontWeight: 600,
+                                border: `1px solid ${ins.territoryMatch !== false ? '#bbf7d0' : '#fecaca'}`,
+                                padding: '1px 7px',
+                                borderRadius: '12px',
+                                fontWeight: 700,
                               }}
                             >
-                              <MapPin size={10} />
-                              {ins.territoryMatch !== false ? 'GPS Verified' : 'Territory Mismatch'}
+                              <ShieldCheck size={11} />
+                              {ins.territoryMatch !== false ? 'GPS Verified' : 'Territory Flagged'}
                             </span>
                           </div>
                         )}
                       </td>
 
                       {/* 4. Connected Load */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#0284c7', background: '#f0f9ff', padding: '3px 8px', borderRadius: '6px', fontSize: '13px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#0284c7', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '3px 8px', borderRadius: '6px', fontSize: '12.5px' }}>
                           <Zap size={13} /> {ins.connectedLoadKw} kW
-                        </span>
+                        </div>
                         {ins.meterNumber && (
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                            Meter: {ins.meterNumber}
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '5px' }}>
+                            Meter: <strong style={{ color: '#334155' }}>{ins.meterNumber}</strong>
                           </div>
                         )}
                       </td>
 
                       {/* 5. Cards Installed & Commercials */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#15803d', background: '#dcfce7', padding: '3px 8px', borderRadius: '6px', fontSize: '13px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#15803d', background: '#dcfce7', border: '1px solid #bbf7d0', padding: '3px 8px', borderRadius: '6px', fontSize: '12.5px' }}>
                           <CreditCard size={13} /> {ins.installedCardCount} Card{ins.installedCardCount > 1 ? 's' : ''}
-                        </span>
-                        <div style={{ fontSize: '11px', color: '#166534', fontFamily: 'monospace', fontWeight: '600', marginTop: '3px' }}>
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#166534', fontFamily: 'monospace', fontWeight: 600, marginTop: '4px' }}>
                           {ins.cardSerialNumbers?.slice(0, 2).join(', ')}
                           {ins.cardSerialNumbers?.length > 2 ? ` (+${ins.cardSerialNumbers.length - 2} more)` : ''}
                         </div>
-                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#334155', marginTop: '2px' }}>
+                        <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#0f172a', marginTop: '3px' }}>
                           ₹{ins.totalAmount?.toLocaleString()}
                         </div>
                       </td>
 
                       {/* 6. Proof Photos Chips */}
-                      <td style={{ padding: '14px 16px' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
                             {hasMcb && (
@@ -552,9 +583,9 @@ const InstallationsPage = () => {
                                 onClick={() => handleOpenPhotoModal(ins, 'MCB')}
                                 title="Click to view MCB Panel Photo"
                                 style={{
-                                  padding: '2px 6px',
+                                  padding: '2px 7px',
                                   fontSize: '11px',
-                                  borderRadius: '4px',
+                                  borderRadius: '5px',
                                   border: '1px solid #BAE6FD',
                                   backgroundColor: '#F0F9FF',
                                   color: '#0369A1',
@@ -562,7 +593,7 @@ const InstallationsPage = () => {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '3px',
-                                  fontWeight: '600',
+                                  fontWeight: 600,
                                 }}
                               >
                                 <Camera size={11} /> MCB
@@ -574,9 +605,9 @@ const InstallationsPage = () => {
                                 onClick={() => handleOpenPhotoModal(ins, 'CARD')}
                                 title="Click to view Installed Card Photo"
                                 style={{
-                                  padding: '2px 6px',
+                                  padding: '2px 7px',
                                   fontSize: '11px',
-                                  borderRadius: '4px',
+                                  borderRadius: '5px',
                                   border: '1px solid #BBF7D0',
                                   backgroundColor: '#F0FDF4',
                                   color: '#15803D',
@@ -584,7 +615,7 @@ const InstallationsPage = () => {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '3px',
-                                  fontWeight: '600',
+                                  fontWeight: 600,
                                 }}
                               >
                                 <CreditCard size={11} /> Card
@@ -596,9 +627,9 @@ const InstallationsPage = () => {
                                 onClick={() => handleOpenPhotoModal(ins, 'BILL')}
                                 title="Click to view Electricity Bill Photo"
                                 style={{
-                                  padding: '2px 6px',
+                                  padding: '2px 7px',
                                   fontSize: '11px',
-                                  borderRadius: '4px',
+                                  borderRadius: '5px',
                                   border: '1px solid #FED7AA',
                                   backgroundColor: '#FFF7ED',
                                   color: '#C2410C',
@@ -606,26 +637,36 @@ const InstallationsPage = () => {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '3px',
-                                  fontWeight: '600',
+                                  fontWeight: 600,
                                 }}
                               >
                                 <FileText size={11} /> Bill
                               </button>
                             )}
                           </div>
-                          <div style={{ fontSize: '10.5px', color: '#64748B' }}>
-                            📸 {photoCount} Proof Photos Attached
+                          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
+                            📸 {photoCount} Proof Photo{photoCount !== 1 ? 's' : ''} Attached
                           </div>
                         </div>
                       </td>
 
                       {/* 7. Action Button */}
-                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                      <td style={{ padding: '16px 18px', verticalAlign: 'middle', textAlign: 'right' }}>
                         <button
                           type="button"
                           onClick={() => handleOpenPhotoModal(ins, 'MCB')}
                           className="btn btn-primary"
-                          style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          style={{
+                            padding: '7px 14px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            borderRadius: '8px',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 2px rgba(2, 132, 199, 0.2)',
+                          }}
                         >
                           <Camera size={13} />
                           <span>Audit Proof</span>

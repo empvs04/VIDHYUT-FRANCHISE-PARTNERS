@@ -33,14 +33,14 @@ export const getInstallationEligibleCards = async (user, partner) => {
 
   if (user.role === USER_ROLES.SUPER_ADMIN) {
     // Super Admin can see available cards
-    query.status = { $in: [CARD_STATUS.AVAILABLE, CARD_STATUS.ASSIGNED] };
+    query.status = { $in: [CARD_STATUS.AVAILABLE, CARD_STATUS.ASSIGNED, CARD_STATUS.TRANSFERRED] };
   } else {
     if (!partner) {
       throw new ApiError(403, 'Franchise Partner profile required to view eligible cards.');
     }
     query.currentOwnerId = partner._id;
     query.currentOwnerType = CARD_OWNER_TYPES.FRANCHISE_PARTNER;
-    query.status = { $in: [CARD_STATUS.ASSIGNED, CARD_STATUS.AVAILABLE] };
+    query.status = { $in: [CARD_STATUS.ASSIGNED, CARD_STATUS.AVAILABLE, CARD_STATUS.TRANSFERRED] };
   }
 
   const eligibleCards = await Card.find(query)

@@ -7,44 +7,130 @@ const api = axios.create({
   },
 });
 
-// Cache & Deduplication Storage
+// ─── Cache & Deduplication Storage ───────────────────────────────────────────
 const memoryCache = new Map();
 const inFlightRequests = new Map();
 
-// Helper to generate cache key
+// ─── TTL config per URL prefix (milliseconds) ────────────────────────────────
+// Longer TTL = faster navigation back to dashboard
+const TTL_MAP = [
+  { pattern: /\/territories/,           ttl: 5 * 60 * 1000  }, // 5 min  — almost never changes
+  { pattern: /\/dashboard\//,            ttl: 60 * 1000       }, // 60 sec — main dashboard APIs
+  { pattern: /\/analytics\//,           ttl: 60 * 1000       }, // 60 sec — charts
+  { pattern: /\/transactions\/stats/,   ttl: 60 * 1000       }, // 60 sec — summary stats
+  { pattern: /\/cards\/stats/,          ttl: 60 * 1000       }, // 60 sec — card stats
+  { pattern: /\/cards\/ranges/,         ttl: 60 * 1000       }, // 60 sec — ranges
+  { pattern: /\/partners/,              ttl: 30 * 1000       }, // 30 sec — partner lists
+  { pattern: /\/transactions(?!\/stats)/, ttl: 20 * 1000     }, // 20 sec — transaction lists
+  { pattern: /\/cards(?!\/stats)/,      ttl: 20 * 1000       }, // 20 sec — card lists
+];
+
+const DEFAULT_TTL = 12 * 1000; // 12 sec fallback
+
+const getTTL = (url, configTTL) => {
+  if (configTTL) return configTTL;
+  for (const { pattern, ttl } of TTL_MAP) {
+    if (pattern.test(url)) return ttl;
+  }
+  return DEFAULT_TTL;
+};
+
+// ─── Cache key generator ─────────────────────────────────────────────────────
 const getCacheKey = (config) => {
   const url = config.url || '';
   const params = config.params ? JSON.stringify(config.params) : '';
-  return `${config.method?.toUpperCase() || 'GET'}:${url}?${params}`;
+  return `GET:${url}?${params}`;
 };
 
-// Clear cache on write operations
-export const clearApiCache = () => {
-  memoryCache.clear();
-};
+// ─── Targeted cache invalidation ─────────────────────────────────────────────
+// Instead of wiping the entire cache on every mutation, only clear keys
+// that are likely affected by the mutation endpoint.
+const INVALIDATION_MAP = [
+  { trigger: /\/transactions/,  clear: [/\/transactions/, /\/dashboard/, /\/analytics/, /\/cards\/stats/] },
+  { trigger: /\/cards/,         clear: [/\/cards/, /\/dashboard/, /\/analytics/, /\/transactions\/stats/] },
+  { trigger: /\/partners/,      clear: [/\/partners/, /\/dashboard/, /\/analytics/] },
+  { trigger: /\/installations/, clear: [/\/installations/, /\/dashboard/, /\/analytics/, /\/cards\/stats/] },
+  { trigger: /\/customers/,     clear: [/\/customers/, /\/dashboard/] },
+  { trigger: /\/auth/,          clear: [/.*/] }, // full clear on auth
+];
 
-// Custom GET with deduplication and caching
-const originalGet = api.get;
-api.get = function (url, config = {}) {
-  const method = 'GET';
-  const fullConfig = { ...config, method, url };
-  const cacheKey = getCacheKey(fullConfig);
-  const now = Date.now();
+export const clearApiCache = (mutationUrl = null) => {
+  if (!mutationUrl) {
+    memoryCache.clear();
+    return;
+  }
 
-  // Check TTL (2 mins for territories, 12s for general dashboard/lookups)
-  const isTerritory = url.includes('/territories');
-  const cacheTTL = config.cacheTTL || (isTerritory ? 120000 : 12000);
-
-  if (!config.skipCache && memoryCache.has(cacheKey)) {
-    const cached = memoryCache.get(cacheKey);
-    if (now - cached.timestamp < cacheTTL) {
-      return Promise.resolve(JSON.parse(JSON.stringify(cached.data)));
-    } else {
-      memoryCache.delete(cacheKey);
+  // Find which patterns to clear for this mutation URL
+  let patternsToInvalidate = null;
+  for (const { trigger, clear } of INVALIDATION_MAP) {
+    if (trigger.test(mutationUrl)) {
+      patternsToInvalidate = clear;
+      break;
     }
   }
 
-  // Deduplicate in-flight GET requests
+  if (!patternsToInvalidate) {
+    // Unknown mutation — clear everything to be safe
+    memoryCache.clear();
+    return;
+  }
+
+  for (const key of memoryCache.keys()) {
+    if (patternsToInvalidate.some((p) => p.test(key))) {
+      memoryCache.delete(key);
+    }
+  }
+};
+
+// ─── Override api.get with caching + dedup + stale-while-revalidate ──────────
+const originalGet = api.get;
+api.get = function (url, config = {}) {
+  const fullConfig = { ...config, method: 'GET', url };
+  const cacheKey = getCacheKey(fullConfig);
+  const now = Date.now();
+  const ttl = getTTL(url, config.cacheTTL);
+
+  // Stale-while-revalidate: dashboard & analytics endpoints
+  // → return cached data immediately AND kick off a background refresh
+  const isStaleWhileRevalidate =
+    !config.skipCache &&
+    /\/dashboard\/|\/analytics\/|\/transactions\/stats|\/cards\/stats|\/cards\/ranges/.test(url);
+
+  if (!config.skipCache && memoryCache.has(cacheKey)) {
+    const cached = memoryCache.get(cacheKey);
+    const age = now - cached.timestamp;
+
+    if (age < ttl) {
+      // Cache still fresh — return immediately
+      return Promise.resolve(JSON.parse(JSON.stringify(cached.data)));
+    }
+
+    if (isStaleWhileRevalidate) {
+      // Cache stale but we have data — return stale immediately, refresh in background
+      const staleData = JSON.parse(JSON.stringify(cached.data));
+
+      // Background refresh (don't await)
+      if (!inFlightRequests.has(cacheKey)) {
+        const bgPromise = originalGet.call(this, url, config)
+          .then((response) => {
+            memoryCache.set(cacheKey, { timestamp: Date.now(), data: response });
+            inFlightRequests.delete(cacheKey);
+            return response;
+          })
+          .catch(() => {
+            inFlightRequests.delete(cacheKey);
+          });
+        inFlightRequests.set(cacheKey, bgPromise);
+      }
+
+      return Promise.resolve(staleData);
+    }
+
+    // Regular expired cache — delete and re-fetch
+    memoryCache.delete(cacheKey);
+  }
+
+  // Deduplicate simultaneous identical requests
   if (inFlightRequests.has(cacheKey)) {
     return inFlightRequests.get(cacheKey);
   }
@@ -64,7 +150,7 @@ api.get = function (url, config = {}) {
   return promise;
 };
 
-// Attach Authorization Token to outgoing requests
+// ─── Attach Authorization Token ───────────────────────────────────────────────
 api.interceptors.request.use((config) => {
   const token =
     localStorage.getItem('vidhyut_auth_token') ||
@@ -73,16 +159,16 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Invalidate cache on mutations (POST, PUT, PATCH, DELETE)
+  // Targeted cache invalidation on mutations
   const method = config.method?.toUpperCase();
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-    clearApiCache();
+    clearApiCache(config.url);
   }
 
   return config;
 });
 
-// Response Error Interceptor
+// ─── Response Error Interceptor ───────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
