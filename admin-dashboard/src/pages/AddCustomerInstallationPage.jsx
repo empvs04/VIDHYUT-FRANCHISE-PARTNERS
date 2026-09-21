@@ -951,11 +951,8 @@ const AddCustomerInstallationPage = () => {
                 onClick={() => {
                   if (isCompleted) setCurrentStep(step.id);
                 }}
+                className="stepper-item-pill"
                 style={{
-                  flex: '1 1 0',
-                  minWidth: '120px',
-                  padding: '9px 12px',
-                  borderRadius: '10px',
                   border: isCurrent
                     ? '2px solid #0284c7'
                     : isCompleted
@@ -964,15 +961,10 @@ const AddCustomerInstallationPage = () => {
                   background: isCurrent ? '#f0f9ff' : isCompleted ? '#f0fdf4' : '#ffffff',
                   cursor: isCompleted ? 'pointer' : isCurrent ? 'default' : 'not-allowed',
                   opacity: isCurrent || isCompleted ? 1 : 0.55,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.15s ease',
-                  userSelect: 'none',
-                  flexShrink: 0,
                 }}
               >
                 <div
+                  className="stepper-num"
                   style={{
                     width: '26px',
                     height: '26px',
@@ -992,6 +984,7 @@ const AddCustomerInstallationPage = () => {
 
                 <div style={{ overflow: 'hidden' }}>
                   <div
+                    className="stepper-title"
                     style={{
                       fontSize: '12.5px',
                       fontWeight: isCurrent ? 700 : 600,
@@ -1005,6 +998,7 @@ const AddCustomerInstallationPage = () => {
                     {step.title}
                   </div>
                   <div
+                    className="stepper-sub"
                     style={{
                       fontSize: '10.5px',
                       color: isCurrent ? '#0369a1' : 'var(--text-muted)',
@@ -1021,26 +1015,26 @@ const AddCustomerInstallationPage = () => {
       </div>
 
       {/* Main Step Content Card */}
-      <div className="card" style={{ padding: '24px', marginBottom: '24px' }}>
+      <div className="card wizard-card">
         {/* ===================================================
             STEP 1: CUSTOMER INFORMATION
             =================================================== */}
         {currentStep === 1 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#e0f2fe', color: '#0284c7' }}>
                 <Home size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 1: Customer Type & Profile</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Select customer category and enter primary contact details.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 1: Customer Type & Profile</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Select customer category and enter primary contact details.</p>
               </div>
             </div>
 
             {/* Customer Type Selection */}
             <div className="form-group" style={{ marginBottom: '20px' }}>
               <label className="form-label" style={{ fontWeight: 600 }}>Customer Type *</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginTop: '6px' }}>
+              <div className="customer-type-grid" style={{ marginTop: '6px' }}>
                 {[
                   { type: 'RESIDENTIAL', label: 'Residential', desc: 'Homes, Apartments, Villas', icon: <Home size={20} /> },
                   { type: 'COMMERCIAL', label: 'Commercial', desc: 'Shops, Offices, Showrooms', icon: <Building size={20} /> },
@@ -1049,27 +1043,23 @@ const AddCustomerInstallationPage = () => {
                   <div
                     key={item.type}
                     onClick={() => handleInputChange('customerType', item.type)}
+                    className="customer-type-card"
                     style={{
                       border: formData.customerType === item.type ? '2px solid #0284c7' : '1px solid var(--border-color)',
                       background: formData.customerType === item.type ? '#f0f9ff' : 'var(--bg-card)',
-                      padding: '16px',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      transition: 'all 0.15s ease',
                     }}
                   >
-                    <div style={{ color: formData.customerType === item.type ? '#0284c7' : '#64748b', display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                    <div className="customer-type-icon" style={{ color: formData.customerType === item.type ? '#0284c7' : '#64748b', display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
                       {item.icon}
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{item.label}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.desc}</div>
+                    <div className="customer-type-label" style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{item.label}</div>
+                    <div className="customer-type-desc" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{item.desc}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <div className="wizard-grid-2col">
               <div className="form-group">
                 <label className="form-label">Customer Full Name *</label>
                 <input
@@ -1091,7 +1081,7 @@ const AddCustomerInstallationPage = () => {
                   value={formData.mobileNumber}
                   onChange={(e) => handleInputChange('mobileNumber', e.target.value.replace(/\D/g, ''))}
                 />
-                <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>OTP confirmation will be sent to this number.</small>
+                <small style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>Official communication will be linked to this number.</small>
               </div>
 
               <div className="form-group">
@@ -1125,26 +1115,26 @@ const AddCustomerInstallationPage = () => {
             =================================================== */}
         {currentStep === 2 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#fef3c7', color: '#b45309' }}>
                 <MapPin size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 2: Installation Address & Territory</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Provide the physical location where Vidhyut Saathi cards are being installed.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 2: Installation Address & Territory</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Provide the physical location where Vidhyut Saathi cards are being installed.</p>
               </div>
             </div>
 
             {!isSuperAdmin && partner && (
-              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Info size={18} color="#0284c7" />
-                <div style={{ fontSize: '13px', color: '#0369a1' }}>
-                  <strong>Authorized Partner Territory:</strong> {partner.district}, {partner.state}. Customers must be located within your authorized area.
+              <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '12px 14px', borderRadius: '8px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Info size={18} color="#0284c7" style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '12.5px', color: '#0369a1', lineHeight: '1.4' }}>
+                  <strong>Authorized Territory:</strong> {partner.district}, {partner.state}. Customers must be located within your authorized area.
                 </div>
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <div className="wizard-grid-2col">
               <div className="form-group">
                 <label className="form-label">House / Shop / Factory Number</label>
                 <input
@@ -1192,7 +1182,7 @@ const AddCustomerInstallationPage = () => {
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="e.g. Andheri East, Panvel, Vashi (Type to auto-fetch PIN)"
+                    placeholder="e.g. Andheri East, Panvel, Vashi"
                     value={formData.city}
                     onChange={(e) => handleVillageSearch(e.target.value)}
                     onFocus={() => {
@@ -1258,7 +1248,7 @@ const AddCustomerInstallationPage = () => {
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {!isSuperAdmin && <Lock size={13} color="#0284c7" />}
-                  <span>State {!isSuperAdmin ? '(Authorized Territory)' : ''} *</span>
+                  <span>State {!isSuperAdmin ? '(Authorized)' : ''} *</span>
                 </label>
                 {!isSuperAdmin ? (
                   <>
@@ -1269,8 +1259,8 @@ const AddCustomerInstallationPage = () => {
                       disabled
                       style={{ backgroundColor: '#f8fafc', fontWeight: 600, color: '#0f172a', border: '1.5px solid #cbd5e1', cursor: 'not-allowed' }}
                     />
-                    <small style={{ color: '#0369a1', fontSize: '11.5px', marginTop: '3px', display: 'block', fontWeight: 500 }}>
-                      🔒 Locked to your assigned state ({partner?.state || formData.state})
+                    <small style={{ color: '#0369a1', fontSize: '11px', marginTop: '3px', display: 'block', fontWeight: 500 }}>
+                      🔒 Assigned state ({partner?.state || formData.state})
                     </small>
                   </>
                 ) : (
@@ -1290,7 +1280,7 @@ const AddCustomerInstallationPage = () => {
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {!isSuperAdmin && <Lock size={13} color="#0284c7" />}
-                  <span>District {!isSuperAdmin ? '(Authorized Territory)' : ''} *</span>
+                  <span>District {!isSuperAdmin ? '(Authorized)' : ''} *</span>
                 </label>
                 {!isSuperAdmin ? (
                   <>
@@ -1301,8 +1291,8 @@ const AddCustomerInstallationPage = () => {
                       disabled
                       style={{ backgroundColor: '#f8fafc', fontWeight: 600, color: '#0f172a', border: '1.5px solid #cbd5e1', cursor: 'not-allowed' }}
                     />
-                    <small style={{ color: '#0369a1', fontSize: '11.5px', marginTop: '3px', display: 'block', fontWeight: 500 }}>
-                      🔒 Locked to your assigned district ({partner?.district || formData.district})
+                    <small style={{ color: '#0369a1', fontSize: '11px', marginTop: '3px', display: 'block', fontWeight: 500 }}>
+                      🔒 Assigned district ({partner?.district || formData.district})
                     </small>
                   </>
                 ) : (
@@ -1325,7 +1315,7 @@ const AddCustomerInstallationPage = () => {
                   <span>PIN Code (6 Digits) *</span>
                   {pincodeLoading && (
                     <span style={{ fontSize: '11px', color: '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <RefreshCw size={12} className="animate-spin" /> Fetching location...
+                      <RefreshCw size={12} className="animate-spin" /> Fetching...
                     </span>
                   )}
                 </label>
@@ -1333,7 +1323,7 @@ const AddCustomerInstallationPage = () => {
                   type="text"
                   maxLength={6}
                   className="form-control"
-                  placeholder="e.g. 400001 (Auto-fetches Village / City)"
+                  placeholder="e.g. 400001"
                   value={formData.pinCode}
                   onChange={(e) => handleInputChange('pinCode', e.target.value.replace(/\D/g, ''))}
                   style={{ fontWeight: 600, letterSpacing: '0.5px' }}
@@ -1353,7 +1343,7 @@ const AddCustomerInstallationPage = () => {
             </div>
 
             {/* Step 2 Embedded Live GPS Geolocation & Territory Verification */}
-            <div style={{ marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+            <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '18px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0f2fe', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <MapPin size={18} />
@@ -1369,15 +1359,15 @@ const AddCustomerInstallationPage = () => {
               </div>
 
               {!locationVerification ? (
-                <div style={{ textAlign: 'center', padding: '20px 16px', background: '#f8fafc', border: '2px dashed #0284c7', borderRadius: '10px', marginBottom: '10px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                    <MapPin size={24} />
+                <div style={{ textAlign: 'center', padding: '18px 14px', background: '#f8fafc', border: '2px dashed #0284c7', borderRadius: '10px', marginBottom: '10px' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                    <MapPin size={22} />
                   </div>
 
-                  <h5 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  <h5 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
                     Capture Live Field GPS Coordinates
                   </h5>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 16px' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto 14px' }}>
                     Click below to capture real-time GPS telemetry from this device. {!isSuperAdmin && partner ? `Your location must be in ${partner.district}, ${partner.state}.` : ''}
                   </p>
 
@@ -1386,21 +1376,21 @@ const AddCustomerInstallationPage = () => {
                     disabled={gpsLoading}
                     onClick={handleCaptureGPS}
                     className="btn btn-primary"
-                    style={{ padding: '10px 24px', fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    style={{ padding: '10px 20px', fontSize: '13.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: 'auto', maxWidth: '100%' }}
                   >
                     {gpsLoading ? <RefreshCw size={16} className="animate-spin" /> : <Navigation size={16} />}
                     <span>{gpsLoading ? 'Acquiring GPS Fix & Geocoding...' : '📍 Capture Live GPS Location'}</span>
                   </button>
 
                   {gpsError && (
-                    <div style={{ marginTop: '14px', background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                      <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div style={{ marginTop: '14px', background: '#fee2e2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 12px', borderRadius: '8px', fontSize: '12px', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                      <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                       <div>{gpsError}</div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {/* Verification Status Banner */}
                   {locationVerification.territoryMatch ? (
                     <div
@@ -1408,19 +1398,19 @@ const AddCustomerInstallationPage = () => {
                         background: '#f0fdf4',
                         border: '1.5px solid #bbf7d0',
                         borderRadius: '10px',
-                        padding: '14px 16px',
+                        padding: '12px 14px',
                         display: 'flex',
                         alignItems: 'flex-start',
-                        gap: '12px',
+                        gap: '10px',
                       }}
                     >
-                      <CheckCircle2 size={22} color="#15803d" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <CheckCircle2 size={20} color="#15803d" style={{ flexShrink: 0, marginTop: '2px' }} />
                       <div>
-                        <h5 style={{ margin: 0, fontSize: '14.5px', fontWeight: 700, color: '#15803d' }}>
-                          ✅ Territory Verified: Within Authorized Franchise Boundary
+                        <h5 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#15803d' }}>
+                          ✅ Territory Verified: Within Boundary
                         </h5>
-                        <p style={{ margin: '3px 0 0 0', fontSize: '12.5px', color: '#166534' }}>
-                          {locationVerification.verificationReason || `GPS location matches your authorized franchise area (${partner?.district || formData.district}). You are cleared to proceed.`}
+                        <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#166534' }}>
+                          {locationVerification.verificationReason || `GPS location matches your authorized area (${partner?.district || formData.district}). Cleared to proceed.`}
                         </p>
                       </div>
                     </div>
@@ -1430,40 +1420,39 @@ const AddCustomerInstallationPage = () => {
                         background: '#fef2f2',
                         border: '2px solid #ef4444',
                         borderRadius: '10px',
-                        padding: '16px',
+                        padding: '14px',
                         display: 'flex',
                         alignItems: 'flex-start',
-                        gap: '12px',
+                        gap: '10px',
                       }}
                     >
-                      <AlertTriangle size={26} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+                      <AlertTriangle size={24} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
                       <div style={{ flex: 1 }}>
-                        <h5 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#b91c1c' }}>
-                          ⛔ Territory Out of Bounds: Next Step Blocked
+                        <h5 style={{ margin: 0, fontSize: '14.5px', fontWeight: 800, color: '#b91c1c' }}>
+                          ⛔ Territory Out of Bounds: Blocked
                         </h5>
-                        <p style={{ margin: '4px 0 8px 0', fontSize: '13px', color: '#991b1b', lineHeight: 1.5 }}>
-                          Detected GPS location is in <strong>{locationVerification.district || 'Different District'}, {locationVerification.state}</strong>, which does <strong>NOT</strong> match your assigned franchise territory <strong>({partner?.district || formData.district}, {partner?.state || formData.state})</strong>.
-                          Customer onboarding outside your authorized territory is strictly prohibited.
+                        <p style={{ margin: '4px 0 8px 0', fontSize: '12.5px', color: '#991b1b', lineHeight: 1.4 }}>
+                          Detected GPS is in <strong>{locationVerification.district || 'Different District'}, {locationVerification.state}</strong>. Authorized: <strong>({partner?.district || formData.district}, {partner?.state || formData.state})</strong>.
                         </p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                           <button
                             type="button"
                             disabled={gpsLoading}
                             onClick={() => handleCaptureGPS(true)}
                             className="btn btn-primary"
-                            style={{ background: '#dc2626', borderColor: '#dc2626', color: '#ffffff', fontSize: '13px', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            style={{ background: '#dc2626', borderColor: '#dc2626', color: '#ffffff', fontSize: '12.5px', padding: '8px 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                           >
-                            <RefreshCw size={14} className={gpsLoading ? 'animate-spin' : ''} />
-                            <span>{gpsLoading ? 'Re-checking Live GPS...' : '🔄 Re-try / Re-check GPS Location'}</span>
+                            <RefreshCw size={13} className={gpsLoading ? 'animate-spin' : ''} />
+                            <span>{gpsLoading ? 'Re-checking...' : '🔄 Re-check GPS'}</span>
                           </button>
                           <button
                             type="button"
                             disabled={gpsLoading}
                             onClick={handleResetGPS}
                             className="btn btn-secondary"
-                            style={{ fontSize: '12.5px', padding: '8px 14px' }}
+                            style={{ fontSize: '12px', padding: '8px 12px' }}
                           >
-                            Reset Location
+                            Reset
                           </button>
                         </div>
                       </div>
@@ -1471,24 +1460,24 @@ const AddCustomerInstallationPage = () => {
                   )}
 
                   {/* Telemetry Detail Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>GPS Coordinates</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px', fontFamily: 'monospace' }}>
-                        {locationVerification.latitude.toFixed(6)}, {locationVerification.longitude.toFixed(6)}
+                  <div className="wizard-telemetry-grid">
+                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '9px 12px' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>GPS Coordinates</div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px', fontFamily: 'monospace' }}>
+                        {locationVerification.latitude.toFixed(5)}, {locationVerification.longitude.toFixed(5)}
                       </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Accuracy Telemetry</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, marginTop: '2px', color: locationVerification.accuracyStatus === 'POOR' ? '#b91c1c' : locationVerification.accuracyStatus === 'ACCEPTABLE' ? '#b45309' : '#15803d' }}>
+                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '9px 12px' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Accuracy Telemetry</div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 700, marginTop: '2px', color: locationVerification.accuracyStatus === 'POOR' ? '#b91c1c' : locationVerification.accuracyStatus === 'ACCEPTABLE' ? '#b45309' : '#15803d' }}>
                         ±{locationVerification.accuracyMeters?.toFixed(1)}m ({locationVerification.accuracyStatus || 'GOOD'})
                       </div>
                     </div>
 
-                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Detected District & State</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: locationVerification.territoryMatch ? '#0369a1' : '#b91c1c', marginTop: '2px' }}>
+                    <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '9px 12px' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Detected Territory</div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 700, color: locationVerification.territoryMatch ? '#0369a1' : '#b91c1c', marginTop: '2px' }}>
                         {locationVerification.district || 'Detected District'}, {locationVerification.state || 'State'}
                       </div>
                     </div>
@@ -1497,7 +1486,7 @@ const AddCustomerInstallationPage = () => {
                   {/* Reverse Geocoded Full Address */}
                   {locationVerification.formattedAddress && (
                     <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px 12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <strong>Detected Reverse-Geocoded Address:</strong> {locationVerification.formattedAddress}
+                      <strong>Detected Address:</strong> {locationVerification.formattedAddress}
                     </div>
                   )}
 
@@ -1536,53 +1525,53 @@ const AddCustomerInstallationPage = () => {
             =================================================== */}
         {currentStep === 3 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#dcfce7', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#dcfce7', color: '#15803d' }}>
                 <Zap size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 3: Electricity Details & Connected Load</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Enter electrical meter specifications and calculate recommended energy saver cards.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 3: Electricity Details & Connected Load</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Enter electrical specifications to calculate recommended saver cards.</p>
               </div>
             </div>
 
             {/* Smart Card Recommendation Calculation Box */}
-            <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: 'white', padding: '18px 22px', borderRadius: '12px', marginBottom: '20px', boxShadow: 'var(--shadow-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', color: 'white', padding: '16px 18px', borderRadius: '12px', marginBottom: '18px', boxShadow: 'var(--shadow-md)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
-                  <div style={{ fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9, fontWeight: 700 }}>
-                    ⚡ Smart Card Recommendation Formula (Load + Bills + Phase)
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', opacity: 0.9, fontWeight: 700 }}>
+                    ⚡ Smart Card Recommendation Formula
                   </div>
-                  <div style={{ fontSize: '22px', fontWeight: 800, marginTop: '4px' }}>
+                  <div style={{ fontSize: '20px', fontWeight: 800, marginTop: '3px' }}>
                     {recommendedCardCount > 0 ? `${recommendedCardCount} Card${recommendedCardCount > 1 ? 's' : ''} Recommended` : 'Enter load or bill to calculate cards'}
                   </div>
                 </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '8px 18px', borderRadius: '8px', backdropFilter: 'blur(4px)', fontSize: '14px', fontWeight: 800 }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.22)', padding: '6px 14px', borderRadius: '8px', backdropFilter: 'blur(4px)', fontSize: '13px', fontWeight: 800 }}>
                   Total: {recommendedCardCount} Card{recommendedCardCount !== 1 ? 's' : ''}
                 </div>
               </div>
 
               {/* Dynamic Factors Breakdown Chips */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                <div style={{ background: 'rgba(0,0,0,0.18)', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                   <span>⚡ <strong>Load ({connectedLoadNum} kW):</strong> {cardsByLoad} card{cardsByLoad !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ background: 'rgba(0,0,0,0.18)', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                   <span>💵 <strong>Avg Bill (₹{avgMonthlyBillNum.toLocaleString()}):</strong> {cardsByAvgBill} card{cardsByAvgBill !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ background: 'rgba(0,0,0,0.18)', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <span>📈 <strong>12M Peak Bill (₹{highestBillNum.toLocaleString()}):</strong> {cardsByHighestBill} card{cardsByHighestBill !== 1 ? 's' : ''}</span>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                  <span>📈 <strong>Peak Bill (₹{highestBillNum.toLocaleString()}):</strong> {cardsByHighestBill} card{cardsByHighestBill !== 1 ? 's' : ''}</span>
                 </div>
 
-                <div style={{ background: isThreePhase ? 'rgba(16, 185, 129, 0.35)' : 'rgba(0,0,0,0.18)', padding: '5px 12px', borderRadius: '6px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', border: isThreePhase ? '1px solid rgba(110, 231, 183, 0.6)' : 'none' }}>
-                  <span>🔌 <strong>Phase:</strong> {isThreePhase ? '+1 Extra (3-Phase)' : '+0 (Single Phase)'}</span>
+                <div style={{ background: isThreePhase ? 'rgba(16, 185, 129, 0.35)' : 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '5px', border: isThreePhase ? '1px solid rgba(110, 231, 183, 0.6)' : 'none' }}>
+                  <span>🔌 <strong>Phase:</strong> {isThreePhase ? '+1 Extra (3-Phase)' : '+0 (1-Phase)'}</span>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <div className="wizard-grid-2col">
               <div className="form-group">
                 <label className="form-label">Current Connected Load (kW) *</label>
                 <input
@@ -1613,7 +1602,7 @@ const AddCustomerInstallationPage = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. MSEDCL, Adani Electricity, Tata Power, BESCOM"
+                  placeholder="e.g. MSEDCL, Adani Electricity, Tata Power"
                   value={formData.electricityBoard}
                   onChange={(e) => handleInputChange('electricityBoard', e.target.value)}
                 />
@@ -1684,26 +1673,26 @@ const AddCustomerInstallationPage = () => {
             =================================================== */}
         {currentStep === 4 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f2fe', color: '#0369a1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#e0f2fe', color: '#0369a1' }}>
                 <CreditCard size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 4: Card Serial Number Selection</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Select verified cards currently in your inventory to allocate to this customer.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 4: Card Serial Number Selection</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Select verified cards currently in your inventory to allocate to this customer.</p>
               </div>
             </div>
 
             {/* Quantity Comparison & Mismatch Alert */}
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
-              <div style={{ flex: '1 1 200px', background: '#f8fafc', border: '1px solid var(--border-color)', padding: '12px 16px', borderRadius: '8px' }}>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Recommended Quantity</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7' }}>{recommendedCardCount} Card{recommendedCardCount > 1 ? 's' : ''}</div>
+            <div className="wizard-grid-3col" style={{ marginBottom: '16px' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', padding: '12px 14px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Recommended</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0284c7', marginTop: '2px' }}>{recommendedCardCount} Card{recommendedCardCount > 1 ? 's' : ''}</div>
               </div>
 
-              <div style={{ flex: '1 1 200px', background: '#f8fafc', border: '1px solid var(--border-color)', padding: '12px 16px', borderRadius: '8px' }}>
-                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cards Selected</div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: selectedCount === recommendedCardCount ? '#15803d' : '#b45309' }}>
+              <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', padding: '12px 14px', borderRadius: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Selected</div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: selectedCount === recommendedCardCount ? '#15803d' : '#b45309', marginTop: '2px' }}>
                   {selectedCount} Card{selectedCount > 1 ? 's' : ''}
                 </div>
               </div>
@@ -1713,29 +1702,29 @@ const AddCustomerInstallationPage = () => {
                   type="button"
                   onClick={handleAutoSelectRecommended}
                   className="btn btn-outline"
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12.5px', padding: '10px' }}
                 >
-                  <Zap size={15} color="#0284c7" />
+                  <Zap size={14} color="#0284c7" />
                   <span>Auto-Select {recommendedCardCount} Cards</span>
                 </button>
               </div>
             </div>
 
             {isQuantityMismatch && (
-              <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <AlertTriangle size={20} color="#b45309" />
-                <div style={{ fontSize: '13px', color: '#92400e' }}>
-                  <strong>Quantity Notice:</strong> Selected card quantity ({selectedCount}) differs from the recommended quantity ({recommendedCardCount}) calculated from connected load ({connectedLoadNum} kW), bills (Avg: ₹{avgMonthlyBillNum.toLocaleString()}, 12M Peak: ₹{highestBillNum.toLocaleString()}), and {isThreePhase ? '3-Phase (+1 card)' : 'Single Phase'}.
+              <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px 14px', borderRadius: '8px', marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <AlertTriangle size={18} color="#b45309" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div style={{ fontSize: '12.5px', color: '#92400e', lineHeight: '1.4' }}>
+                  <strong>Quantity Notice:</strong> Selected cards ({selectedCount}) differs from recommended count ({recommendedCardCount}).
                 </div>
               </div>
             )}
 
             {/* Search Cards Input */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '14px' }}>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search available card serial numbers in your inventory..."
+                placeholder="Search available card serial numbers..."
                 value={cardSearchQuery}
                 onChange={(e) => setCardSearchQuery(e.target.value)}
               />
@@ -1745,18 +1734,18 @@ const AddCustomerInstallationPage = () => {
             {loadingCards ? (
               <div style={{ textAlign: 'center', padding: '30px' }}>
                 <RefreshCw size={24} className="animate-spin" color="#0284c7" />
-                <div style={{ marginTop: '8px', color: 'var(--text-muted)' }}>Loading inventory cards...</div>
+                <div style={{ marginTop: '8px', color: 'var(--text-muted)', fontSize: '13px' }}>Loading inventory cards...</div>
               </div>
             ) : filteredCards.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
-                <AlertTriangle size={32} color="#b45309" style={{ margin: '0 auto 8px' }} />
-                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>No Eligible Cards Found</div>
-                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  You currently have 0 cards in your assigned inventory available for customer installation.
+              <div style={{ textAlign: 'center', padding: '24px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed var(--border-color)' }}>
+                <AlertTriangle size={28} color="#b45309" style={{ margin: '0 auto 6px' }} />
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13.5px' }}>No Eligible Cards Found</div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  You currently have 0 cards in your assigned inventory available for installation.
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', maxHeight: '320px', overflowY: 'auto', padding: '4px' }}>
+              <div className="cards-inventory-grid">
                 {filteredCards.map((card) => {
                   const isSelected = formData.selectedCards.includes(card.serialNumber);
                   return (
@@ -1766,7 +1755,7 @@ const AddCustomerInstallationPage = () => {
                       style={{
                         border: isSelected ? '2px solid #0284c7' : '1px solid var(--border-color)',
                         background: isSelected ? '#f0f9ff' : 'var(--bg-card)',
-                        padding: '12px',
+                        padding: '10px 12px',
                         borderRadius: '8px',
                         cursor: 'pointer',
                         display: 'flex',
@@ -1775,12 +1764,12 @@ const AddCustomerInstallationPage = () => {
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--text-primary)' }}>{card.serialNumber}</div>
-                        <div style={{ fontSize: '11px', color: '#15803d', fontWeight: 600 }}>AVAILABLE</div>
+                      <div style={{ overflow: 'hidden' }}>
+                        <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{card.serialNumber}</div>
+                        <div style={{ fontSize: '10.5px', color: '#15803d', fontWeight: 600 }}>AVAILABLE</div>
                       </div>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '6px', border: isSelected ? 'none' : '1.5px solid #cbd5e1', background: isSelected ? '#0284c7' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                        {isSelected && <Check size={14} />}
+                      <div style={{ width: '20px', height: '20px', borderRadius: '5px', border: isSelected ? 'none' : '1.5px solid #cbd5e1', background: isSelected ? '#0284c7' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0 }}>
+                        {isSelected && <Check size={13} />}
                       </div>
                     </div>
                   );
@@ -1795,35 +1784,35 @@ const AddCustomerInstallationPage = () => {
             =================================================== */}
         {currentStep === 5 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef3c7', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#fef3c7', color: '#b45309' }}>
                 <DollarSign size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 5: Commercials & Customer Billing</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Set price charged per card and review the automatically calculated total.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 5: Commercials & Customer Billing</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Set price charged per card and review the total bill calculation.</p>
               </div>
             </div>
 
             {/* Total Billing Banner */}
-            <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', padding: '20px', borderRadius: '12px', marginBottom: '24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            <div style={{ background: '#f8fafc', border: '1px solid var(--border-color)', padding: '16px 18px', borderRadius: '12px', marginBottom: '20px' }}>
+              <div className="wizard-grid-3col">
                 <div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Cards Selected</div>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedCount} Cards</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Cards Selected</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{selectedCount} Cards</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Price Per Card</div>
-                  <div style={{ fontSize: '20px', fontWeight: 700, color: '#0284c7' }}>₹{priceNum.toLocaleString()}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Price Per Card</div>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#0284c7', marginTop: '2px' }}>₹{priceNum.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total Amount Charged</div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#15803d' }}>₹{totalAmount.toLocaleString()}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Total Amount Charged</div>
+                  <div style={{ fontSize: '22px', fontWeight: 800, color: '#15803d', marginTop: '2px' }}>₹{totalAmount.toLocaleString()}</div>
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+            <div className="wizard-grid-2col">
               <div className="form-group">
                 <label className="form-label">Price Per Card Charged to Customer (₹) *</label>
                 <input
@@ -1842,7 +1831,7 @@ const AddCustomerInstallationPage = () => {
                 <input
                   type="text"
                   className="form-control"
-                  placeholder="e.g. Installed in main distribution box near entrance"
+                  placeholder="e.g. Installed in main distribution box"
                   value={formData.notes}
                   onChange={(e) => handleInputChange('notes', e.target.value)}
                 />
@@ -1856,37 +1845,37 @@ const AddCustomerInstallationPage = () => {
             =================================================== */}
         {currentStep === 6 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#dbeafe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#dbeafe', color: '#0284c7' }}>
                 <Camera size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 6: Live Camera Photo Verification</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  🔴 <strong>Live Camera Only:</strong> Take on-site live snapshots of MCB panel, electricity bill, and installed cards. Gallery uploads are strictly disabled.
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 6: Live Camera Photo Verification</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                  🔴 <strong>Live Camera Only:</strong> Take on-site live snapshots. Gallery upload is disabled.
                 </p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            <div className="wizard-photo-grid">
               {/* Photo 1: MCB Panel */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>1. MCB / Distribution Panel *</div>
-                  <span style={{ fontSize: '11px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>LIVE ONLY</span>
+                  <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0f172a' }}>1. MCB / Panel *</div>
+                  <span style={{ fontSize: '10.5px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>LIVE ONLY</span>
                 </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Take live photo of circuit breaker / panel board.</p>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>Take live photo of circuit breaker / panel.</p>
 
                 {formData.mcbPhoto ? (
-                  <div style={{ position: 'relative', marginBottom: '10px' }}>
-                    <img src={formData.mcbPhoto} alt="MCB Panel" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <img src={formData.mcbPhoto} alt="MCB Panel" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     <button
                       type="button"
                       onClick={() => startLiveCamera('mcbPhoto', 'MCB / Distribution Panel Photo')}
-                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <RotateCcw size={12} />
-                      <span>Retake Live</span>
+                      <RotateCcw size={11} />
+                      <span>Retake</span>
                     </button>
                   </div>
                 ) : (
@@ -1895,7 +1884,7 @@ const AddCustomerInstallationPage = () => {
                     onClick={() => startLiveCamera('mcbPhoto', 'MCB / Distribution Panel Photo')}
                     style={{
                       width: '100%',
-                      height: '150px',
+                      height: '140px',
                       border: '2px dashed #0284c7',
                       borderRadius: '10px',
                       cursor: 'pointer',
@@ -1904,37 +1893,37 @@ const AddCustomerInstallationPage = () => {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '8px',
+                      gap: '6px',
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Camera size={22} />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Camera size={20} />
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Gallery Upload Disabled</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
+                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>Gallery Upload Disabled</span>
                   </button>
                 )}
               </div>
 
               {/* Photo 2: Electricity Bill */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>2. Electricity Bill Photo *</div>
-                  <span style={{ fontSize: '11px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>LIVE ONLY</span>
+                  <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0f172a' }}>2. Electricity Bill *</div>
+                  <span style={{ fontSize: '10.5px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>LIVE ONLY</span>
                 </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Take live photo of highest electricity bill.</p>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>Take live photo of highest electricity bill.</p>
 
                 {formData.billPhoto ? (
-                  <div style={{ position: 'relative', marginBottom: '10px' }}>
-                    <img src={formData.billPhoto} alt="Electricity Bill" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <img src={formData.billPhoto} alt="Electricity Bill" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     <button
                       type="button"
                       onClick={() => startLiveCamera('billPhoto', 'Electricity Bill Photo')}
-                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <RotateCcw size={12} />
-                      <span>Retake Live</span>
+                      <RotateCcw size={11} />
+                      <span>Retake</span>
                     </button>
                   </div>
                 ) : (
@@ -1943,7 +1932,7 @@ const AddCustomerInstallationPage = () => {
                     onClick={() => startLiveCamera('billPhoto', 'Electricity Bill Photo')}
                     style={{
                       width: '100%',
-                      height: '150px',
+                      height: '140px',
                       border: '2px dashed #0284c7',
                       borderRadius: '10px',
                       cursor: 'pointer',
@@ -1952,37 +1941,37 @@ const AddCustomerInstallationPage = () => {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '8px',
+                      gap: '6px',
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Camera size={22} />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Camera size={20} />
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Gallery Upload Disabled</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
+                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>Gallery Upload Disabled</span>
                   </button>
                 )}
               </div>
 
               {/* Photo 3: Installed Card */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>3. Installed Vidhyut Card Photo *</div>
-                  <span style={{ fontSize: '11px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>LIVE ONLY</span>
+                  <div style={{ fontWeight: 700, fontSize: '13.5px', color: '#0f172a' }}>3. Installed Card *</div>
+                  <span style={{ fontSize: '10.5px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>LIVE ONLY</span>
                 </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Take live photo of card installed on-site.</p>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '10px' }}>Take live photo of installed card on-site.</p>
 
                 {formData.installedCardPhoto ? (
-                  <div style={{ position: 'relative', marginBottom: '10px' }}>
-                    <img src={formData.installedCardPhoto} alt="Installed Card" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                  <div style={{ position: 'relative', marginBottom: '8px' }}>
+                    <img src={formData.installedCardPhoto} alt="Installed Card" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     <button
                       type="button"
                       onClick={() => startLiveCamera('installedCardPhoto', 'Installed Vidhyut Saathi Card Photo')}
-                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      <RotateCcw size={12} />
-                      <span>Retake Live</span>
+                      <RotateCcw size={11} />
+                      <span>Retake</span>
                     </button>
                   </div>
                 ) : (
@@ -1991,7 +1980,7 @@ const AddCustomerInstallationPage = () => {
                     onClick={() => startLiveCamera('installedCardPhoto', 'Installed Vidhyut Saathi Card Photo')}
                     style={{
                       width: '100%',
-                      height: '150px',
+                      height: '140px',
                       border: '2px dashed #0284c7',
                       borderRadius: '10px',
                       cursor: 'pointer',
@@ -2000,15 +1989,15 @@ const AddCustomerInstallationPage = () => {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '8px',
+                      gap: '6px',
                       transition: 'all 0.2s ease',
                     }}
                   >
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Camera size={22} />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Camera size={20} />
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Gallery Upload Disabled</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
+                    <span style={{ fontSize: '10.5px', color: '#64748b' }}>Gallery Upload Disabled</span>
                   </button>
                 )}
               </div>
@@ -2021,23 +2010,23 @@ const AddCustomerInstallationPage = () => {
             =================================================== */}
         {currentStep === 7 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="wizard-step-header">
+              <div className="wizard-step-icon-box" style={{ background: '#e0f2fe', color: '#0284c7' }}>
                 <CheckCircle2 size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 7: Final Review & Confirmation</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Review all customer details, linked card serials, pricing, and verified GPS evidence before atomic creation.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Step 7: Final Review & Confirmation</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Review details, linked cards, pricing, and verified GPS evidence.</p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+            <div className="wizard-review-grid" style={{ marginBottom: '20px' }}>
               {/* Summary 1: Customer & Address */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc' }}>
+                <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
                   👤 Customer Profile
                 </div>
-                <div style={{ fontSize: '13.5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div><strong>Name:</strong> {formData.fullName}</div>
                   <div><strong>Mobile:</strong> {formData.mobileNumber}</div>
                   <div><strong>Type:</strong> {formData.customerType}</div>
@@ -2046,11 +2035,11 @@ const AddCustomerInstallationPage = () => {
               </div>
 
               {/* Summary 2: Electricity Specs */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc' }}>
+                <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
                   ⚡ Electricity Specifications
                 </div>
-                <div style={{ fontSize: '13.5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div><strong>Connected Load:</strong> {formData.connectedLoadKw} kW</div>
                   <div><strong>Phase:</strong> {formData.phase === 'THREE_PHASE' ? 'Three Phase' : 'Single Phase'}</div>
                   <div><strong>Board / DISCOM:</strong> {formData.electricityBoard || 'N/A'}</div>
@@ -2060,71 +2049,71 @@ const AddCustomerInstallationPage = () => {
               </div>
 
               {/* Summary 3: Cards & Commercials */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc' }}>
+                <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
                   💳 Cards & Billing Summary
                 </div>
-                <div style={{ fontSize: '13.5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div><strong>Installed Cards:</strong> {selectedCount} Cards</div>
                   <div><strong>Card Serials:</strong> {formData.selectedCards.join(', ')}</div>
                   <div><strong>Price Per Card:</strong> ₹{priceNum.toLocaleString()}</div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#15803d', marginTop: '6px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#15803d', marginTop: '4px' }}>
                     Total Bill: ₹{totalAmount.toLocaleString()}
                   </div>
                 </div>
               </div>
 
               {/* Summary 4: GPS Location & Territory Evidence */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
+              <div className="card" style={{ padding: '14px', background: '#f8fafc' }}>
+                <div style={{ fontWeight: 700, fontSize: '13.5px', color: 'var(--color-primary-dark)', marginBottom: '8px' }}>
                   📍 GPS Location Evidence
                 </div>
                 {locationVerification ? (
-                  <div style={{ fontSize: '13.5px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div><strong>Coordinates:</strong> {locationVerification.latitude.toFixed(5)}, {locationVerification.longitude.toFixed(5)}</div>
                     <div><strong>Accuracy:</strong> ±{locationVerification.accuracyMeters?.toFixed(1)}m ({locationVerification.accuracyStatus})</div>
-                    <div><strong>Detected Territory:</strong> {locationVerification.district}, {locationVerification.state}</div>
+                    <div><strong>Territory:</strong> {locationVerification.district}, {locationVerification.state}</div>
                     <div style={{ marginTop: '4px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: locationVerification.territoryMatch ? '#dcfce7' : '#fee2e2', color: locationVerification.territoryMatch ? '#15803d' : '#b91c1c', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 700 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: locationVerification.territoryMatch ? '#dcfce7' : '#fee2e2', color: locationVerification.territoryMatch ? '#15803d' : '#b91c1c', padding: '2px 8px', borderRadius: '4px', fontSize: '11.5px', fontWeight: 700 }}>
                         {locationVerification.territoryMatch ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
-                        {locationVerification.territoryMatch ? 'TERRITORY MATCH' : 'TERRITORY MISMATCH (FLAGGED)'}
+                        {locationVerification.territoryMatch ? 'TERRITORY MATCH' : 'TERRITORY MISMATCH'}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ color: '#b91c1c', fontSize: '13px' }}>GPS location not recorded</div>
+                  <div style={{ color: '#b91c1c', fontSize: '12.5px' }}>GPS location not recorded</div>
                 )}
               </div>
             </div>
 
             {/* Photo Previews */}
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontWeight: 700, fontSize: '13.5px', marginBottom: '8px' }}>Uploaded Verification Photos:</div>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: '8px' }}>Uploaded Verification Photos:</div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {formData.mcbPhoto && (
                   <div style={{ textAlign: 'center' }}>
-                    <img src={formData.mcbPhoto} alt="MCB" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>MCB Panel</div>
+                    <img src={formData.mcbPhoto} alt="MCB" style={{ width: '76px', height: '76px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>MCB Panel</div>
                   </div>
                 )}
                 {formData.billPhoto && (
                   <div style={{ textAlign: 'center' }}>
-                    <img src={formData.billPhoto} alt="Bill" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Bill Photo</div>
+                    <img src={formData.billPhoto} alt="Bill" style={{ width: '76px', height: '76px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>Bill Photo</div>
                   </div>
                 )}
                 {formData.installedCardPhoto && (
                   <div style={{ textAlign: 'center' }}>
-                    <img src={formData.installedCardPhoto} alt="Card" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Installed Card</div>
+                    <img src={formData.installedCardPhoto} alt="Card" style={{ width: '76px', height: '76px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>Installed Card</div>
                   </div>
                 )}
               </div>
             </div>
 
-            <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', padding: '14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <CheckCircle2 size={20} color="#15803d" />
-              <div style={{ fontSize: '13px', color: '#166534' }}>
+            <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', padding: '12px 14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <CheckCircle2 size={18} color="#15803d" style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: '12.5px', color: '#166534', lineHeight: '1.4' }}>
                 Submission will atomically update inventory cards to <strong>INSTALLED</strong> and link GPS audit verification.
               </div>
             </div>
@@ -2132,7 +2121,7 @@ const AddCustomerInstallationPage = () => {
         )}
 
         {/* Step Navigation Controls (Footer) */}
-        <div className="wizard-footer-actions" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '28px', borderTop: '1px solid var(--border-color)', paddingTop: '18px', flexWrap: 'wrap', gap: '12px' }}>
+        <div className="wizard-footer-actions">
           {currentStep > 1 ? (
             <button
               type="button"
@@ -2145,37 +2134,39 @@ const AddCustomerInstallationPage = () => {
             </button>
           ) : <div />}
 
-          {currentStep < STEPS.length ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {currentStep === 2 && !isSuperAdmin && partner?.franchiseType !== 'STATE_FRANCHISE' && locationVerification && !locationVerification.territoryMatch && (
-                <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>
-                  ⛔ Outside Authorized Territory ({partner?.district || formData.district})
-                </span>
-              )}
-              {!(currentStep === 2 && !isSuperAdmin && partner?.franchiseType !== 'STATE_FRANCHISE' && locationVerification && !locationVerification.territoryMatch) ? (
-                <button
-                  type="button"
-                  onClick={handleNext}
-                  className="btn btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 24px', minHeight: '44px' }}
-                >
-                  <span>Next: {STEPS[currentStep]?.title}</span>
-                  <ArrowRight size={16} />
-                </button>
-              ) : null}
-            </div>
-          ) : (
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleSubmitInstallation}
-              className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 28px', fontSize: '15px', background: '#10b981', borderColor: '#10b981', minHeight: '46px' }}
-            >
-              {submitting ? <RefreshCw size={18} className="animate-spin" /> : <ShieldCheck size={20} />}
-              <span>{submitting ? 'Recording Installation...' : 'Finalize & Record Installation'}</span>
-            </button>
-          )}
+          <div className="wizard-action-right" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {currentStep < STEPS.length ? (
+              <>
+                {currentStep === 2 && !isSuperAdmin && partner?.franchiseType !== 'STATE_FRANCHISE' && locationVerification && !locationVerification.territoryMatch && (
+                  <span style={{ fontSize: '12px', color: '#b91c1c', fontWeight: 600 }}>
+                    ⛔ Outside Territory ({partner?.district || formData.district})
+                  </span>
+                )}
+                {!(currentStep === 2 && !isSuperAdmin && partner?.franchiseType !== 'STATE_FRANCHISE' && locationVerification && !locationVerification.territoryMatch) ? (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="btn btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px 24px', minHeight: '44px' }}
+                  >
+                    <span>Next: {STEPS[currentStep]?.title}</span>
+                    <ArrowRight size={16} />
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleSubmitInstallation}
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px 28px', fontSize: '14.5px', background: '#10b981', borderColor: '#10b981', minHeight: '46px' }}
+              >
+                {submitting ? <RefreshCw size={18} className="animate-spin" /> : <ShieldCheck size={18} />}
+                <span>{submitting ? 'Recording Installation...' : 'Finalize & Record Installation'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
