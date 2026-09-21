@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   UserPlus,
@@ -27,6 +27,8 @@ import {
   Search,
   Navigation,
   ShieldAlert,
+  X,
+  RotateCcw,
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -39,8 +41,7 @@ const STEPS = [
   { id: 4, title: 'Card Selection', subtitle: 'Serial Number Linking' },
   { id: 5, title: 'Commercials', subtitle: 'Pricing & Billing' },
   { id: 6, title: 'Photo Uploads', subtitle: 'MCB, Bill & Card Photos' },
-  { id: 7, title: 'Customer OTP', subtitle: 'Mobile OTP Verification' },
-  { id: 8, title: 'Review & Submit', subtitle: 'Final Authorization' },
+  { id: 7, title: 'Review & Submit', subtitle: 'Final Authorization' },
 ];
 
 const AddCustomerInstallationPage = () => {
@@ -120,14 +121,17 @@ const AddCustomerInstallationPage = () => {
   const [showOversmartAlert, setShowOversmartAlert] = useState(false);
   const [breachData, setBreachData] = useState(null);
 
-  // Step 7 OTP Verification State
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpVerifying, setOtpVerifying] = useState(false);
-  const [otpCountdown, setOtpCountdown] = useState(0);
-  const [devOtpHint, setDevOtpHint] = useState('');
+  // Step 6 Live Camera Capture State & Refs
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
+  const [cameraField, setCameraField] = useState(null);
+  const [cameraFieldTitle, setCameraFieldTitle] = useState('');
+  const [cameraFacingMode, setCameraFacingMode] = useState('environment');
+  const [cameraStream, setCameraStream] = useState(null);
+  const [capturedPreview, setCapturedPreview] = useState(null);
+  const [cameraError, setCameraError] = useState('');
+  const [cameraStarting, setCameraStarting] = useState(false);
 
   // Initial Sync from partner context
   useEffect(() => {
@@ -369,15 +373,6 @@ const AddCustomerInstallationPage = () => {
     fetchCards();
   }, []);
 
-  // OTP Countdown timer
-  useEffect(() => {
-    let timer;
-    if (otpCountdown > 0) {
-      timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [otpCountdown]);
-
   // Handle Input Changes
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -431,13 +426,13 @@ const AddCustomerInstallationPage = () => {
     showToast(`Auto-selected ${cardsToSelect.length} card(s) matching smart recommendation (${recommendedCardCount} cards).`, 'success');
   };
 
-  // Handle Photo Upload (Convert to Data URL + Secure media validation)
+  // Handle Photo Upload (Fallback for direct camera intents)
   const handlePhotoUpload = async (e, photoType) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
-      showToast('Please upload a valid image file (JPEG, PNG, WEBP).', 'error');
+      showToast('Please capture a valid image file (JPEG, PNG, WEBP).', 'error');
       return;
     }
 
@@ -450,9 +445,100 @@ const AddCustomerInstallationPage = () => {
     reader.onload = async (event) => {
       const base64Data = event.target.result;
       setFormData((prev) => ({ ...prev, [photoType]: base64Data }));
-      showToast(`${photoType === 'mcbPhoto' ? 'MCB panel' : photoType === 'billPhoto' ? 'Electricity bill' : 'Installed card'} photo uploaded successfully!`, 'success');
+      showToast(`📸 ${photoType === 'mcbPhoto' ? 'MCB panel' : photoType === 'billPhoto' ? 'Electricity bill' : 'Installed card'} live photo captured successfully!`, 'success');
     };
     reader.readAsDataURL(file);
+  };
+
+  // Step 6: Live Camera Controller Functions
+  const startLiveCamera = async (field, title, facing = 'environment') => {
+    setCameraField(field);
+    setCameraFieldTitle(title);
+    setCameraFacingMode(facing);
+    setCapturedPreview(null);
+    setCameraError('');
+    setCameraModalOpen(true);
+    setCameraStarting(true);
+
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      setCameraStream(null);
+    }
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera device access is not supported by your browser.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
+    } catch (err) {
+      console.error('Camera access error:', err);
+      let msg = 'Unable to access device camera.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        msg = 'Camera permission was denied. Please allow camera access in browser settings.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        msg = 'No camera device found on this system.';
+      }
+      setCameraError(msg);
+    } finally {
+      setCameraStarting(false);
+    }
+  };
+
+  const toggleCameraFacingMode = () => {
+    const nextMode = cameraFacingMode === 'environment' ? 'user' : 'environment';
+    if (cameraField) {
+      startLiveCamera(cameraField, cameraFieldTitle, nextMode);
+    }
+  };
+
+  const snapLivePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current || document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    setCapturedPreview(dataUrl);
+  };
+
+  const retakeLivePhoto = () => {
+    setCapturedPreview(null);
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const confirmLivePhoto = () => {
+    if (!capturedPreview || !cameraField) return;
+    setFormData((prev) => ({ ...prev, [cameraField]: capturedPreview }));
+    showToast(`📸 ${cameraFieldTitle} captured live!`, 'success');
+    closeLiveCamera();
+  };
+
+  const closeLiveCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((t) => t.stop());
+      setCameraStream(null);
+    }
+    setCameraModalOpen(false);
+    setCapturedPreview(null);
+    setCameraField(null);
+    setCameraError('');
   };
 
   // Step 2: Live GPS Geolocation Capture & Territory Verification
@@ -568,52 +654,6 @@ const AddCustomerInstallationPage = () => {
     );
   };
 
-  // Step 7: Send Customer OTP
-  const handleSendOTP = async () => {
-    if (!/^[6-9]\d{9}$/.test(formData.mobileNumber.trim())) {
-      showToast('Please enter a valid 10-digit Indian mobile number in Step 1.', 'error');
-      return;
-    }
-
-    try {
-      setOtpSending(true);
-      const res = await api.post('/customers/send-otp', { mobileNumber: formData.mobileNumber.trim() });
-      setOtpSent(true);
-      setOtpCountdown(60);
-      if (res.data?.data?.devCode) {
-        setDevOtpHint(res.data.data.devCode);
-        setOtpCode(res.data.data.devCode);
-      }
-      showToast('Verification OTP sent to customer mobile number.', 'success');
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to dispatch OTP.', 'error');
-    } finally {
-      setOtpSending(false);
-    }
-  };
-
-  // Step 7: Verify Customer OTP
-  const handleVerifyOTP = async () => {
-    if (!otpCode || otpCode.trim().length !== 6) {
-      showToast('Please enter the 6-digit OTP received by customer.', 'error');
-      return;
-    }
-
-    try {
-      setOtpVerifying(true);
-      await api.post('/customers/verify-otp', {
-        mobileNumber: formData.mobileNumber.trim(),
-        otp: otpCode.trim(),
-      });
-      setOtpVerified(true);
-      showToast('Customer OTP verified successfully! Ready for final submission.', 'success');
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Invalid or expired OTP.', 'error');
-    } finally {
-      setOtpVerifying(false);
-    }
-  };
-
   // Step Validations
   const validateCurrentStep = () => {
     if (currentStep === 1) {
@@ -707,13 +747,6 @@ const AddCustomerInstallationPage = () => {
       }
     }
 
-    if (currentStep === 7) {
-      if (!otpVerified) {
-        showToast('Customer confirmation via OTP is required before final submission.', 'error');
-        return false;
-      }
-    }
-
     return true;
   };
 
@@ -768,8 +801,7 @@ const AddCustomerInstallationPage = () => {
         mcbPhoto: formData.mcbPhoto,
         billPhoto: formData.billPhoto,
         installedCardPhoto: formData.installedCardPhoto,
-        customerOtp: otpCode.trim(),
-        skipOtpVerification: otpVerified, // Already verified in step 8
+        skipOtpVerification: true,
         locationVerificationId: locationVerification?.locationVerificationId || formData.locationVerificationId,
         notes: formData.notes.trim(),
       };
@@ -1764,93 +1796,164 @@ const AddCustomerInstallationPage = () => {
         )}
 
         {/* ===================================================
-            STEP 6: PHOTO UPLOADS & EVIDENCE
+            STEP 6: LIVE PHOTO CAPTURE ONLY (GALLERY DISABLED)
             =================================================== */}
         {currentStep === 6 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#dbeafe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Camera size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 6: Required Photo Verification</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Upload photos of the MCB distribution panel, electricity bill, and installed cards.</p>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 6: Live Camera Photo Verification</h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  🔴 <strong>Live Camera Only:</strong> Take on-site live snapshots of MCB panel, electricity bill, and installed cards. Gallery uploads are strictly disabled.
+                </p>
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
               {/* Photo 1: MCB Panel */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>1. MCB / ELCB Distribution Panel Photo *</div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Capture main circuit breaker / panel board.</p>
+              <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>1. MCB / Distribution Panel *</div>
+                  <span style={{ fontSize: '11px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>LIVE ONLY</span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Take live photo of circuit breaker / panel board.</p>
 
                 {formData.mcbPhoto ? (
                   <div style={{ position: 'relative', marginBottom: '10px' }}>
-                    <img src={formData.mcbPhoto} alt="MCB" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <img src={formData.mcbPhoto} alt="MCB Panel" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     <button
                       type="button"
-                      onClick={() => handleInputChange('mcbPhoto', '')}
-                      style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+                      onClick={() => startLiveCamera('mcbPhoto', 'MCB / Distribution Panel Photo')}
+                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      Change
+                      <RotateCcw size={12} />
+                      <span>Retake Live</span>
                     </button>
                   </div>
                 ) : (
-                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '2px dashed var(--border-color)', borderRadius: '8px', cursor: 'pointer', background: 'white' }}>
-                    <Camera size={26} color="#0284c7" />
-                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--color-primary)', marginTop: '6px' }}>Take Photo / Upload</span>
-                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(e, 'mcbPhoto')} style={{ display: 'none' }} />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => startLiveCamera('mcbPhoto', 'MCB / Distribution Panel Photo')}
+                    style={{
+                      width: '100%',
+                      height: '150px',
+                      border: '2px dashed #0284c7',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background: '#f0f9ff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Camera size={22} />
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>Gallery Upload Disabled</span>
+                  </button>
                 )}
               </div>
 
               {/* Photo 2: Electricity Bill */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>2. Electricity Bill Photo (Last 12M) *</div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Clear photo of highest electricity bill.</p>
+              <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>2. Electricity Bill Photo *</div>
+                  <span style={{ fontSize: '11px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>LIVE ONLY</span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Take live photo of highest electricity bill.</p>
 
                 {formData.billPhoto ? (
                   <div style={{ position: 'relative', marginBottom: '10px' }}>
-                    <img src={formData.billPhoto} alt="Bill" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <img src={formData.billPhoto} alt="Electricity Bill" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     <button
                       type="button"
-                      onClick={() => handleInputChange('billPhoto', '')}
-                      style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+                      onClick={() => startLiveCamera('billPhoto', 'Electricity Bill Photo')}
+                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      Change
+                      <RotateCcw size={12} />
+                      <span>Retake Live</span>
                     </button>
                   </div>
                 ) : (
-                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '2px dashed var(--border-color)', borderRadius: '8px', cursor: 'pointer', background: 'white' }}>
-                    <FileText size={26} color="#0284c7" />
-                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--color-primary)', marginTop: '6px' }}>Upload Bill Photo</span>
-                    <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(e, 'billPhoto')} style={{ display: 'none' }} />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => startLiveCamera('billPhoto', 'Electricity Bill Photo')}
+                    style={{
+                      width: '100%',
+                      height: '150px',
+                      border: '2px dashed #0284c7',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background: '#f0f9ff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Camera size={22} />
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>Gallery Upload Disabled</span>
+                  </button>
                 )}
               </div>
 
               {/* Photo 3: Installed Card */}
-              <div className="card" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>3. Installed Vidhyut Saathi Card Photo *</div>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Photo showing card installed at the location.</p>
+              <div className="card" style={{ padding: '16px', background: '#f8fafc', border: '1.5px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>3. Installed Vidhyut Card Photo *</div>
+                  <span style={{ fontSize: '11px', background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 7px', borderRadius: '4px' }}>LIVE ONLY</span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Take live photo of card installed on-site.</p>
 
                 {formData.installedCardPhoto ? (
                   <div style={{ position: 'relative', marginBottom: '10px' }}>
-                    <img src={formData.installedCardPhoto} alt="Installed Card" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px' }} />
+                    <img src={formData.installedCardPhoto} alt="Installed Card" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                     <button
                       type="button"
-                      onClick={() => handleInputChange('installedCardPhoto', '')}
-                      style={{ position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}
+                      onClick={() => startLiveCamera('installedCardPhoto', 'Installed Vidhyut Saathi Card Photo')}
+                      style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.85)', color: 'white', border: 'none', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                     >
-                      Change
+                      <RotateCcw size={12} />
+                      <span>Retake Live</span>
                     </button>
                   </div>
                 ) : (
-                  <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '140px', border: '2px dashed var(--border-color)', borderRadius: '8px', cursor: 'pointer', background: 'white' }}>
-                    <CreditCard size={26} color="#0284c7" />
-                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--color-primary)', marginTop: '6px' }}>Capture Installed Card</span>
-                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePhotoUpload(e, 'installedCardPhoto')} style={{ display: 'none' }} />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => startLiveCamera('installedCardPhoto', 'Installed Vidhyut Saathi Card Photo')}
+                    style={{
+                      width: '100%',
+                      height: '150px',
+                      border: '2px dashed #0284c7',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background: '#f0f9ff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#0284c7', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Camera size={22} />
+                    </div>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0369a1' }}>Open Live Camera & Click</span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>Gallery Upload Disabled</span>
+                  </button>
                 )}
               </div>
             </div>
@@ -1858,113 +1961,16 @@ const AddCustomerInstallationPage = () => {
         )}
 
         {/* ===================================================
-            STEP 7: CUSTOMER CONFIRMATION OTP
+            STEP 7: REVIEW & SUBMIT
             =================================================== */}
         {currentStep === 7 && (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#dcfce7', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 7: Customer OTP Confirmation</h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Customer verifies installation authorization via secure mobile OTP.</p>
-              </div>
-            </div>
-
-            <div style={{ maxWidth: '460px', margin: '0 auto', textAlign: 'center' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Phone size={28} />
-              </div>
-
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                Verify Customer Mobile Number
-              </h4>
-              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                An authentication code will be sent to <strong>+91 {formData.mobileNumber}</strong> ({formData.fullName}).
-              </p>
-
-              {otpVerified ? (
-                <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', padding: '16px', borderRadius: '10px', color: '#15803d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                  <CheckCircle2 size={24} />
-                  <span style={{ fontWeight: 700, fontSize: '15px' }}>Customer OTP Confirmed Successfully!</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  {!otpSent ? (
-                    <button
-                      type="button"
-                      disabled={otpSending}
-                      onClick={handleSendOTP}
-                      className="btn btn-primary"
-                      style={{ padding: '12px 24px', fontSize: '14.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                    >
-                      {otpSending ? <RefreshCw size={18} className="animate-spin" /> : <Send size={18} />}
-                      <span>{otpSending ? 'Sending OTP...' : 'Send Confirmation OTP'}</span>
-                    </button>
-                  ) : (
-                    <>
-                      {devOtpHint && (
-                        <div style={{ background: '#fef3c7', border: '1px solid #fde68a', color: '#b45309', padding: '8px', borderRadius: '6px', fontSize: '12.5px', fontWeight: 600 }}>
-                          [DEV MODE] Auto-Filled OTP Code: {devOtpHint}
-                        </div>
-                      )}
-
-                      <div className="form-group">
-                        <input
-                          type="text"
-                          maxLength={6}
-                          className="form-control"
-                          placeholder="Enter 6-Digit OTP"
-                          value={otpCode}
-                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                          style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '6px', fontWeight: 700 }}
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        disabled={otpVerifying}
-                        onClick={handleVerifyOTP}
-                        className="btn btn-primary"
-                        style={{ padding: '12px 24px', fontSize: '14.5px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                      >
-                        {otpVerifying ? <RefreshCw size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-                        <span>{otpVerifying ? 'Verifying...' : 'Confirm Installation OTP'}</span>
-                      </button>
-
-                      <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                        {otpCountdown > 0 ? (
-                          <span>Resend OTP available in {otpCountdown}s</span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={handleSendOTP}
-                            style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}
-                          >
-                            Resend OTP
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ===================================================
-            STEP 8: REVIEW & SUBMIT
-            =================================================== */}
-        {currentStep === 8 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
               <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CheckCircle2 size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 8: Final Review & Confirmation</h3>
+                <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Step 7: Final Review & Confirmation</h3>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Review all customer details, linked card serials, pricing, and verified GPS evidence before atomic creation.</p>
               </div>
             </div>
@@ -2063,7 +2069,7 @@ const AddCustomerInstallationPage = () => {
             <div style={{ background: '#dcfce7', border: '1px solid #bbf7d0', padding: '14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <CheckCircle2 size={20} color="#15803d" />
               <div style={{ fontSize: '13px', color: '#166534' }}>
-                Customer confirmation verified via OTP on {new Date().toLocaleDateString()}. Submission will atomically update inventory cards to <strong>INSTALLED</strong> and link GPS audit verification.
+                Submission will atomically update inventory cards to <strong>INSTALLED</strong> and link GPS audit verification.
               </div>
             </div>
           </div>
@@ -2297,6 +2303,285 @@ const AddCustomerInstallationPage = () => {
               >
                 <span>Dismiss & Return to Authorized Territory</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* LIVE CAMERA CAPTURE VIEWFINDER MODAL (GALLERY DISABLED)     */}
+      {/* ============================================================ */}
+      {cameraModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0f172a',
+              borderRadius: '20px',
+              maxWidth: '560px',
+              width: '100%',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 2px #0284c7',
+              display: 'flex',
+              flexDirection: 'column',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            {/* Camera Header */}
+            <div
+              style={{
+                padding: '14px 20px',
+                background: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '14px', letterSpacing: '0.3px' }}>
+                  Live Camera • {cameraFieldTitle}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={toggleCameraFacingMode}
+                  title="Switch Front/Rear Camera"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#ffffff',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
+                  <RotateCcw size={13} />
+                  <span>Switch</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={closeLiveCamera}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: 'none',
+                    color: '#cbd5e1',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Camera Viewport / Freeze Frame Preview */}
+            <div
+              style={{
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '4 / 3',
+                backgroundColor: '#020617',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {capturedPreview ? (
+                <img
+                  src={capturedPreview}
+                  alt="Live Capture Preview"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
+
+              {/* Viewfinder Target Framing Guide */}
+              {!capturedPreview && !cameraError && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: '16px',
+                    border: '2px dashed rgba(255, 255, 255, 0.45)',
+                    borderRadius: '12px',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    paddingTop: '10px',
+                  }}
+                >
+                  <span
+                    style={{
+                      background: 'rgba(0, 0, 0, 0.65)',
+                      color: '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    ALIGN {cameraFieldTitle?.toUpperCase()} IN FRAME
+                  </span>
+                </div>
+              )}
+
+              {/* Error state */}
+              {cameraError && (
+                <div style={{ padding: '24px', textAlign: 'center', color: '#fecaca', zIndex: 10 }}>
+                  <AlertTriangle size={36} color="#ef4444" style={{ margin: '0 auto 10px' }} />
+                  <p style={{ fontSize: '13.5px', fontWeight: 600, margin: '0 0 14px' }}>{cameraError}</p>
+                  <label
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '8px 16px',
+                      background: '#0284c7',
+                      color: 'white',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Camera size={16} />
+                    <span>Open Native Camera</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={(e) => {
+                        handlePhotoUpload(e, cameraField);
+                        closeLiveCamera();
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden Canvas for High-Resolution Frame Rendering */}
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+            {/* Camera Controls Footer */}
+            <div
+              style={{
+                padding: '16px 20px',
+                background: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '14px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              }}
+            >
+              {!capturedPreview ? (
+                <button
+                  type="button"
+                  disabled={cameraStarting || !!cameraError}
+                  onClick={snapLivePhoto}
+                  style={{
+                    padding: '12px 32px',
+                    borderRadius: '40px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#ffffff',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 16px rgba(2, 132, 199, 0.4)',
+                  }}
+                >
+                  <Camera size={20} />
+                  <span>Capture Live Snapshot</span>
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                  <button
+                    type="button"
+                    onClick={retakeLivePhoto}
+                    style={{
+                      flex: 1,
+                      padding: '11px',
+                      borderRadius: '10px',
+                      background: 'rgba(255, 255, 255, 0.12)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      fontSize: '13.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <RotateCcw size={15} />
+                    <span>Retake Photo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmLivePhoto}
+                    style={{
+                      flex: 1.5,
+                      padding: '11px',
+                      borderRadius: '10px',
+                      background: '#10b981',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                    }}
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>Confirm & Use Photo</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

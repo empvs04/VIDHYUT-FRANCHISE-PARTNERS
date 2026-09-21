@@ -283,11 +283,8 @@ export const createInstallation = async (data, user, partner) => {
   const verifiedPricePerCard = Math.max(0, parseFloat(pricePerCard) || 0);
   const totalAmount = calculateInstallationTotal(installedCardCount, verifiedPricePerCard);
 
-  // F. Customer Confirmation OTP Verification
-  if (!skipOtpVerification) {
-    if (!customerOtp) {
-      throw new ApiError(400, 'Customer OTP confirmation is required to finalize installation.');
-    }
+  // F. Customer Confirmation OTP Verification (Optional / Skipped)
+  if (!skipOtpVerification && customerOtp) {
     await verifyCustomerConfirmationOTP(mobileNumber, customerOtp);
   }
 
