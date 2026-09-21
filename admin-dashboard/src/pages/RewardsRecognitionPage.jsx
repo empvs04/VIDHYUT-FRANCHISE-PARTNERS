@@ -2455,7 +2455,7 @@ const RewardsRecognitionPage = () => {
         }
         .rewards-kpi-grid {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 14px;
           margin-top: 24px;
           align-items: stretch;
@@ -3266,48 +3266,9 @@ const RewardsRecognitionPage = () => {
           </div>
         </div>
 
-        {/* Hero 5 KPI Metrics: Equal Size, Clean Minimal Light Cards */}
+        {/* Hero 4 KPI Metrics: Equal Size, Clean Minimal Light Cards */}
         <div className="rewards-kpi-grid">
-          {/* Card 1: Total Cards Sold (Franchise) / Total Received Stock (Sub-Franchise) */}
-          <div
-            className="rewards-kpi-card rewards-kpi-card-blue"
-            onClick={() => {
-              setSalesSearchQuery('');
-              setActiveKpiModal('CARDS_SOLD_BREAKDOWN');
-            }}
-            title={isSubFranchise ? 'Click to view Received Stock Allocation & Ledger' : 'Click to open Sub-Franchise Card Sales, Rate & Distribution Breakdown'}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10.5px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.3px', height: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                <div style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <CreditCard size={13} color="#0284c7" />
-                </div>
-                <span style={{ color: '#475569' }}>{isSubFranchise ? 'Total Received Stock' : 'Total Cards Sold'}</span>
-              </div>
-              <ArrowUpRight size={13} color="#94a3b8" style={{ flexShrink: 0 }} />
-            </div>
-
-            <div style={{ margin: '6px 0' }}>
-              <div style={{ fontSize: '22px', fontWeight: '950', color: '#0f172a', height: '28px', display: 'flex', alignItems: 'center', letterSpacing: '-0.4px' }}>
-                {isSubFranchise ? (activeRoadmapPartner?.assignedCount || activeRoadmapPartner?.purchasedCards || partner?.assignedCount || 16) : subFranchiseSalesData.totalCardsSold}
-                <span style={{ fontSize: '11px', color: '#64748b', marginLeft: '6px', fontWeight: '600' }}>
-                  {isSubFranchise ? 'Cards Stock' : 'Cards Sold'}
-                </span>
-              </div>
-              <div style={{ fontSize: '10.5px', color: '#475569', marginTop: '5px', fontWeight: '600', padding: '3px 7px', borderRadius: '6px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {isSubFranchise
-                  ? `⚡ In-Hand: ${Math.max(0, (activeRoadmapPartner?.assignedCount || partner?.assignedCount || 16) - directInstallationsData.totalInstalledCards)} Units Available`
-                  : `⚡ To ${subFranchiseSalesData.totalSubPartners} Sub-Partners • ₹${subFranchiseSalesData.averageRate}/card`}
-              </div>
-            </div>
-
-            <div style={{ fontSize: '10px', color: '#0284c7', marginTop: '7px', paddingTop: '6px', borderTop: '1px solid #f1f5f9', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'space-between', letterSpacing: '0.2px' }}>
-              <span>{isSubFranchise ? '⚡ View Stock Log' : '⚡ View Sales & Rate Log'}</span>
-              <span style={{ fontSize: '11px', color: '#94a3b8' }}>↗</span>
-            </div>
-          </div>
-
-          {/* Card 2: Total Installations */}
+          {/* Card 1: Total Installations */}
           <div
             className="rewards-kpi-card rewards-kpi-card-green"
             onClick={() => {
