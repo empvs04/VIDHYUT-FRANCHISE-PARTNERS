@@ -2051,23 +2051,128 @@ const RewardsRecognitionPage = () => {
     setShowCertModal(true);
   };
 
-  // Print Certificate
-  const handlePrintCertificate = () => {
-    window.print();
-  };
+  // Pr  // Static Reward Tickets for Live Moving Ticker
+  const REWARD_TICKETS = [
+    {
+      id: 'TKT-100',
+      targetShort: '100 CARDS',
+      icon: '🪙',
+      title: '24K Gold Coin (5g)',
+      rewardType: 'GOLD COIN',
+      cashAlternative: '₹35,000 Cash',
+      badgeColor: '#f59e0b',
+      gradient: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #fde68a 100%)',
+      borderColor: '#f59e0b',
+      glowColor: 'rgba(245, 158, 11, 0.28)',
+      tag: '100 TARGET',
+    },
+    {
+      id: 'TKT-250',
+      targetShort: '250 CARDS',
+      icon: '📱',
+      title: 'iPhone 16 Pro (128GB)',
+      rewardType: 'SMARTPHONE',
+      cashAlternative: '₹1,20,000 Cash',
+      badgeColor: '#0284c7',
+      gradient: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 45%, #bae6fd 100%)',
+      borderColor: '#0284c7',
+      glowColor: 'rgba(2, 132, 199, 0.28)',
+      tag: '250 TARGET',
+    },
+    {
+      id: 'TKT-500',
+      targetShort: '500 CARDS',
+      icon: '🛵',
+      title: 'Activa 6G / EV Scooter',
+      rewardType: 'SCOOTER',
+      cashAlternative: '₹85,000 Cash',
+      badgeColor: '#16a34a',
+      gradient: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 45%, #bbf7d0 100%)',
+      borderColor: '#16a34a',
+      glowColor: 'rgba(22, 163, 74, 0.28)',
+      tag: '500 TARGET',
+    },
+    {
+      id: 'TKT-1000',
+      targetShort: '1,000 CARDS',
+      icon: '🏍️',
+      title: 'Royal Enfield 350',
+      rewardType: 'MOTORCYCLE',
+      cashAlternative: '₹1,75,000 Cash',
+      badgeColor: '#dc2626',
+      gradient: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 45%, #fecaca 100%)',
+      borderColor: '#dc2626',
+      glowColor: 'rgba(220, 38, 38, 0.28)',
+      tag: '1K TARGET',
+    },
+    {
+      id: 'TKT-2500',
+      targetShort: '2,500 CARDS',
+      icon: '🚗',
+      title: 'Tata Punch / Swift Car',
+      rewardType: 'CAR REWARD',
+      cashAlternative: '₹6,50,000 Cash',
+      badgeColor: '#ea580c',
+      gradient: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 45%, #fed7aa 100%)',
+      borderColor: '#ea580c',
+      glowColor: 'rgba(234, 88, 12, 0.28)',
+      tag: '2.5K TARGET',
+    },
+    {
+      id: 'TKT-5000',
+      targetShort: '5,000 CARDS',
+      icon: '🚙',
+      title: 'Scorpio-N / Creta SUV',
+      rewardType: 'LUXURY SUV',
+      cashAlternative: '₹16,00,000 Cash',
+      badgeColor: '#9333ea',
+      gradient: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 45%, #e9d5ff 100%)',
+      borderColor: '#9333ea',
+      glowColor: 'rgba(147, 51, 234, 0.28)',
+      tag: '5K TARGET',
+    },
+    {
+      id: 'TKT-10000',
+      targetShort: '10,000 CARDS',
+      icon: '✈️',
+      title: 'Dubai Trip + ₹25 Lakhs',
+      rewardType: 'MEGA REWARD',
+      cashAlternative: '₹25,00,000 Bonus',
+      badgeColor: '#059669',
+      gradient: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 45%, #a7f3d0 100%)',
+      borderColor: '#059669',
+      glowColor: 'rgba(5, 150, 105, 0.28)',
+      tag: '10K TARGET',
+    },
+    {
+      id: 'TKT-SUB',
+      targetShort: 'SUB-FRANCHISE',
+      icon: '💎',
+      title: '₹250/Card + VIP Trophy',
+      rewardType: 'DIRECT MARGIN',
+      cashAlternative: 'Instant Payout',
+      badgeColor: '#4f46e5',
+      gradient: 'linear-gradient(135deg, #eef2ff 0%, #e0e7ff 45%, #c7d2fe 100%)',
+      borderColor: '#4f46e5',
+      glowColor: 'rgba(79, 70, 229, 0.28)',
+      tag: 'SUB-PARTNER',
+    },
+  ];
 
   // Helper for Top Hero Congratulations Greeting
   const formatPartnerTitleName = (name) => {
     if (!name) return 'Partner';
-    const trimmed = String(name).trim();
-    if (/^(Mr\.|Mrs\.|Ms\.|Dr\.|Shri|Smt\.)\s/i.test(trimmed)) {
-      return trimmed;
-    }
-    return `Mr. ${trimmed}`;
+    return String(name).trim();
   };
 
   const getPartnerTypeTitle = (fType) => {
     switch (fType) {
+      case 'PREMIUM_EXCLUSIVE_DISTRICT':
+        return 'Premium Exclusive District';
+      case 'STANDARD_EXCLUSIVE_DISTRICT':
+        return 'Standard Exclusive District';
+      case 'NON_EXCLUSIVE_DISTRICT':
+        return 'Non-Exclusive District';
       case 'STATE_FRANCHISE':
         return 'State Franchise Partner';
       case 'DISTRICT_FRANCHISE':
@@ -2095,6 +2200,233 @@ const RewardsRecognitionPage = () => {
           box-sizing: border-box;
           width: 100%;
         }
+
+        /* Continuous Moving Rewards Ticket Marquee */
+        @keyframes moveRewardsTickets {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .rewards-ticker-wrapper {
+          width: calc(100% + 48px);
+          margin-left: -24px;
+          margin-right: -24px;
+          margin-top: 10px;
+          margin-bottom: 20px;
+          padding: 8px 24px 10px 24px;
+          box-sizing: border-box;
+          background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+          border-top: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+          position: relative;
+          border-radius: 10px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        }
+        .rewards-ticker-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          padding: 0 2px;
+        }
+        .rewards-ticker-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          font-weight: 800;
+          color: #c2410c;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+        }
+        .rewards-ticker-pulse-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: #ea580c;
+          box-shadow: 0 0 8px rgba(234, 88, 12, 0.8);
+          animation: pulseDot 1.5s infinite;
+        }
+        @keyframes pulseDot {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.4); opacity: 0.5; }
+        }
+        .rewards-ticker-viewport {
+          overflow: hidden;
+          width: 100%;
+          position: relative;
+          mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+          padding: 2px 0;
+        }
+        .rewards-ticker-track {
+          display: flex;
+          gap: 0px;
+          width: max-content;
+          animation: moveRewardsTickets 32s linear infinite;
+        }
+        .rewards-ticker-track:hover {
+          animation-play-state: paused;
+        }
+        .rewards-ticket-item {
+          display: flex;
+          align-items: center;
+          border-radius: 0px;
+          border-top: 1.5px solid;
+          border-bottom: 1.5px solid;
+          border-left: none;
+          border-right: 1.5px dashed rgba(100, 116, 139, 0.45);
+          min-width: 250px;
+          max-width: 275px;
+          height: 74px;
+          padding: 6px 10px;
+          position: relative;
+          cursor: pointer;
+          transition: filter 0.15s ease, transform 0.15s ease;
+          user-select: none;
+          box-sizing: border-box;
+          flex-shrink: 0;
+        }
+        .rewards-ticket-item:first-child {
+          border-top-left-radius: 8px;
+          border-bottom-left-radius: 8px;
+          border-left: 1.5px solid;
+        }
+        .rewards-ticket-item:hover {
+          filter: brightness(1.03);
+          z-index: 5;
+        }
+        .ticket-left-stub {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding-right: 6px;
+          flex-shrink: 0;
+          gap: 3px;
+        }
+        .ticket-icon-wrap {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .ticket-target-badge {
+          font-size: 7.5px;
+          font-weight: 900;
+          color: #ffffff;
+          padding: 1px 5px;
+          border-radius: 6px;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+        }
+        .ticket-perforation {
+          width: 1px;
+          height: 60%;
+          border-left: 1px dashed rgba(100, 116, 139, 0.3);
+          margin: 0 6px;
+          flex-shrink: 0;
+        }
+        .ticket-center-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          min-width: 0;
+          padding-right: 6px;
+        }
+        .ticket-tag-row {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-bottom: 2px;
+        }
+        .ticket-category-tag {
+          font-size: 8px;
+          font-weight: 800;
+          padding: 1px 4px;
+          border-radius: 3px;
+          background: #ffffff;
+          border: 1px solid;
+          letter-spacing: 0.3px;
+          text-transform: uppercase;
+        }
+        .ticket-type-label {
+          font-size: 8.5px;
+          font-weight: 700;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.2px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .ticket-reward-title {
+          font-size: 12.5px;
+          font-weight: 900;
+          color: #0f172a;
+          line-height: 1.2;
+          letter-spacing: -0.2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 2px;
+        }
+        .ticket-cash-option {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 10px;
+          font-weight: 700;
+          color: #047857;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .ticket-right-stub {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding-left: 6px;
+          flex-shrink: 0;
+          height: 100%;
+        }
+        .ticket-claim-text {
+          font-size: 8px;
+          font-weight: 900;
+          color: #ea580c;
+          letter-spacing: 0.8px;
+        }
+        .ticket-barcode {
+          display: flex;
+          gap: 2px;
+          height: 14px;
+          align-items: center;
+          margin: 2px 0;
+        }
+        .ticket-barcode .bar {
+          width: 1px;
+          height: 12px;
+          background-color: #334155;
+        }
+        .ticket-barcode .bar.thick {
+          width: 2.5px;
+          background-color: #0f172a;
+        }
+        .ticket-code-label {
+          font-size: 7.5px;
+          font-weight: 800;
+          font-family: monospace;
+          color: #64748b;
+        }
+
         .rewards-hero-card {
           background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #eff6ff 100%);
           border-radius: 20px;
@@ -2198,36 +2530,108 @@ const RewardsRecognitionPage = () => {
           display: flex;
           align-items: center;
           gap: 8px;
-          border-bottom: 1px solid #e2e8f0;
-          margin-bottom: 24px;
+          border-bottom: 2px solid #e2e8f0;
+          margin-bottom: 28px;
           overflow-x: auto;
-          padding-bottom: 4px;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: thin;
+          white-space: nowrap;
+          padding-bottom: 2px;
+        }
+        .rewards-tab-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 20px;
+          background: transparent;
+          border: none;
+          font-size: 14px;
+          font-weight: 700;
+          color: #64748b;
+          cursor: pointer;
+          border-radius: 10px 10px 0 0;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+        .rewards-tab-btn:hover {
+          color: #0f172a;
+          background-color: #f1f5f9;
+        }
+        .rewards-tab-btn.active {
+          color: #ea580c;
+          background-color: #ffffff;
+        }
+        .rewards-tab-btn.active::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background-color: #ea580c;
+          border-radius: 3px 3px 0 0;
+        }
+        .rewards-tab-badge {
+          font-size: 11px;
+          padding: 2px 7px;
+          border-radius: 12px;
+          background-color: #f1f5f9;
+          color: #475569;
+        }
+        .rewards-tab-btn.active .rewards-tab-badge {
+          background-color: #ffedd5;
+          color: #ea580c;
         }
         .rewards-targets-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-          gap: 24px;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 20px;
+          margin-bottom: 32px;
         }
         .rewards-podium-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          grid-template-columns: repeat(3, 1fr);
           gap: 20px;
-          margin-bottom: 32px;
           align-items: flex-end;
+          margin-bottom: 32px;
+        }
+        .rewards-podium-card {
+          background: #ffffff;
+          border-radius: 16px;
+          padding: 24px;
+          text-align: center;
+          border: 2px solid;
+          position: relative;
+          box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+          transition: transform 0.25s ease;
+        }
+        .rewards-podium-card:hover {
+          transform: translateY(-4px);
+        }
+        .rewards-podium-card-1 {
+          border-color: #f59e0b;
+          background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+          transform: scale(1.04);
+          z-index: 2;
+        }
+        .rewards-podium-card-2 {
+          border-color: #94a3b8;
+          background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        }
+        .rewards-podium-card-3 {
+          border-color: #d97706;
+          background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
         }
         .rewards-filter-bar {
-          background-color: #ffffff;
+          background: #ffffff;
           border-radius: 14px;
           padding: 16px 20px;
-          border: 1px solid #e2e8f0;
-          margin-bottom: 20px;
+          border: 1.5px solid #e2e8f0;
           display: flex;
           align-items: center;
           justify-content: space-between;
           flex-wrap: wrap;
           gap: 14px;
+          margin-bottom: 24px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
         .rewards-modal-overlay {
           position: fixed;
@@ -2323,16 +2727,27 @@ const RewardsRecognitionPage = () => {
         /* Mobile & Tablet Responsiveness */
         @media (max-width: 1200px) {
           .rewards-kpi-grid {
-            grid-template-columns: repeat(5, minmax(170px, 1fr));
-            overflow-x: auto;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
+            grid-template-columns: repeat(3, 1fr);
+          }
+          .rewards-kpi-card-last {
+            grid-column: span 2;
           }
         }
 
         @media (max-width: 768px) {
           .rewards-page-root {
             padding: 0;
+          }
+          .rewards-ticker-wrapper {
+            margin-left: -16px;
+            margin-right: -16px;
+            width: calc(100% + 32px);
+            padding: 8px 16px;
+          }
+          .rewards-ticket-item {
+            min-width: 320px;
+            max-width: 340px;
+            height: 90px;
           }
           .rewards-hero-card {
             padding: 20px 14px;
@@ -2464,39 +2879,40 @@ const RewardsRecognitionPage = () => {
       `}</style>
 
       {/* ============================================================ */}
-      {/* 1. TOP PAGE HEADER (Ultra-Lucrative VIP Banner at very Top)   */}
+      {/* 1. TOP HEADER (COMPACT 2-LINE LIGHT THEME)                    */}
       {/* ============================================================ */}
-      <div style={{ marginTop: '0px', marginBottom: '20px' }}>
-        {/* Top Greeting Ribbon / Line 1: Refined White Frosted Glass Ribbon */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          marginBottom: '10px',
+        }}
+      >
+        {/* Line 1: Congratulations Pill + Partner Name + Badges */}
         <div
           style={{
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            padding: '6px 14px',
-            borderRadius: '9999px',
-            backgroundColor: '#ffffff',
-            border: '1.5px solid #e2e8f0',
-            marginBottom: '10px',
-            boxShadow: '0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)',
             flexWrap: 'wrap',
+            gap: '8px',
           }}
         >
-          {/* Congratulations Pill */}
+          {/* Orange Congratulations Pill */}
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              padding: '3px 9px',
+              padding: '4px 10px',
               borderRadius: '20px',
               backgroundColor: '#fff7ed',
-              border: '1px solid #ffedd5',
+              border: '1.5px solid #fdba74',
+              color: '#c2410c',
               fontSize: '11px',
-              fontWeight: '800',
-              color: '#ea580c',
-              letterSpacing: '0.4px',
+              fontWeight: '900',
               textTransform: 'uppercase',
+              letterSpacing: '0.5px',
             }}
           >
             <Sparkles size={12} color="#ea580c" />
@@ -2506,7 +2922,7 @@ const RewardsRecognitionPage = () => {
           {/* Partner Name */}
           <span
             style={{
-              fontSize: '14px',
+              fontSize: '15px',
               fontWeight: '900',
               color: '#0f172a',
               letterSpacing: '-0.2px',
@@ -2626,6 +3042,89 @@ const RewardsRecognitionPage = () => {
               ? 'National Network Performance, State-wise & District-wise partner milestones, vehicle/cash incentives and downline recognition engine.'
               : 'Track your live customer installation milestones, stock purchase targets, vehicle/gold rewards, and manage sub-franchise incentives.'}
           </p>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* 1.5. LIVE MOVING REWARDS & INCENTIVE TICKETS (RIGHT TO LEFT) */}
+      {/* ============================================================ */}
+      <div className="rewards-ticker-wrapper">
+        <div className="rewards-ticker-header">
+          <div className="rewards-ticker-pill">
+            <span className="rewards-ticker-pulse-dot" />
+            <Sparkles size={13} color="#ea580c" />
+            <span>EXCLUSIVE REWARD VOUCHERS • 2026 ROADMAP</span>
+          </div>
+          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>Auto-Scrolling Live</span>
+            <span style={{ fontSize: '10px', color: '#94a3b8' }}>(Hover to pause)</span>
+          </span>
+        </div>
+
+        <div className="rewards-ticker-viewport">
+          <div className="rewards-ticker-track">
+            {/* Duplicated list for seamless infinite right-to-left loop */}
+            {[...REWARD_TICKETS, ...REWARD_TICKETS].map((tkt, idx) => (
+              <div
+                key={`${tkt.id}-${idx}`}
+                className="rewards-ticket-item"
+                style={{
+                  background: tkt.gradient,
+                  borderTopColor: tkt.borderColor,
+                  borderBottomColor: tkt.borderColor,
+                  borderRightColor: tkt.borderColor,
+                }}
+                onClick={() => {
+                  const el = document.getElementById('my-rewards-roadmap-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                title={`Click to view milestone roadmap for ${tkt.title}`}
+              >
+                {/* Left Ticket Stub */}
+                <div className="ticket-left-stub">
+                  <div className="ticket-icon-wrap" style={{ border: `1.5px solid ${tkt.borderColor}`, backgroundColor: '#ffffff' }}>
+                    <span style={{ fontSize: '19px' }}>{tkt.icon}</span>
+                  </div>
+                  <div className="ticket-target-badge" style={{ backgroundColor: tkt.badgeColor }}>
+                    {tkt.targetShort}
+                  </div>
+                </div>
+
+                {/* Inner Perforated Divider */}
+                <div className="ticket-perforation" />
+
+                {/* Center Details */}
+                <div className="ticket-center-body">
+                  <div className="ticket-tag-row">
+                    <span className="ticket-category-tag" style={{ color: tkt.badgeColor, borderColor: tkt.borderColor }}>
+                      {tkt.tag}
+                    </span>
+                    <span className="ticket-type-label">{tkt.rewardType}</span>
+                  </div>
+
+                  <div className="ticket-reward-title">{tkt.title}</div>
+
+                  <div className="ticket-cash-option">
+                    <Gift size={11} style={{ flexShrink: 0 }} />
+                    <span>{tkt.cashAlternative}</span>
+                  </div>
+                </div>
+
+                {/* Right Voucher Stub */}
+                <div className="ticket-right-stub" style={{ borderLeft: `1.5px dashed ${tkt.borderColor}` }}>
+                  <div className="ticket-claim-text">CLAIM</div>
+                  <div className="ticket-barcode">
+                    <div className="bar" />
+                    <div className="bar thick" />
+                    <div className="bar" />
+                    <div className="bar thick" />
+                    <div className="bar" />
+                  </div>
+                  <div className="ticket-code-label">#{tkt.id}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
