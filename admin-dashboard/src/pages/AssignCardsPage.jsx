@@ -20,11 +20,14 @@ import {
   Package,
   Sparkles,
   ShieldCheck,
+  Camera,
+  QrCode,
 } from 'lucide-react';
 import api from '../services/api';
 import { FranchiseTypeBadge } from '../components/common/Badge';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import BarcodeCardScanner from '../components/cards/BarcodeCardScanner';
 
 const AssignCardsPage = () => {
   const navigate = useNavigate();
@@ -51,7 +54,8 @@ const AssignCardsPage = () => {
   const [availableRange, setAvailableRange] = useState(null);
 
   // Stock selection state
-  const [activeTab, setActiveTab] = useState('RANGE'); // 'RANGE' or 'MANUAL'
+  const [activeTab, setActiveTab] = useState('RANGE'); // 'RANGE', 'SCANNER', or 'MANUAL'
+  const [scannedCards, setScannedCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -247,6 +251,12 @@ const AssignCardsPage = () => {
             return;
           }
           payload = { ...payload, prefix, startNumber: start, endNumber: end, paddingLength };
+        } else if (activeTab === 'SCANNER') {
+          if (scannedCards.length === 0) {
+            setPreviewData(null);
+            return;
+          }
+          payload = { ...payload, serialNumbers: scannedCards };
         } else {
           const rawList = manualText
             .split(/[\n,]+/)
@@ -271,7 +281,21 @@ const AssignCardsPage = () => {
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [selectedPartnerId, activeTab, prefix, startNumber, endNumber, paddingLength, manualText]);
+  }, [selectedPartnerId, activeTab, prefix, startNumber, endNumber, paddingLength, manualText, scannedCards]);
+
+  // Handlers for Camera Barcode Scanner
+  const handleAddScannedCard = (serial) => {
+    if (!serial) return;
+    setScannedCards((prev) => (prev.includes(serial) ? prev : [...prev, serial]));
+  };
+
+  const handleRemoveScannedCard = (serial) => {
+    setScannedCards((prev) => prev.filter((s) => s !== serial));
+  };
+
+  const handleClearAllScanned = () => {
+    setScannedCards([]);
+  };
 
   // Auto-allot next N cards from remaining warehouse stock
   const handleAutoAllotNextN = (count) => {
@@ -377,11 +401,23 @@ const AssignCardsPage = () => {
           endNumber: parseInt(endNumber, 10),
           paddingLength,
         };
+      } else if (activeTab === 'SCANNER') {
+        if (scannedCards.length === 0) {
+          showToast('Please scan at least one card barcode before allocating.', 'error');
+          setLoading(false);
+          return;
+        }
+        payload = { ...payload, serialNumbers: scannedCards };
       } else {
         const rawList = manualText
           .split(/[\n,]+/)
           .map((s) => s.trim())
           .filter(Boolean);
+        if (rawList.length === 0) {
+          showToast('Please enter at least one card serial number.', 'error');
+          setLoading(false);
+          return;
+        }
         payload = { ...payload, serialNumbers: rawList };
       }
 
@@ -404,6 +440,8 @@ const AssignCardsPage = () => {
       ? !isNaN(parseInt(startNumber, 10)) && !isNaN(parseInt(endNumber, 10)) && parseInt(endNumber, 10) >= parseInt(startNumber, 10)
         ? parseInt(endNumber, 10) - parseInt(startNumber, 10) + 1
         : 0
+      : activeTab === 'SCANNER'
+      ? scannedCards.length
       : manualText.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean).length;
 
   return (
@@ -831,6 +869,7 @@ const AssignCardsPage = () => {
 
           {/* Mode Switcher Tabs */}
           <div
+            className="assign-mode-tabs"
             style={{
               display: 'flex',
               backgroundColor: '#F1F5F9',
@@ -845,13 +884,13 @@ const AssignCardsPage = () => {
               onClick={() => setActiveTab('RANGE')}
               style={{
                 flex: 1,
-                padding: '9px 12px',
+                padding: '9px 10px',
                 border: 'none',
                 borderRadius: '6px',
                 backgroundColor: activeTab === 'RANGE' ? '#FFFFFF' : 'transparent',
                 color: activeTab === 'RANGE' ? '#0284C7' : '#64748B',
-                fontWeight: activeTab === 'RANGE' ? '700' : '500',
-                fontSize: '13px',
+                fontWeight: activeTab === 'RANGE' ? '700' : '600',
+                fontSize: '12.5px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -859,10 +898,51 @@ const AssignCardsPage = () => {
                 gap: '6px',
                 boxShadow: activeTab === 'RANGE' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
               }}
             >
               <Layers size={15} />
-              <span>Continuous Serial Range</span>
+              <span>Serial Range</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('SCANNER')}
+              style={{
+                flex: 1,
+                padding: '9px 10px',
+                border: 'none',
+                borderRadius: '6px',
+                backgroundColor: activeTab === 'SCANNER' ? '#FFFFFF' : 'transparent',
+                color: activeTab === 'SCANNER' ? '#0284C7' : '#64748B',
+                fontWeight: activeTab === 'SCANNER' ? '700' : '600',
+                fontSize: '12.5px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                boxShadow: activeTab === 'SCANNER' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <Camera size={15} />
+              <span>Barcode Scanner</span>
+              {scannedCards.length > 0 && (
+                <span
+                  style={{
+                    backgroundColor: activeTab === 'SCANNER' ? '#E0F2FE' : '#E2E8F0',
+                    color: activeTab === 'SCANNER' ? '#0284C7' : '#475569',
+                    fontSize: '10.5px',
+                    fontWeight: '800',
+                    padding: '1px 6px',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {scannedCards.length}
+                </span>
+              )}
             </button>
 
             <button
@@ -870,13 +950,13 @@ const AssignCardsPage = () => {
               onClick={() => setActiveTab('MANUAL')}
               style={{
                 flex: 1,
-                padding: '9px 12px',
+                padding: '9px 10px',
                 border: 'none',
                 borderRadius: '6px',
                 backgroundColor: activeTab === 'MANUAL' ? '#FFFFFF' : 'transparent',
                 color: activeTab === 'MANUAL' ? '#0284C7' : '#64748B',
-                fontWeight: activeTab === 'MANUAL' ? '700' : '500',
-                fontSize: '13px',
+                fontWeight: activeTab === 'MANUAL' ? '700' : '600',
+                fontSize: '12.5px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -884,10 +964,11 @@ const AssignCardsPage = () => {
                 gap: '6px',
                 boxShadow: activeTab === 'MANUAL' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
               }}
             >
               <ListPlus size={15} />
-              <span>Specific Serial Numbers</span>
+              <span>Manual Entry</span>
             </button>
           </div>
 
@@ -1065,6 +1146,17 @@ const AssignCardsPage = () => {
                   </div>
                 </div>
               )}
+            </div>
+          ) : activeTab === 'SCANNER' ? (
+            <div style={{ marginBottom: '16px' }}>
+              <BarcodeCardScanner
+                scannedCards={scannedCards}
+                onAddCard={handleAddScannedCard}
+                onRemoveCard={handleRemoveScannedCard}
+                onClearAll={handleClearAllScanned}
+                availableCards={availableCards}
+                warehouseAvailable={warehouseAvailable}
+              />
             </div>
           ) : (
             <div style={{ marginBottom: '16px' }}>

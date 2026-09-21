@@ -24,11 +24,13 @@ import {
   Info,
   Layers,
   ArrowRight,
+  Camera,
 } from 'lucide-react';
 import api from '../services/api';
 import { FranchiseTypeBadge } from '../components/common/Badge';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import BarcodeCardScanner from '../components/cards/BarcodeCardScanner';
 
 const DistributeCardsPage = () => {
   const navigate = useNavigate();
@@ -362,6 +364,45 @@ const DistributeCardsPage = () => {
     setSelectedCardIds(new Set());
     setQuickCount('');
   };
+
+  // Barcode Scanner Handlers
+  const handleAddScannedCard = (serial) => {
+    const card = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial.toUpperCase());
+    if (!card) {
+      showToast(`Card ${serial} is not in your available stock`, 'error');
+      return false;
+    }
+    setSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      next.add(card._id);
+      return next;
+    });
+    return true;
+  };
+
+  const handleRemoveScannedCard = (serial) => {
+    const card = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial.toUpperCase());
+    if (card) {
+      setSelectedCardIds((prev) => {
+        const next = new Set(prev);
+        next.delete(card._id);
+        return next;
+      });
+    }
+  };
+
+  const handleClearAllScanned = () => {
+    setSelectedCardIds(new Set());
+  };
+
+  const scannedSerialsList = useMemo(() => {
+    return Array.from(selectedCardIds)
+      .map((id) => {
+        const card = availableCards.find((c) => c._id === id);
+        return card?.serialNumber || '';
+      })
+      .filter(Boolean);
+  }, [selectedCardIds, availableCards]);
 
   // Pricing & Free Cards calculations
   const totalCardsCount = selectedCardIds.size;
@@ -840,7 +881,8 @@ const DistributeCardsPage = () => {
               {[
                 { id: 'QUANTITY', label: '1. By Quantity' },
                 { id: 'RANGE', label: '2. Serial Range' },
-                { id: 'GRID', label: '3. Card Picker' },
+                { id: 'SCANNER', label: '3. Barcode Scanner 📸' },
+                { id: 'GRID', label: '4. Card Picker' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1319,6 +1361,18 @@ const DistributeCardsPage = () => {
                   )}
                 </div>
               </div>
+            )}
+
+            {/* TAB: Barcode / QR Camera Scanner */}
+            {selectionMode === 'SCANNER' && (
+              <BarcodeCardScanner
+                scannedCards={scannedSerialsList}
+                onAddCard={handleAddScannedCard}
+                onRemoveCard={handleRemoveScannedCard}
+                onClearAll={handleClearAllScanned}
+                availableCards={availableCards}
+                warehouseAvailable={availableCards.length}
+              />
             )}
 
             {/* TAB C: Interactive Grid */}

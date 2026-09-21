@@ -1078,18 +1078,7 @@ const CardInventoryPage = () => {
 
       {/* Super Admin Top Context Bar */}
       {isSuperAdmin && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '18px',
-            borderBottom: '1px solid var(--border-color)',
-            paddingBottom: '12px',
-            flexWrap: 'wrap',
-            gap: '12px',
-          }}
-        >
+        <div className="inventory-superadmin-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CreditCard size={18} color="#0284C7" />
             <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>
@@ -1136,7 +1125,7 @@ const CardInventoryPage = () => {
         <>
           {/* Unified Command & Filter Card */}
           <div
-            className="card"
+            className="card inventory-command-card"
             style={{
               marginBottom: '18px',
               padding: '14px 16px',
@@ -1160,31 +1149,34 @@ const CardInventoryPage = () => {
                     fetchRanges(1);
                   }}
                   style={{
-                    padding: '6px 14px',
+                    padding: '6px 10px',
                     borderRadius: '7px',
                     border: 'none',
                     backgroundColor: cardViewMode === 'ranges' ? '#FFFFFF' : 'transparent',
                     color: cardViewMode === 'ranges' ? '#0284C7' : '#64748B',
                     fontWeight: cardViewMode === 'ranges' ? '700' : '600',
-                    fontSize: '12.5px',
+                    fontSize: '12px',
                     boxShadow: cardViewMode === 'ranges' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    justifyContent: 'center',
+                    gap: '5px',
+                    whiteSpace: 'nowrap',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <Layers size={14} color={cardViewMode === 'ranges' ? '#0284C7' : '#64748B'} />
+                  <Layers size={14} color={cardViewMode === 'ranges' ? '#0284C7' : '#64748B'} style={{ flexShrink: 0 }} />
                   <span>Serial Ranges</span>
                   <span
                     style={{
-                      fontSize: '10.5px',
-                      padding: '1px 6px',
-                      borderRadius: '6px',
+                      fontSize: '10px',
+                      padding: '1px 5px',
+                      borderRadius: '5px',
                       backgroundColor: cardViewMode === 'ranges' ? '#E0F2FE' : '#E2E8F0',
                       color: cardViewMode === 'ranges' ? '#0284C7' : '#64748B',
                       fontWeight: '800',
+                      flexShrink: 0,
                     }}
                   >
                     {rangesPagination.total || (ranges.length > 0 ? 1 : 0)}
@@ -1198,31 +1190,34 @@ const CardInventoryPage = () => {
                     fetchCards(1);
                   }}
                   style={{
-                    padding: '6px 14px',
+                    padding: '6px 8px',
                     borderRadius: '7px',
                     border: 'none',
                     backgroundColor: cardViewMode === 'individual' ? '#FFFFFF' : 'transparent',
                     color: cardViewMode === 'individual' ? '#0284C7' : '#64748B',
                     fontWeight: cardViewMode === 'individual' ? '700' : '600',
-                    fontSize: '12.5px',
+                    fontSize: '12px',
                     boxShadow: cardViewMode === 'individual' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    justifyContent: 'center',
+                    gap: '5px',
+                    whiteSpace: 'nowrap',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <CreditCard size={14} color={cardViewMode === 'individual' ? '#0284C7' : '#64748B'} />
-                  <span>All Cards (1-by-1)</span>
+                  <CreditCard size={14} color={cardViewMode === 'individual' ? '#0284C7' : '#64748B'} style={{ flexShrink: 0 }} />
+                  <span>All Cards</span>
                   <span
                     style={{
-                      fontSize: '10.5px',
-                      padding: '1px 6px',
-                      borderRadius: '6px',
+                      fontSize: '10px',
+                      padding: '1px 5px',
+                      borderRadius: '5px',
                       backgroundColor: cardViewMode === 'individual' ? '#E0F2FE' : '#E2E8F0',
                       color: cardViewMode === 'individual' ? '#0284C7' : '#64748B',
                       fontWeight: '800',
+                      flexShrink: 0,
                     }}
                   >
                     {pagination.total || stats.total || 0}
@@ -1233,7 +1228,7 @@ const CardInventoryPage = () => {
               {/* Right: Search & Filters Form */}
               <form onSubmit={handleSearchSubmit} className="inventory-search-form">
                 {/* 1. Search Input */}
-                <div className="inventory-search-input-wrap" style={{ position: 'relative' }}>
+                <div className="inventory-search-input-wrap">
                   <Search
                     size={14}
                     style={{
@@ -1241,8 +1236,9 @@ const CardInventoryPage = () => {
                       left: '11px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: 'var(--text-muted)',
+                      color: '#94A3B8',
                       pointerEvents: 'none',
+                      zIndex: 2,
                     }}
                   />
                   <input
@@ -1250,7 +1246,7 @@ const CardInventoryPage = () => {
                     className="input"
                     style={{
                       height: '38px',
-                      padding: '0 12px 0 32px',
+                      padding: '0 12px 0 34px',
                       fontSize: '12.5px',
                       borderRadius: '8px',
                       width: '100%',
@@ -1265,14 +1261,14 @@ const CardInventoryPage = () => {
                 {/* 2. Status Filter & Action Buttons Row on Mobile */}
                 <div className="inventory-search-controls-row">
                   {/* Status Filter */}
-                  <div style={{ flex: 1, minWidth: '130px' }}>
+                  <div className="inventory-filter-col">
                     <select
                       className="select"
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                       style={{
                         height: '38px',
-                        padding: '0 24px 0 8px',
+                        padding: '0 20px 0 8px',
                         fontSize: '12px',
                         borderRadius: '8px',
                         width: '100%',
@@ -1292,14 +1288,14 @@ const CardInventoryPage = () => {
 
                   {/* Franchise Type Filter (SuperAdmin) */}
                   {isSuperAdmin && (
-                    <div style={{ flex: 1, minWidth: '140px' }}>
+                    <div className="inventory-filter-col">
                       <select
                         className="select"
                         value={franchiseTypeFilter}
                         onChange={(e) => setFranchiseTypeFilter(e.target.value)}
                         style={{
                           height: '38px',
-                          padding: '0 24px 0 8px',
+                          padding: '0 20px 0 8px',
                           fontSize: '12px',
                           borderRadius: '8px',
                           width: '100%',
@@ -1307,7 +1303,7 @@ const CardInventoryPage = () => {
                           cursor: 'pointer',
                         }}
                       >
-                        <option value="">All Franchise Types</option>
+                        <option value="">All Types</option>
                         <option value="PREMIUM_EXCLUSIVE_DISTRICT">Premium Exclusive</option>
                         <option value="STANDARD_EXCLUSIVE_DISTRICT">Standard Exclusive</option>
                         <option value="NON_EXCLUSIVE_DISTRICT">Non-Exclusive</option>
@@ -1317,14 +1313,14 @@ const CardInventoryPage = () => {
 
                   {/* State Filter (SuperAdmin) */}
                   {isSuperAdmin && (
-                    <div style={{ width: '120px' }}>
+                    <div className={`inventory-filter-col ${!districtsList || districtsList.length === 0 ? 'inventory-filter-full' : ''}`}>
                       <select
                         className="select"
                         value={stateFilter}
                         onChange={(e) => setStateFilter(e.target.value)}
                         style={{
                           height: '38px',
-                          padding: '0 24px 0 8px',
+                          padding: '0 20px 0 8px',
                           fontSize: '12px',
                           borderRadius: '8px',
                           width: '100%',
@@ -1343,15 +1339,15 @@ const CardInventoryPage = () => {
                   )}
 
                   {/* District Filter (SuperAdmin) */}
-                  {isSuperAdmin && districtsList.length > 0 && (
-                    <div style={{ width: '120px' }}>
+                  {isSuperAdmin && districtsList && districtsList.length > 0 && (
+                    <div className="inventory-filter-col">
                       <select
                         className="select"
                         value={districtFilter}
                         onChange={(e) => setDistrictFilter(e.target.value)}
                         style={{
                           height: '38px',
-                          padding: '0 24px 0 8px',
+                          padding: '0 20px 0 8px',
                           fontSize: '12px',
                           borderRadius: '8px',
                           width: '100%',
@@ -1370,7 +1366,7 @@ const CardInventoryPage = () => {
                   )}
 
                   {/* Apply & Clear Action Buttons */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                  <div className="inventory-search-actions-wrap">
                     <button
                       type="submit"
                       className="btn btn-primary"
@@ -1381,6 +1377,7 @@ const CardInventoryPage = () => {
                         borderRadius: '8px',
                         display: 'inline-flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '5px',
                         fontWeight: '700',
                       }}
@@ -1396,11 +1393,12 @@ const CardInventoryPage = () => {
                         className="btn btn-outline"
                         style={{
                           height: '38px',
-                          padding: '0 10px',
+                          padding: '0 12px',
                           fontSize: '12px',
                           borderRadius: '8px',
                           display: 'inline-flex',
                           alignItems: 'center',
+                          justifyContent: 'center',
                           gap: '4px',
                           color: '#dc2626',
                           borderColor: '#fca5a5',
@@ -1418,6 +1416,7 @@ const CardInventoryPage = () => {
 
             {/* Bottom Sub-row: Helper note & active filter badges */}
             <div
+              className="inventory-filter-footer-note"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1501,8 +1500,8 @@ const CardInventoryPage = () => {
                     </div>
 
                     <div className="inventory-table-top-controls">
-                      {/* Top Slider Navigation Buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {/* Top Slider Navigation Buttons (Desktop only) */}
+                      <div className="table-slide-desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"
@@ -1525,7 +1524,7 @@ const CardInventoryPage = () => {
                         </button>
                       </div>
 
-                      <div style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
+                      <div className="table-slide-desktop-only" style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
 
                       {/* Rows per page selector */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1872,8 +1871,8 @@ const CardInventoryPage = () => {
                             setRangeModalOpen(true);
                           }}
                         >
-                          <div className="mobile-card-header">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <div className="mobile-card-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                               <span
                                 style={{
                                   fontFamily: 'monospace',
@@ -1884,75 +1883,90 @@ const CardInventoryPage = () => {
                               >
                                 {rangeLabel}
                               </span>
+                              <CardStatusBadge status={rng.status} />
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'nowrap', overflowX: 'auto', whiteSpace: 'nowrap' }}>
                               <span
                                 style={{
-                                  fontSize: '11px',
+                                  fontSize: '10.5px',
                                   fontWeight: '700',
                                   padding: '1px 6px',
-                                  borderRadius: '10px',
+                                  borderRadius: '6px',
                                   backgroundColor: '#DCFCE7',
                                   color: '#15803D',
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 0,
                                 }}
                               >
-                                {rng.totalCards} Cards {rng.totalAllotments > 1 ? '(Latest Stock)' : ''}
+                                {rng.totalCards} Cards {rng.totalAllotments > 1 ? '(Latest)' : ''}
                               </span>
                               {rng.totalAllotments > 1 && (
                                 <span
                                   style={{
-                                    fontSize: '10.5px',
+                                    fontSize: '10px',
                                     fontWeight: '700',
                                     padding: '1px 6px',
-                                    borderRadius: '10px',
+                                    borderRadius: '6px',
                                     backgroundColor: '#EFF6FF',
                                     color: '#1D4ED8',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0,
                                   }}
                                 >
                                   Total: {rng.partnerTotalCards} Cards ({rng.totalAllotments} Batches)
                                 </span>
                               )}
                             </div>
-                            <CardStatusBadge status={rng.status} />
                           </div>
 
-                          <div className="mobile-card-grid">
-                            <div>
-                              <div className="mobile-card-label">Current Owner</div>
-                              <div className="mobile-card-value">
-                                {isHQ ? (
-                                  <span style={{ color: '#0284C7' }}>Vidhyut Saathi HQ</span>
-                                ) : (
-                                  partnerOwner?.fullName || '—'
-                                )}
-                              </div>
-                              {!isHQ && partnerOwner?.franchiseId && (
-                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  {partnerOwner.franchiseId}
+                          <div className="mobile-card-grid" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Row 1: Current Owner + Franchise Level */}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div className="mobile-card-label">Current Owner</div>
+                                <div className="mobile-card-value" style={{ fontWeight: '700', fontSize: '13px', color: '#0F172A' }}>
+                                  {isHQ ? (
+                                    <span style={{ color: '#0284C7' }}>Vidhyut Saathi HQ</span>
+                                  ) : (
+                                    partnerOwner?.fullName || '—'
+                                  )}
                                 </div>
-                              )}
-                            </div>
-
-                            <div>
-                              <div className="mobile-card-label">Franchise Level</div>
-                              <div className="mobile-card-value">
-                                {isHQ ? (
-                                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Central HQ</span>
-                                ) : (
-                                  <FranchiseTypeBadge type={partnerOwner?.franchiseType} />
+                                {!isHQ && partnerOwner?.franchiseId && (
+                                  <div style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#64748b', marginTop: '2px', wordBreak: 'break-all' }}>
+                                    {partnerOwner.franchiseId}
+                                  </div>
                                 )}
                               </div>
-                            </div>
 
-                            <div>
-                              <div className="mobile-card-label">Territory</div>
-                              <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                {isHQ ? 'Central HQ' : `${partnerOwner?.district || '—'}, ${partnerOwner?.state || ''}`}
+                              <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                                <div className="mobile-card-label" style={{ textAlign: 'right' }}>Franchise Level</div>
+                                <div style={{ marginTop: '2px' }}>
+                                  {isHQ ? (
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Central HQ</span>
+                                  ) : (
+                                    <FranchiseTypeBadge type={partnerOwner?.franchiseType} />
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            <div>
-                              <div className="mobile-card-label">Assigned Date</div>
-                              <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                {formatDate(rng.assignedAt)}
+                            <div style={{ height: '1px', backgroundColor: '#F1F5F9', width: '100%' }} />
+
+                            {/* Row 2: Territory + Assigned Date */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                              <div>
+                                <div className="mobile-card-label">Territory</div>
+                                <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                  {isHQ ? 'Central HQ' : `${partnerOwner?.district || '—'}, ${partnerOwner?.state || ''}`}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="mobile-card-label">Assigned Date</div>
+                                <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                  {formatDate(rng.assignedAt)}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1973,18 +1987,7 @@ const CardInventoryPage = () => {
                   </div>
 
                   {/* Pagination Controls for Ranges */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 18px',
-                      borderTop: '1px solid var(--border-color)',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      backgroundColor: '#F8FAFC',
-                    }}
-                  >
+                  <div className="inventory-pagination-footer">
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                       Showing{' '}
                       <strong>
@@ -1997,7 +2000,7 @@ const CardInventoryPage = () => {
                       of <strong>{rangesPagination.total}</strong> contiguous ranges ({rangesPagination.totalCards} total cards)
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="inventory-pagination-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                         <span>Rows:</span>
                         <select
@@ -2098,8 +2101,8 @@ const CardInventoryPage = () => {
                     </div>
 
                     <div className="inventory-table-top-controls">
-                      {/* Top Slider Navigation Buttons */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {/* Top Slider Navigation Buttons (Desktop only) */}
+                      <div className="table-slide-desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <button
                           type="button"
                           className="btn btn-outline btn-sm"
@@ -2122,7 +2125,7 @@ const CardInventoryPage = () => {
                         </button>
                       </div>
 
-                      <div style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
+                      <div className="table-slide-desktop-only" style={{ width: '1px', height: '18px', backgroundColor: '#CBD5E1' }} />
 
                       {/* Rows per page selector */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -2400,45 +2403,53 @@ const CardInventoryPage = () => {
                             <CardStatusBadge status={card.status} />
                           </div>
 
-                          <div className="mobile-card-grid">
-                            <div>
-                              <div className="mobile-card-label">Current Owner</div>
-                              <div className="mobile-card-value">
-                                {isHQ ? (
-                                  <span style={{ color: '#0284C7' }}>Vidhyut Saathi HQ</span>
-                                ) : (
-                                  partnerOwner?.fullName || '—'
-                                )}
-                              </div>
-                              {!isHQ && partnerOwner?.franchiseId && (
-                                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                  {partnerOwner.franchiseId}
+                          <div className="mobile-card-grid" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Row 1: Current Owner + Franchise Level */}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div className="mobile-card-label">Current Owner</div>
+                                <div className="mobile-card-value" style={{ fontWeight: '700', fontSize: '13px', color: '#0F172A' }}>
+                                  {isHQ ? (
+                                    <span style={{ color: '#0284C7' }}>Vidhyut Saathi HQ</span>
+                                  ) : (
+                                    partnerOwner?.fullName || '—'
+                                  )}
                                 </div>
-                              )}
-                            </div>
-
-                            <div>
-                              <div className="mobile-card-label">Franchise Level</div>
-                              <div className="mobile-card-value">
-                                {isHQ ? (
-                                  <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Central HQ</span>
-                                ) : (
-                                  <FranchiseTypeBadge type={partnerOwner?.franchiseType} />
+                                {!isHQ && partnerOwner?.franchiseId && (
+                                  <div style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#64748b', marginTop: '2px', wordBreak: 'break-all' }}>
+                                    {partnerOwner.franchiseId}
+                                  </div>
                                 )}
                               </div>
-                            </div>
 
-                            <div>
-                              <div className="mobile-card-label">Territory</div>
-                              <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                {isHQ ? 'Central HQ' : `${partnerOwner?.district || '—'}, ${partnerOwner?.state || ''}`}
+                              <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                                <div className="mobile-card-label" style={{ textAlign: 'right' }}>Franchise Level</div>
+                                <div style={{ marginTop: '2px' }}>
+                                  {isHQ ? (
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Central HQ</span>
+                                  ) : (
+                                    <FranchiseTypeBadge type={partnerOwner?.franchiseType} />
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            <div>
-                              <div className="mobile-card-label">Assigned Date</div>
-                              <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                                {formatDate(card.assignedAt || card.createdAt)}
+                            <div style={{ height: '1px', backgroundColor: '#F1F5F9', width: '100%' }} />
+
+                            {/* Row 2: Territory + Assigned Date */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                              <div>
+                                <div className="mobile-card-label">Territory</div>
+                                <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                  {isHQ ? 'Central HQ' : `${partnerOwner?.district || '—'}, ${partnerOwner?.state || ''}`}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="mobile-card-label">Assigned Date</div>
+                                <div className="mobile-card-value" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                  {formatDate(card.assignedAt || card.createdAt)}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -2473,18 +2484,7 @@ const CardInventoryPage = () => {
                   </div>
 
                   {/* Pagination Controls for Cards */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 18px',
-                      borderTop: '1px solid var(--border-color)',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      backgroundColor: '#F8FAFC',
-                    }}
-                  >
+                  <div className="inventory-pagination-footer">
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                       Showing{' '}
                       <strong>
@@ -2497,7 +2497,7 @@ const CardInventoryPage = () => {
                       of <strong>{pagination.total}</strong> individual cards
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className="inventory-pagination-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                         <span>Rows:</span>
                         <select
@@ -2554,6 +2554,7 @@ const CardInventoryPage = () => {
       {/* ========================================================= */}
       {partnerModalOpen && isSuperAdmin && (
         <div
+          className="partner-stock-modal-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -2572,6 +2573,7 @@ const CardInventoryPage = () => {
           onClick={() => setPartnerModalOpen(false)}
         >
           <div
+            className="partner-stock-modal-container"
             style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -2589,6 +2591,7 @@ const CardInventoryPage = () => {
           >
             {/* Modal Header */}
             <div
+              className="partner-stock-modal-header"
               style={{
                 padding: '16px 24px',
                 borderBottom: '1px solid #E2E8F0',
@@ -2600,7 +2603,7 @@ const CardInventoryPage = () => {
                 gap: '12px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="partner-stock-modal-title-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
                   style={{
                     width: '42px',
@@ -2645,7 +2648,7 @@ const CardInventoryPage = () => {
                   )}
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span>
                       {partnerModalTier === 'MAIN_FRANCHISE'
                         ? 'Franchise Partners Stock Overview'
@@ -2723,8 +2726,9 @@ const CardInventoryPage = () => {
               </div>
 
               {/* Header Right: Segmented Filter Tabs & Close [X] */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div className="partner-stock-modal-tabs-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div
+                  className="partner-stock-modal-tabs-scroll"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -4569,11 +4573,10 @@ const CardInventoryPage = () => {
           );
         })()}
       </Modal>
-      {/* ========================================================= */}
-      {/* PARTNER CARD INVENTORY DETAIL POPUP MODAL (NO SCROLL/SLIDE)*/}
-      {/* ========================================================= */}
+      {/* ─── Modal 4: Interactive Real-Time Franchise Partner Card Details Popup ─── */}
       {partnerCardPopupOpen && !isSuperAdmin && (
         <div
+          className="partner-card-popup-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -4592,6 +4595,7 @@ const CardInventoryPage = () => {
           onClick={() => setPartnerCardPopupOpen(false)}
         >
           <div
+            className="partner-card-popup-container"
             style={{
               backgroundColor: '#FFFFFF',
               borderRadius: '16px',
@@ -4609,6 +4613,7 @@ const CardInventoryPage = () => {
           >
             {/* Modal Header */}
             <div
+              className="partner-card-popup-header"
               style={{
                 padding: '14px 20px',
                 borderBottom: '1px solid #E2E8F0',
@@ -4621,7 +4626,7 @@ const CardInventoryPage = () => {
               }}
             >
               {/* Left: Icon & Title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="partner-card-popup-title-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
                   style={{
                     width: '40px',
@@ -4662,7 +4667,7 @@ const CardInventoryPage = () => {
                 </div>
 
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={{ margin: 0, fontSize: '17px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     {partnerCardPopupType === 'MY_AVAILABLE_STOCK' && 'My Available Stock Details'}
                     {partnerCardPopupType === 'SUB_FRANCHISE_AVAILABLE_STOCK' && 'Sub-Franchise Stock Breakdown'}
                     {partnerCardPopupType === 'CUSTOMERS' && 'Registered Customers & Network'}
@@ -4714,8 +4719,9 @@ const CardInventoryPage = () => {
               </div>
 
               {/* Right: Quick Tab Switcher & Close */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="partner-card-popup-tabs-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <div
+                  className="partner-card-popup-tabs-scroll"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
