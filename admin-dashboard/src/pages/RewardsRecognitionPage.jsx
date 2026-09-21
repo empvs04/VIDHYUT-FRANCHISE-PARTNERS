@@ -2186,8 +2186,7 @@ const RewardsRecognitionPage = () => {
           margin-bottom: 0px;
           height: 38px;
           background: linear-gradient(90deg, #ea580c 0%, #f97316 35%, #fb923c 70%, #ea580c 100%);
-          border-top: 2px solid #c2410c;
-          border-bottom: 2px solid #9a3412;
+          border: none;
           border-radius: 0px;
           display: flex;
           align-items: center;
@@ -2205,8 +2204,7 @@ const RewardsRecognitionPage = () => {
           margin-bottom: 24px;
           height: 38px;
           background: #080e1a;
-          border-top: 1.5px solid rgba(0, 0, 0, 0.6);
-          border-bottom: 2.5px solid #ea580c;
+          border: none;
           border-radius: 0px;
           display: flex;
           align-items: center;
@@ -2302,10 +2300,7 @@ const RewardsRecognitionPage = () => {
           overflow: hidden;
           box-shadow: 0 14px 34px -6px rgba(15, 23, 42, 0.22);
           background: #080e1a;
-          border-top: 1px solid rgba(255, 255, 255, 0.12);
-          border-left: none;
-          border-right: none;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+          border: none;
           user-select: none;
         }
         .rewards-banner-slides-wrapper {
