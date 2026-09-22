@@ -16,6 +16,9 @@ import {
   Package,
   Layers,
   Sparkles,
+  Check,
+  AlertTriangle,
+  ScanLine,
 } from 'lucide-react';
 
 const playBeepSound = () => {
@@ -28,7 +31,7 @@ const playBeepSound = () => {
 
     osc.type = 'sine';
     osc.frequency.setValueAtTime(920, ctx.currentTime); // Crisp High Beep
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.14);
 
     osc.connect(gain);
@@ -37,6 +40,28 @@ const playBeepSound = () => {
     osc.stop(ctx.currentTime + 0.14);
   } catch {
     // AudioContext blocked or unsupported
+  }
+};
+
+const playWarningSound = () => {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+  } catch {
+    // AudioContext blocked
   }
 };
 
@@ -50,17 +75,19 @@ const BarcodeCardScanner = ({
 }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  const [lastScannedSerial, setLastScannedSerial] = useState(null);
-  const [duplicateWarning, setDuplicateWarning] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [manualInput, setManualInput] = useState('');
   const [facingMode, setFacingMode] = useState('environment'); // 'environment' (back) or 'user' (front)
   const [availableCameras, setAvailableCameras] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState('');
 
+  // Single-Scan with Retry Control States
+  const [isPausedAfterScan, setIsPausedAfterScan] = useState(false);
+  const [scanResult, setScanResult] = useState(null); // { serial, status: 'SUCCESS' | 'DUPLICATE' | 'NOT_IN_STOCK', message: '' }
+
   const scannerRef = useRef(null);
   const scannerId = 'barcode-card-viewfinder-region';
-  const lastScannedTimeRef = useRef(0);
+  const isScanLockedRef = useRef(false);
 
   // Set of available serial numbers in inventory for instant lookup
   const availableSerialsSet = useRef(new Set());
@@ -75,17 +102,20 @@ const BarcodeCardScanner = ({
     }
   }, [availableCards]);
 
-  // Handle a detected barcode result
+  // Handle a detected barcode result (Single-Scan Mode)
   const handleScanSuccess = useCallback(
     (decodedText) => {
-      const now = Date.now();
-      // Throttle scanning to avoid multi-trigger on same frame (500ms debounce)
-      if (now - lastScannedTimeRef.current < 500) {
+      // Synchronous Lock: Ignore any additional frames immediately after detection
+      if (isScanLockedRef.current) {
+        return;
+      }
+      isScanLockedRef.current = true;
+
+      if (!decodedText || typeof decodedText !== 'string') {
+        isScanLockedRef.current = false;
         return;
       }
 
-      if (!decodedText || typeof decodedText !== 'string') return;
-      
       // Clean scanned text (extract serial format if QR contains URL or text)
       let serial = decodedText.trim();
       const match = serial.match(/(VS\d{4,8}|[A-Z0-9]{5,15})/i);
@@ -95,29 +125,99 @@ const BarcodeCardScanner = ({
         serial = serial.toUpperCase();
       }
 
-      lastScannedTimeRef.current = now;
+      // 1. Pause Hardware Scanner Feed immediately to stop continuous scanning
+      try {
+        if (scannerRef.current && typeof scannerRef.current.pause === 'function') {
+          scannerRef.current.pause(true);
+        }
+      } catch (err) {
+        console.warn('Scanner pause non-fatal error:', err);
+      }
 
-      // Check if already in scanned list
-      if (scannedCards.includes(serial)) {
-        setDuplicateWarning(`Card ${serial} is already in the scanned list!`);
-        setTimeout(() => setDuplicateWarning(''), 3000);
+      // 2. Validate Card Serial
+      const isDuplicate = scannedCards.some((s) => s.toUpperCase() === serial);
+      const isStockRestricted = availableSerialsSet.current.size > 0;
+      const isNotInStock = isStockRestricted && !availableSerialsSet.current.has(serial);
+
+      if (isDuplicate) {
+        if (soundEnabled) playWarningSound();
+        setScanResult({
+          serial,
+          status: 'DUPLICATE',
+          message: `Card ${serial} is already in your scanned list!`,
+        });
+        setIsPausedAfterScan(true);
         return;
       }
 
+      if (isNotInStock) {
+        if (soundEnabled) playWarningSound();
+        setScanResult({
+          serial,
+          status: 'NOT_IN_STOCK',
+          message: `Card ${serial} is NOT found in your available stock inventory!`,
+        });
+        setIsPausedAfterScan(true);
+        return;
+      }
+
+      // 3. Success: Play sound and add card
       if (soundEnabled) {
         playBeepSound();
       }
 
-      setDuplicateWarning('');
-      setLastScannedSerial(serial);
-      onAddCard(serial);
+      const addResult = onAddCard(serial);
+      if (addResult === false) {
+        setScanResult({
+          serial,
+          status: 'NOT_IN_STOCK',
+          message: `Card ${serial} could not be added from stock.`,
+        });
+      } else {
+        setScanResult({
+          serial,
+          status: 'SUCCESS',
+          message: `Card ${serial} scanned and added successfully!`,
+        });
+      }
+
+      setIsPausedAfterScan(true);
     },
     [scannedCards, soundEnabled, onAddCard]
   );
 
-  // Start Camera Scanning
+  // Resume / Retry for Next Scan
+  const handleRetryOrNextScan = async () => {
+    setScanResult(null);
+    setIsPausedAfterScan(false);
+    isScanLockedRef.current = false;
+
+    try {
+      if (scannerRef.current) {
+        const state = typeof scannerRef.current.getState === 'function' ? scannerRef.current.getState() : null;
+        // State 3 = PAUSED in html5-qrcode
+        if (state === 3 && typeof scannerRef.current.resume === 'function') {
+          scannerRef.current.resume();
+          return;
+        }
+      }
+      // If not paused or resumed, ensure scanner is active
+      if (!isScanning) {
+        await startScanner();
+      }
+    } catch (err) {
+      console.warn('Error resuming scanner, restarting instance...', err);
+      startScanner();
+    }
+  };
+
+  // Start Camera Scanning with FULL SCREEN Viewfinder Scanning
   const startScanner = async () => {
     setCameraError('');
+    setScanResult(null);
+    setIsPausedAfterScan(false);
+    isScanLockedRef.current = false;
+
     try {
       if (scannerRef.current) {
         try {
@@ -137,6 +237,7 @@ const BarcodeCardScanner = ({
           Html5QrcodeSupportedFormats.UPC_E,
           Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
         ],
         verbose: false,
       });
@@ -157,16 +258,23 @@ const BarcodeCardScanner = ({
         ? { deviceId: { exact: selectedCameraId } }
         : { facingMode: facingMode };
 
+      // Wide Full-Screen qrbox calculation: Scan across 95% width & 90% height of the full mobile screen
+      const wideQrboxFunction = (viewfinderWidth, viewfinderHeight) => {
+        const width = Math.max(Math.floor(viewfinderWidth * 0.94), 260);
+        const height = Math.max(Math.floor(viewfinderHeight * 0.90), 200);
+        return { width, height };
+      };
+
       await html5QrCode.start(
         cameraConfig,
         {
           fps: 15,
-          qrbox: { width: 280, height: 160 },
-          aspectRatio: 1.777778,
+          qrbox: wideQrboxFunction,
+          // Omitting restrictive aspectRatio so it utilizes full container dimensions
         },
         (decodedText) => handleScanSuccess(decodedText),
         () => {
-          // On frame error: ignore frame parse failures
+          // Frame error ignore
         }
       );
 
@@ -188,6 +296,9 @@ const BarcodeCardScanner = ({
       try {
         await scannerRef.current.stop();
         setIsScanning(false);
+        setIsPausedAfterScan(false);
+        setScanResult(null);
+        isScanLockedRef.current = false;
       } catch (err) {
         console.error('Error stopping scanner:', err);
       }
@@ -224,8 +335,24 @@ const BarcodeCardScanner = ({
     const serial = manualInput.trim().toUpperCase();
 
     if (scannedCards.includes(serial)) {
-      setDuplicateWarning(`Card ${serial} is already in the list!`);
-      setTimeout(() => setDuplicateWarning(''), 3000);
+      if (soundEnabled) playWarningSound();
+      setScanResult({
+        serial,
+        status: 'DUPLICATE',
+        message: `Card ${serial} is already in the list!`,
+      });
+      setIsPausedAfterScan(true);
+      return;
+    }
+
+    if (availableSerialsSet.current.size > 0 && !availableSerialsSet.current.has(serial)) {
+      if (soundEnabled) playWarningSound();
+      setScanResult({
+        serial,
+        status: 'NOT_IN_STOCK',
+        message: `Card ${serial} is not in your available stock!`,
+      });
+      setIsPausedAfterScan(true);
       return;
     }
 
@@ -233,14 +360,50 @@ const BarcodeCardScanner = ({
       playBeepSound();
     }
 
-    setDuplicateWarning('');
-    setLastScannedSerial(serial);
     onAddCard(serial);
+    setScanResult({
+      serial,
+      status: 'SUCCESS',
+      message: `Card ${serial} manually added successfully!`,
+    });
+    setIsPausedAfterScan(true);
     setManualInput('');
   };
 
   return (
     <div className="barcode-card-scanner-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* Dynamic Keyframes & Full Screen Scanner Styles */}
+      <style>{`
+        #barcode-card-viewfinder-region {
+          width: 100% !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+        }
+        #barcode-card-viewfinder-region video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          border-radius: 12px !important;
+          display: block !important;
+        }
+        #barcode-card-viewfinder-region img {
+          display: none !important;
+        }
+        @keyframes laserScanAnimation {
+          0% { top: 6%; opacity: 0.85; }
+          50% { top: 92%; opacity: 1; }
+          100% { top: 6%; opacity: 0.85; }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.9; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.02); }
+        }
+        @keyframes resultPopIn {
+          0% { opacity: 0; transform: scale(0.92); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
       {/* Top Controls Bar */}
       <div
         style={{
@@ -261,12 +424,20 @@ const BarcodeCardScanner = ({
               width: '10px',
               height: '10px',
               borderRadius: '50%',
-              backgroundColor: isScanning ? '#22C55E' : '#EF4444',
-              boxShadow: isScanning ? '0 0 8px #22C55E' : 'none',
+              backgroundColor: isPausedAfterScan ? '#F59E0B' : isScanning ? '#22C55E' : '#EF4444',
+              boxShadow: isPausedAfterScan
+                ? '0 0 8px #F59E0B'
+                : isScanning
+                ? '0 0 8px #22C55E'
+                : 'none',
             }}
           />
           <span style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.3px' }}>
-            {isScanning ? 'LIVE CAMERA BARCODE SCANNER ACTIVE' : 'SCANNER PAUSED'}
+            {isPausedAfterScan
+              ? 'CARD SCANNED • READY FOR NEXT'
+              : isScanning
+              ? 'FULL SCREEN CAMERA SCANNER ACTIVE'
+              : 'SCANNER PAUSED'}
           </span>
         </div>
 
@@ -362,67 +533,283 @@ const BarcodeCardScanner = ({
         </div>
       </div>
 
-      {/* Camera Viewfinder Box */}
+      {/* Camera Viewfinder Box (Expanded Full Screen Size) */}
       <div
         style={{
           position: 'relative',
           backgroundColor: '#000000',
-          borderRadius: '12px',
+          borderRadius: '14px',
           overflow: 'hidden',
-          minHeight: '260px',
+          minHeight: '340px',
+          maxHeight: '440px',
+          width: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+          border: '2px solid #1E293B',
         }}
       >
         <div
           id={scannerId}
           style={{
             width: '100%',
-            maxWidth: '480px',
             height: '100%',
+            minHeight: '340px',
             overflow: 'hidden',
           }}
         />
 
-        {/* Scan Target Overlay Reticle */}
-        {isScanning && (
+        {/* ACTIVE SCANNING FULL SCREEN RETICLE OVERLAY */}
+        {isScanning && !isPausedAfterScan && (
           <div
             style={{
               position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '260px',
-              height: '140px',
-              border: '2px dashed #38BDF8',
-              borderRadius: '10px',
-              boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.45)',
+              inset: '12px',
               pointerEvents: 'none',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '6px',
-              boxSizing: 'border-box',
               zIndex: 10,
             }}
           >
+            {/* Top Viewfinder Frame Brackets */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ width: '12px', height: '12px', borderTop: '3px solid #38BDF8', borderLeft: '3px solid #38BDF8' }} />
-              <div style={{ width: '12px', height: '12px', borderTop: '3px solid #38BDF8', borderRight: '3px solid #38BDF8' }} />
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderTop: '3.5px solid #38BDF8',
+                  borderLeft: '3.5px solid #38BDF8',
+                  borderTopLeftRadius: '8px',
+                }}
+              />
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderTop: '3.5px solid #38BDF8',
+                  borderRight: '3.5px solid #38BDF8',
+                  borderTopRightRadius: '8px',
+                }}
+              />
             </div>
 
-            <div style={{ fontSize: '11px', color: '#E0F2FE', fontWeight: '700', textShadow: '0 1px 3px rgba(0,0,0,0.8)', textAlign: 'center' }}>
-              Align Card Barcode Inside Reticle
+            {/* Laser Line Scanning Effect */}
+            <div
+              style={{
+                position: 'absolute',
+                left: '12px',
+                right: '12px',
+                height: '3px',
+                backgroundColor: '#38BDF8',
+                boxShadow: '0 0 12px #38BDF8, 0 0 20px #0284C7',
+                borderRadius: '2px',
+                animation: 'laserScanAnimation 2.2s infinite ease-in-out',
+              }}
+            />
+
+            {/* Subtitle Banner Badge */}
+            <div
+              style={{
+                alignSelf: 'center',
+                backgroundColor: 'rgba(15, 23, 42, 0.78)',
+                backdropFilter: 'blur(6px)',
+                color: '#E0F2FE',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '12px',
+                fontWeight: '700',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                textAlign: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              }}
+            >
+              ⚡ Full-Screen Active: Point camera at any card barcode
             </div>
 
+            {/* Bottom Viewfinder Frame Brackets */}
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-              <div style={{ width: '12px', height: '12px', borderBottom: '3px solid #38BDF8', borderLeft: '3px solid #38BDF8' }} />
-              <div style={{ width: '12px', height: '12px', borderBottom: '3px solid #38BDF8', borderRight: '3px solid #38BDF8' }} />
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderBottom: '3.5px solid #38BDF8',
+                  borderLeft: '3.5px solid #38BDF8',
+                  borderBottomLeftRadius: '8px',
+                }}
+              />
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderBottom: '3.5px solid #38BDF8',
+                  borderRight: '3.5px solid #38BDF8',
+                  borderBottomRightRadius: '8px',
+                }}
+              />
             </div>
+          </div>
+        )}
+
+        {/* SINGLE-SCAN RESULT OVERLAY (PAUSED AFTER SCAN - WITH RETRY / SCAN NEXT BUTTON) */}
+        {isPausedAfterScan && scanResult && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: '0',
+              backgroundColor: 'rgba(15, 23, 42, 0.94)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '24px 20px',
+              textAlign: 'center',
+              color: 'white',
+              zIndex: 30,
+              animation: 'resultPopIn 0.25s ease-out',
+            }}
+          >
+            {/* Status Icon */}
+            {scanResult.status === 'SUCCESS' ? (
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                  border: '2px solid #22C55E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '14px',
+                  boxShadow: '0 0 20px rgba(34, 197, 94, 0.35)',
+                }}
+              >
+                <CheckCircle2 size={36} color="#22C55E" />
+              </div>
+            ) : scanResult.status === 'DUPLICATE' ? (
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                  border: '2px solid #F59E0B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '14px',
+                  boxShadow: '0 0 20px rgba(245, 158, 11, 0.35)',
+                }}
+              >
+                <AlertTriangle size={34} color="#F59E0B" />
+              </div>
+            ) : (
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                  border: '2px solid #EF4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '14px',
+                  boxShadow: '0 0 20px rgba(239, 68, 68, 0.35)',
+                }}
+              >
+                <AlertCircle size={36} color="#EF4444" />
+              </div>
+            )}
+
+            {/* Status Title */}
+            <div
+              style={{
+                fontSize: '12px',
+                fontWeight: '800',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                color:
+                  scanResult.status === 'SUCCESS'
+                    ? '#86EFAC'
+                    : scanResult.status === 'DUPLICATE'
+                    ? '#FCD34D'
+                    : '#FCA5A5',
+                marginBottom: '6px',
+              }}
+            >
+              {scanResult.status === 'SUCCESS'
+                ? 'BARCODE SCANNED & ADDED'
+                : scanResult.status === 'DUPLICATE'
+                ? 'ALREADY SCANNED'
+                : 'CARD NOT IN STOCK'}
+            </div>
+
+            {/* Serial Number Display */}
+            <div
+              style={{
+                fontFamily: 'monospace',
+                fontSize: '24px',
+                fontWeight: '900',
+                letterSpacing: '1.5px',
+                backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                padding: '6px 18px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                color: '#FFFFFF',
+                marginBottom: '10px',
+              }}
+            >
+              {scanResult.serial}
+            </div>
+
+            {/* Message info */}
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#CBD5E1',
+                maxWidth: '380px',
+                marginBottom: '20px',
+                lineHeight: 1.4,
+              }}
+            >
+              {scanResult.message}
+            </p>
+
+            {/* Primary Action Button: "Scan Next Card / Retry" */}
+            <button
+              type="button"
+              onClick={handleRetryOrNextScan}
+              style={{
+                backgroundColor: scanResult.status === 'SUCCESS' ? '#0284C7' : '#D97706',
+                color: '#FFFFFF',
+                padding: '12px 26px',
+                borderRadius: '10px',
+                fontWeight: '800',
+                fontSize: '14px',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow:
+                  scanResult.status === 'SUCCESS'
+                    ? '0 4px 16px rgba(2, 132, 199, 0.5)'
+                    : '0 4px 16px rgba(217, 119, 6, 0.5)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <RefreshCw size={17} />
+              <span>
+                {scanResult.status === 'SUCCESS'
+                  ? 'Scan Next Card (अगला कार्ड स्कैन करें)'
+                  : 'Retry Scan (दोबारा स्कैन करें)'}
+              </span>
+            </button>
           </div>
         )}
 
@@ -432,7 +819,7 @@ const BarcodeCardScanner = ({
             style={{
               position: 'absolute',
               inset: '0',
-              backgroundColor: 'rgba(15, 23, 42, 0.92)',
+              backgroundColor: 'rgba(15, 23, 42, 0.94)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -440,7 +827,7 @@ const BarcodeCardScanner = ({
               padding: '20px',
               textAlign: 'center',
               color: 'white',
-              zIndex: 20,
+              zIndex: 40,
             }}
           >
             <AlertCircle size={32} color="#F87171" style={{ marginBottom: '10px' }} />
@@ -462,28 +849,6 @@ const BarcodeCardScanner = ({
           </div>
         )}
       </div>
-
-      {/* Duplicate / Notification Warnings */}
-      {duplicateWarning && (
-        <div
-          style={{
-            backgroundColor: '#FEF3C7',
-            border: '1px solid #FCD34D',
-            color: '#92400E',
-            padding: '8px 12px',
-            borderRadius: '8px',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          <AlertCircle size={16} color="#D97706" />
-          <span>{duplicateWarning}</span>
-        </div>
-      )}
 
       {/* Quick Manual Entry Input Fallback */}
       <form
@@ -615,7 +980,7 @@ const BarcodeCardScanner = ({
               No cards scanned yet
             </div>
             <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Hold card box barcode in front of camera to continuously scan and add up to 50+ cards
+              Scan cards one by one using the full-screen camera scanner above.
             </div>
           </div>
         ) : (
