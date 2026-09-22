@@ -924,18 +924,19 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Celebratory Card Allotment Banner */}
+        {/* Celebratory Card Allotment Banner (Compact & Snug) */}
         {partnerSummary?.latestAllotment && !dismissedBannerIds.includes(partnerSummary.latestAllotment.allotmentId) && (
           <div
             className="celebratory-allotment-banner"
             style={{
               position: 'relative',
               backgroundColor: '#F0FDF4',
-              border: '1.5px solid #BBF7D0',
-              borderRadius: '12px',
-              padding: '14px 16px',
-              marginBottom: '18px',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)',
+              border: '1px solid #86EFAC',
+              borderRadius: '10px',
+              padding: '10px 12px',
+              marginBottom: '14px',
+              boxShadow: '0 1px 4px rgba(16, 185, 129, 0.08)',
+              height: 'auto',
             }}
           >
             <style>{`
@@ -943,46 +944,53 @@ const DashboardPage = () => {
                 display: flex;
                 align-items: center;
                 justifyContent: space-between;
-                gap: 12px;
+                gap: 10px;
                 flex-wrap: wrap;
               }
               .celebratory-banner-info {
                 display: flex;
                 align-items: center;
-                gap: 12px;
-                flex: 1 1 280px;
+                gap: 10px;
+                flex: 1 1 260px;
                 min-width: 0;
-                padding-right: 32px;
+                padding-right: 28px;
               }
               .celebratory-banner-actions {
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 6px;
                 flex-shrink: 0;
               }
               @media (max-width: 640px) {
                 .celebratory-allotment-banner {
-                  padding: 12px 14px !important;
+                  padding: 10px 12px !important;
+                  margin-bottom: 12px !important;
                 }
                 .celebratory-banner-layout {
-                  flex-direction: column;
-                  align-items: stretch;
-                  gap: 12px;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  align-items: stretch !important;
+                  justify-content: flex-start !important;
+                  gap: 8px !important;
                 }
                 .celebratory-banner-info {
-                  padding-right: 28px;
+                  padding-right: 26px !important;
+                  gap: 8px !important;
                 }
                 .celebratory-banner-actions {
-                  width: 100%;
-                  display: grid;
-                  grid-template-columns: 1fr 1fr;
-                  gap: 8px;
+                  width: 100% !important;
+                  display: grid !important;
+                  grid-template-columns: 1fr 1fr !important;
+                  gap: 6px !important;
+                  margin-top: 2px !important;
                 }
                 .celebratory-banner-actions .btn {
-                  width: 100%;
-                  height: 36px !important;
-                  font-size: 12px !important;
-                  justify-content: center;
+                  width: 100% !important;
+                  height: 32px !important;
+                  font-size: 11.5px !important;
+                  padding: 0 8px !important;
+                  justify-content: center !important;
+                  border-radius: 6px !important;
                 }
               }
             `}</style>
@@ -994,11 +1002,11 @@ const DashboardPage = () => {
               title="Dismiss Banner"
               style={{
                 position: 'absolute',
-                top: '10px',
-                right: '10px',
-                width: '26px',
-                height: '26px',
-                borderRadius: '6px',
+                top: '8px',
+                right: '8px',
+                width: '24px',
+                height: '24px',
+                borderRadius: '50%',
                 border: '1px solid #CBD5E1',
                 background: '#FFFFFF',
                 color: '#64748B',
@@ -1007,29 +1015,28 @@ const DashboardPage = () => {
                 justifyContent: 'center',
                 cursor: 'pointer',
                 zIndex: 5,
+                padding: 0,
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#FEE2E2';
                 e.currentTarget.style.color = '#EF4444';
-                e.currentTarget.style.borderColor = '#FCA5A5';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = '#FFFFFF';
                 e.currentTarget.style.color = '#64748B';
-                e.currentTarget.style.borderColor = '#CBD5E1';
               }}
             >
-              <X size={14} />
+              <X size={13} />
             </button>
 
             <div className="celebratory-banner-layout">
               <div className="celebratory-banner-info">
                 <div
                   style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
                     backgroundColor: '#DCFCE7',
                     color: '#15803D',
                     display: 'flex',
@@ -1039,17 +1046,14 @@ const DashboardPage = () => {
                     border: '1px solid #BBF7D0',
                   }}
                 >
-                  <Sparkles size={18} />
+                  <Sparkles size={16} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '800', color: '#15803D', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <span>Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards Ready</span>
+                  <div style={{ fontWeight: '800', color: '#15803D', fontSize: '13px', lineHeight: 1.25 }}>
+                    Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards Ready
                   </div>
-                  <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px', wordBreak: 'break-all' }}>
-                    Serial Range:{' '}
-                    <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>
-                      {partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}
-                    </strong>
+                  <div style={{ fontSize: '11px', color: '#475569', marginTop: '1px', wordBreak: 'break-all', lineHeight: 1.2 }}>
+                    Range: <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>{partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}</strong>
                   </div>
                 </div>
               </div>
@@ -1060,19 +1064,20 @@ const DashboardPage = () => {
                   onClick={() => setShowCelebrationModal(true)}
                   className="btn btn-outline"
                   style={{
-                    fontSize: '12px',
+                    fontSize: '11.5px',
                     fontWeight: '700',
-                    height: '34px',
-                    padding: '0 12px',
+                    height: '30px',
+                    padding: '0 10px',
                     backgroundColor: '#FFFFFF',
                     borderColor: '#BAE6FD',
                     color: '#0284C7',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
+                    gap: '4px',
+                    borderRadius: '6px',
                   }}
                 >
-                  <Award size={14} color="#0284C7" />
+                  <Award size={13} color="#0284C7" />
                   <span>Certificate</span>
                 </button>
 
@@ -1080,16 +1085,17 @@ const DashboardPage = () => {
                   to={isSub ? '/customers/new' : '/cards/distribute'}
                   className="btn btn-primary"
                   style={{
-                    fontSize: '12px',
+                    fontSize: '11.5px',
                     fontWeight: '700',
-                    height: '34px',
-                    padding: '0 14px',
+                    height: '30px',
+                    padding: '0 12px',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
+                    gap: '4px',
+                    borderRadius: '6px',
                   }}
                 >
-                  <Zap size={14} />
+                  <Zap size={13} />
                   <span>{isSub ? 'Install' : 'Distribute'}</span>
                 </Link>
               </div>
