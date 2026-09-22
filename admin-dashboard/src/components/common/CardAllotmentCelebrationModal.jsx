@@ -27,16 +27,30 @@ const CardAllotmentCelebrationModal = ({
   useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(() => setAnimateIn(true), 50);
+      // Immediately mark this allotment ID as acknowledged so it never pops up again across page reloads
+      if (allotmentData) {
+        try {
+          if (allotmentData.allotmentId) {
+            localStorage.setItem(`vs_allotment_ack_${allotmentData.allotmentId}`, 'true');
+          }
+          if (allotmentData.transactionDbId) {
+            localStorage.setItem(`vs_allotment_ack_${allotmentData.transactionDbId}`, 'true');
+          }
+        } catch {
+          // localStorage disabled or private mode fallback
+        }
+      }
       return () => clearTimeout(timer);
     } else {
       setAnimateIn(false);
     }
-  }, [isOpen]);
+  }, [isOpen, allotmentData]);
 
   if (!isOpen || !allotmentData) return null;
 
   const {
     allotmentId,
+    transactionDbId,
     cardCount = 0,
     firstSerial = '',
     lastSerial = '',
@@ -46,12 +60,15 @@ const CardAllotmentCelebrationModal = ({
   } = allotmentData;
 
   const handleAcknowledgeAndClose = () => {
-    if (allotmentId) {
-      try {
+    try {
+      if (allotmentId) {
         localStorage.setItem(`vs_allotment_ack_${allotmentId}`, 'true');
-      } catch (e) {
-        console.error('Failed to save acknowledgement:', e);
       }
+      if (transactionDbId) {
+        localStorage.setItem(`vs_allotment_ack_${transactionDbId}`, 'true');
+      }
+    } catch (e) {
+      console.error('Failed to save acknowledgement:', e);
     }
     onClose();
   };

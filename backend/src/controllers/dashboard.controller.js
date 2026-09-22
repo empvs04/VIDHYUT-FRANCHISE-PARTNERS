@@ -996,18 +996,20 @@ export const getPartnerSummary = async (req, res, next) => {
     if (latestTxn && (latestTxn.cardIds?.length > 0 || latestTxn.quantity > 0)) {
       const totalCards = Math.max(latestTxn.quantity || 0, latestTxn.cardIds?.length || 0);
       const serials = latestTxn.cardSerialNumbers || [];
-      const updatedTs = new Date(latestTxn.updatedAt).getTime();
+      const txnDate = new Date(latestTxn.createdAt || latestTxn.updatedAt);
+      const ageHours = (Date.now() - txnDate.getTime()) / (1000 * 60 * 60);
 
-      // allotmentId encodes the transaction ID + updatedAt timestamp
-      // → admin edit changes updatedAt → new ID → dashboard shows fresh celebration
+      // Stable allotment ID using transactionId / _id so acknowledgement is permanent
       latestAllotment = {
-        allotmentId: `TXN_${latestTxn.transactionId}_${updatedTs}`,
+        allotmentId: `TXN_${latestTxn.transactionId || latestTxn._id}`,
+        transactionDbId: latestTxn._id ? latestTxn._id.toString() : '',
         cardCount: totalCards,
         firstSerial: serials[0] || null,
         lastSerial: serials[serials.length - 1] || null,
-        assignedAt: latestTxn.updatedAt || latestTxn.createdAt,
+        assignedAt: latestTxn.createdAt || latestTxn.updatedAt,
         assignedBy: 'Central HQ Administrator',
         notes: latestTxn.notes || 'Consignment allocation from Central Headquarters',
+        isRecent: ageHours <= 48, // Flag whether allotment happened within last 48 hours
       };
     }
 

@@ -765,10 +765,17 @@ const DashboardPage = () => {
           const summary = res.data.data;
           setPartnerSummary(summary);
 
-          // Check if there is a new unacknowledged card allotment
+          // Check if there is a new unacknowledged card allotment (Single time only within 48 hours)
           if (summary?.latestAllotment?.allotmentId) {
-            const isAck = localStorage.getItem(`vs_allotment_ack_${summary.latestAllotment.allotmentId}`);
-            if (!isAck) {
+            const allotment = summary.latestAllotment;
+            const isAck =
+              localStorage.getItem(`vs_allotment_ack_${allotment.allotmentId}`) ||
+              (allotment.transactionDbId && localStorage.getItem(`vs_allotment_ack_${allotment.transactionDbId}`));
+
+            const assignedTime = new Date(allotment.assignedAt || allotment.createdAt).getTime();
+            const isWithin48h = !isNaN(assignedTime) ? Date.now() - assignedTime < 48 * 60 * 60 * 1000 : false;
+
+            if (!isAck && isWithin48h && allotment.isRecent !== false) {
               setTimeout(() => {
                 setShowCelebrationModal(true);
               }, 450);
@@ -4482,7 +4489,19 @@ const DashboardPage = () => {
         {/* Celebratory Allotment Popup Modal */}
         <CardAllotmentCelebrationModal
           isOpen={showCelebrationModal}
-          onClose={() => setShowCelebrationModal(false)}
+          onClose={() => {
+            setShowCelebrationModal(false);
+            if (partnerSummary?.latestAllotment?.allotmentId) {
+              try {
+                localStorage.setItem(`vs_allotment_ack_${partnerSummary.latestAllotment.allotmentId}`, 'true');
+                if (partnerSummary.latestAllotment.transactionDbId) {
+                  localStorage.setItem(`vs_allotment_ack_${partnerSummary.latestAllotment.transactionDbId}`, 'true');
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }
+          }}
           allotmentData={partnerSummary?.latestAllotment}
           partner={partner}
         />
