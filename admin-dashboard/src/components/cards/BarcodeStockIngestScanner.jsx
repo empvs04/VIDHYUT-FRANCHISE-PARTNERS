@@ -25,6 +25,8 @@ import {
   ArrowRight,
   ShieldCheck,
   FlipHorizontal,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -172,6 +174,9 @@ const BarcodeStockIngestScanner = ({
   const [availableCameras, setAvailableCameras] = useState([]);
   const [selectedCameraId, setSelectedCameraId] = useState('');
 
+  // Auto-Suffix Mode (Allows scanning same physical test card barcode repeatedly)
+  const [autoUniqueMode, setAutoUniqueMode] = useState(true);
+
   // Stock Ingestion Processing States
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastScannedResult, setLastScannedResult] = useState(null); 
@@ -201,6 +206,50 @@ const BarcodeStockIngestScanner = ({
     setCameraStarting(false);
   }, []);
 
+  // Helper to resolve unique serial by adding incremental suffix if it already exists
+  const resolveUniqueSerial = async (baseSerial) => {
+    const rawClean = cleanBarcodeText(baseSerial);
+    if (!rawClean) return rawClean;
+
+    if (!autoUniqueMode) {
+      return rawClean;
+    }
+
+    try {
+      // Check existing cards in DB matching prefix or search
+      const searchRes = await api.get('/cards', { params: { search: rawClean, limit: 50 } });
+      const existingCards = searchRes.data?.data?.cards || [];
+      const existingSerials = new Set(existingCards.map((c) => c.serialNumber?.toUpperCase()));
+
+      // If not taken, use directly
+      if (!existingSerials.has(rawClean)) {
+        return rawClean;
+      }
+
+      // If taken, truncate base to 16 chars max to allow suffix like -01
+      const baseTruncated = rawClean.length > 16 ? rawClean.slice(0, 16) : rawClean;
+
+      for (let i = 1; i <= 99; i++) {
+        const suffix = String(i).padStart(2, '0');
+        const candidate = `${baseTruncated}-${suffix}`;
+        if (!existingSerials.has(candidate)) {
+          // Double-check candidate
+          const checkRes = await api.get('/cards', { params: { search: candidate, limit: 1 } });
+          const checkCards = checkRes.data?.data?.cards || [];
+          const isMatch = checkCards.some((c) => c.serialNumber?.toUpperCase() === candidate);
+          if (!isMatch) {
+            return candidate;
+          }
+        }
+      }
+
+      // Fallback timestamp suffix
+      return `${baseTruncated}-${Date.now().toString().slice(-4)}`;
+    } catch {
+      return `${rawClean.slice(0, 15)}-${Date.now().toString().slice(-3)}`;
+    }
+  };
+
   // Ingest Serials directly into Stock
   const ingestStockDirectly = async (serialsToAdd, detectedInfo) => {
     if (!serialsToAdd || serialsToAdd.length === 0) {
@@ -217,16 +266,43 @@ const BarcodeStockIngestScanner = ({
     setLastScannedResult(null);
 
     try {
+      // If Auto-Unique mode is active, ensure all serials are unique with suffix if repeated
+      let finalSerials = [];
+      let hadSuffixed = false;
+
+      if (autoUniqueMode) {
+        if (serialsToAdd.length === 1) {
+          const resolved = await resolveUniqueSerial(serialsToAdd[0]);
+          if (resolved !== serialsToAdd[0]) {
+            hadSuffixed = true;
+          }
+          finalSerials = [resolved];
+        } else {
+          // Range case
+          const firstResolved = await resolveUniqueSerial(serialsToAdd[0]);
+          if (firstResolved !== serialsToAdd[0]) {
+            hadSuffixed = true;
+            const suffixMatch = firstResolved.match(/-(\d+)$/);
+            const suffixStr = suffixMatch ? `-${suffixMatch[1]}` : `-${Date.now().toString().slice(-3)}`;
+            finalSerials = serialsToAdd.map((s) => `${s.slice(0, 16)}${suffixStr}`);
+          } else {
+            finalSerials = serialsToAdd;
+          }
+        }
+      } else {
+        finalSerials = serialsToAdd;
+      }
+
       const notesPayload = `[BARCODE STOCK] ${boxNotes?.trim() || 'Physical Barcode Stock Ingestion'}${
         detectedInfo?.isRange ? ` (Box ${detectedInfo.rawCode})` : ''
-      }`;
+      }${hadSuffixed ? ' [Auto-Suffixed Duplicate]' : ''}`;
 
       const res = await api.post('/cards/manual', {
-        serialNumbers: serialsToAdd,
+        serialNumbers: finalSerials,
         notes: notesPayload,
       });
 
-      const totalCreated = res.data?.data?.totalCreated || serialsToAdd.length;
+      const totalCreated = res.data?.data?.totalCreated || finalSerials.length;
       const batchId = res.data?.data?.batchId || 'BATCH-' + Date.now();
 
       if (soundEnabled) playSuccessChime();
@@ -235,10 +311,12 @@ const BarcodeStockIngestScanner = ({
         status: 'SUCCESS',
         batchId,
         count: totalCreated,
-        serials: serialsToAdd,
+        serials: finalSerials,
         detectedInfo,
-        firstSerial: serialsToAdd[0],
-        lastSerial: serialsToAdd[serialsToAdd.length - 1],
+        firstSerial: finalSerials[0],
+        lastSerial: finalSerials[finalSerials.length - 1],
+        originalScanned: serialsToAdd[0],
+        wasSuffixed: hadSuffixed,
         timestamp: new Date(),
       };
 
@@ -302,7 +380,7 @@ const BarcodeStockIngestScanner = ({
         });
       }
     },
-    [soundEnabled, stopCamera, boxNotes]
+    [soundEnabled, stopCamera, boxNotes, autoUniqueMode]
   );
 
   // Start Camera in Full Box View
@@ -548,6 +626,29 @@ const BarcodeStockIngestScanner = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Auto-Unique Mode Switcher */}
+            <button
+              type="button"
+              onClick={() => setAutoUniqueMode((prev) => !prev)}
+              style={{
+                background: autoUniqueMode ? 'rgba(16, 185, 129, 0.18)' : 'rgba(148, 163, 184, 0.15)',
+                border: `1px solid ${autoUniqueMode ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.15)'}`,
+                color: autoUniqueMode ? '#34D399' : '#94A3B8',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '700',
+              }}
+              title="When enabled, scanning the same physical test barcode multiple times will auto-append -01, -02 so you can add multiple cards freely"
+            >
+              <Zap size={15} color={autoUniqueMode ? '#34D399' : '#94A3B8'} />
+              <span>{autoUniqueMode ? 'Multi-Scan Suffix: ON' : 'Strict Mode'}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setSoundEnabled((prev) => !prev)}
@@ -572,13 +673,16 @@ const BarcodeStockIngestScanner = ({
         </div>
       </div>
 
-      {/* Lot Notes Input */}
+      {/* Lot Notes & Multi-Scan Info */}
       <div className="card" style={{ padding: '14px 18px', marginBottom: '0px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
           <label style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Box size={16} color="#0284C7" />
             <span>Packaging / Box Lot Reference (Optional):</span>
           </label>
+          <span style={{ fontSize: '12px', color: '#059669', fontWeight: '600', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '6px' }}>
+            ⚡ Same test barcode scan karne par automatically <code>-01, -02...</code> add ho jayega!
+          </span>
         </div>
         <input
           type="text"
@@ -762,7 +866,7 @@ const BarcodeStockIngestScanner = ({
               <RefreshCw size={48} color="#38BDF8" className="animate-spin" style={{ marginBottom: '14px' }} />
               <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: '700' }}>Adding Stock to Warehouse...</h3>
               <p style={{ margin: 0, fontSize: '13.5px', color: '#94A3B8' }}>
-                Validating barcode uniqueness and saving cards into system inventory
+                Registering card stock into database with uniqueness resolution...
               </p>
             </div>
           )}
@@ -822,7 +926,7 @@ const BarcodeStockIngestScanner = ({
                 +{lastScannedResult.count} Cards Added to Inventory
               </h3>
 
-              <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#15803D', maxWidth: '460px' }}>
+              <div style={{ margin: '0 0 20px', fontSize: '14px', color: '#15803D', maxWidth: '460px' }}>
                 {lastScannedResult.detectedInfo?.isRange ? (
                   <>
                     Box Range Barcode: <strong>{lastScannedResult.detectedInfo.rawCode}</strong> <br />
@@ -832,10 +936,15 @@ const BarcodeStockIngestScanner = ({
                   </>
                 ) : (
                   <>
-                    Card Serial: <strong>{lastScannedResult.firstSerial}</strong>
+                    Registered Serial: <strong>{lastScannedResult.firstSerial}</strong>
+                    {lastScannedResult.wasSuffixed && (
+                      <div style={{ marginTop: '4px', fontSize: '12px', color: '#047857' }}>
+                        (Auto-indexed from duplicate test barcode: <code>{lastScannedResult.originalScanned}</code>)
+                      </div>
+                    )}
                   </>
                 )}
-              </p>
+              </div>
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', width: '100%', maxWidth: '440px' }}>
