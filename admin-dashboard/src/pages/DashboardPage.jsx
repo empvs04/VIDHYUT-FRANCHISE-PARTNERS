@@ -924,7 +924,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Celebratory Card Allotment Banner (Compact & Snug) */}
+        {/* Celebratory Card Allotment Banner (Responsive: 1-row on Desktop, 2-row on Mobile) */}
         {partnerSummary?.latestAllotment && !dismissedBannerIds.includes(partnerSummary.latestAllotment.allotmentId) && (
           <div
             className="celebratory-allotment-banner"
@@ -933,148 +933,170 @@ const DashboardPage = () => {
               backgroundColor: '#F0FDF4',
               border: '1px solid #86EFAC',
               borderRadius: '10px',
-              padding: '10px 12px',
-              marginBottom: '14px',
+              padding: '10px 14px',
+              marginBottom: '16px',
               boxShadow: '0 1px 4px rgba(16, 185, 129, 0.08)',
-              height: 'auto',
             }}
           >
             <style>{`
-              .celebratory-banner-layout {
+              .celebratory-banner-inner {
                 display: flex;
                 align-items: center;
-                justifyContent: space-between;
-                gap: 10px;
-                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 12px;
               }
-              .celebratory-banner-info {
+              .celebratory-banner-left {
                 display: flex;
                 align-items: center;
                 gap: 10px;
-                flex: 1 1 260px;
                 min-width: 0;
-                padding-right: 28px;
+                flex: 1;
               }
-              .celebratory-banner-actions {
+              .celebratory-banner-right {
                 display: flex;
                 align-items: center;
-                gap: 6px;
+                gap: 8px;
                 flex-shrink: 0;
               }
+              .celebratory-mobile-close-btn {
+                display: none !important;
+              }
+              .celebratory-desktop-close-btn {
+                display: flex !important;
+              }
+
               @media (max-width: 640px) {
                 .celebratory-allotment-banner {
                   padding: 10px 12px !important;
-                  margin-bottom: 12px !important;
                 }
-                .celebratory-banner-layout {
-                  display: flex !important;
+                .celebratory-banner-inner {
                   flex-direction: column !important;
                   align-items: stretch !important;
-                  justify-content: flex-start !important;
                   gap: 8px !important;
                 }
-                .celebratory-banner-info {
-                  padding-right: 26px !important;
-                  gap: 8px !important;
+                .celebratory-banner-left {
+                  width: 100% !important;
+                  justify-content: space-between !important;
                 }
-                .celebratory-banner-actions {
+                .celebratory-banner-right {
                   width: 100% !important;
                   display: grid !important;
                   grid-template-columns: 1fr 1fr !important;
                   gap: 6px !important;
-                  margin-top: 2px !important;
                 }
-                .celebratory-banner-actions .btn {
+                .celebratory-banner-right .celebratory-action-btn {
                   width: 100% !important;
                   height: 32px !important;
                   font-size: 11.5px !important;
                   padding: 0 8px !important;
                   justify-content: center !important;
-                  border-radius: 6px !important;
+                }
+                .celebratory-mobile-close-btn {
+                  display: flex !important;
+                }
+                .celebratory-desktop-close-btn {
+                  display: none !important;
                 }
               }
             `}</style>
 
-            {/* Top Right Dismiss 'X' Button */}
-            <button
-              type="button"
-              onClick={() => handleDismissBanner(partnerSummary.latestAllotment.allotmentId)}
-              title="Dismiss Banner"
-              style={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
-                color: '#64748B',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                zIndex: 5,
-                padding: 0,
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#FEE2E2';
-                e.currentTarget.style.color = '#EF4444';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.color = '#64748B';
-              }}
-            >
-              <X size={13} />
-            </button>
+            <div className="celebratory-banner-inner">
+              {/* Left side: Icon + Text (+ Mobile close button on Row 1) */}
+              <div className="celebratory-banner-left">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: '#DCFCE7',
+                      color: '#15803D',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      border: '1px solid #BBF7D0',
+                    }}
+                  >
+                    <Sparkles size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: '800',
+                        color: '#15803D',
+                        fontSize: '13px',
+                        lineHeight: 1.25,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards Ready
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '11.5px',
+                        color: '#475569',
+                        marginTop: '1px',
+                        lineHeight: 1.2,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      Serial Range:{' '}
+                      <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>
+                        {partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="celebratory-banner-layout">
-              <div className="celebratory-banner-info">
-                <div
+                {/* Mobile only X button (Row 1 top right) */}
+                <button
+                  type="button"
+                  className="celebratory-mobile-close-btn"
+                  onClick={() => handleDismissBanner(partnerSummary.latestAllotment.allotmentId)}
+                  title="Dismiss Banner"
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    backgroundColor: '#DCFCE7',
-                    color: '#15803D',
-                    display: 'flex',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    border: '1px solid #CBD5E1',
+                    background: '#FFFFFF',
+                    color: '#64748B',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    cursor: 'pointer',
                     flexShrink: 0,
-                    border: '1px solid #BBF7D0',
+                    padding: 0,
                   }}
                 >
-                  <Sparkles size={16} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '800', color: '#15803D', fontSize: '13px', lineHeight: 1.25 }}>
-                    Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards Ready
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#475569', marginTop: '1px', wordBreak: 'break-all', lineHeight: 1.2 }}>
-                    Range: <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>{partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}</strong>
-                  </div>
-                </div>
+                  <X size={13} />
+                </button>
               </div>
 
-              <div className="celebratory-banner-actions">
+              {/* Right side: Certificate + Distribute + Desktop Close X */}
+              <div className="celebratory-banner-right">
                 <button
                   type="button"
                   onClick={() => setShowCelebrationModal(true)}
-                  className="btn btn-outline"
+                  className="btn btn-outline celebratory-action-btn"
                   style={{
+                    height: '32px',
+                    padding: '0 12px',
                     fontSize: '11.5px',
                     fontWeight: '700',
-                    height: '30px',
-                    padding: '0 10px',
                     backgroundColor: '#FFFFFF',
                     borderColor: '#BAE6FD',
                     color: '#0284C7',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '5px',
                     borderRadius: '6px',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   <Award size={13} color="#0284C7" />
@@ -1083,21 +1105,56 @@ const DashboardPage = () => {
 
                 <Link
                   to={isSub ? '/customers/new' : '/cards/distribute'}
-                  className="btn btn-primary"
+                  className="btn btn-primary celebratory-action-btn"
                   style={{
+                    height: '32px',
+                    padding: '0 14px',
                     fontSize: '11.5px',
                     fontWeight: '700',
-                    height: '30px',
-                    padding: '0 12px',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '5px',
                     borderRadius: '6px',
+                    whiteSpace: 'nowrap',
+                    textDecoration: 'none',
                   }}
                 >
                   <Zap size={13} />
                   <span>{isSub ? 'Install' : 'Distribute'}</span>
                 </Link>
+
+                {/* Desktop only X button */}
+                <button
+                  type="button"
+                  className="celebratory-desktop-close-btn"
+                  onClick={() => handleDismissBanner(partnerSummary.latestAllotment.allotmentId)}
+                  title="Dismiss Banner"
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    background: '#FFFFFF',
+                    color: '#64748B',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    padding: 0,
+                    marginLeft: '2px',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#FEE2E2';
+                    e.currentTarget.style.color = '#EF4444';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#FFFFFF';
+                    e.currentTarget.style.color = '#64748B';
+                  }}
+                >
+                  <X size={13} />
+                </button>
               </div>
             </div>
           </div>
