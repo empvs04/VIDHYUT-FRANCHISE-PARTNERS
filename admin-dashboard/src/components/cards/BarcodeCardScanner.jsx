@@ -134,7 +134,7 @@ const BarcodeCardScanner = ({
         console.warn('Scanner pause non-fatal error:', err);
       }
 
-      // 2. Validate Card Serial
+      // 2. Validate Card Serial against Partner's Assigned Stock
       const isDuplicate = scannedCards.some((s) => s.toUpperCase() === serial);
       const isStockRestricted = availableSerialsSet.current.size > 0;
       const isNotInStock = isStockRestricted && !availableSerialsSet.current.has(serial);
@@ -144,7 +144,7 @@ const BarcodeCardScanner = ({
         setScanResult({
           serial,
           status: 'DUPLICATE',
-          message: `Card ${serial} is already in your scanned list!`,
+          message: `Card ${serial} pehle se aapke Sub-Franchise allotment list me add ho chuka hai!`,
         });
         setIsPausedAfterScan(true);
         return;
@@ -155,13 +155,13 @@ const BarcodeCardScanner = ({
         setScanResult({
           serial,
           status: 'NOT_IN_STOCK',
-          message: `Card ${serial} is NOT found in your available stock inventory!`,
+          message: `Card ${serial} aapko allot nahi kiya gaya hai ya aapke available stock me nahi hai!`,
         });
         setIsPausedAfterScan(true);
         return;
       }
 
-      // 3. Success: Play sound and add card
+      // 3. Success: Card belongs to partner's stock -> Play sound and add card
       if (soundEnabled) {
         playBeepSound();
       }
@@ -171,13 +171,13 @@ const BarcodeCardScanner = ({
         setScanResult({
           serial,
           status: 'NOT_IN_STOCK',
-          message: `Card ${serial} could not be added from stock.`,
+          message: `Card ${serial} aapke stock se add nahi ho paya.`,
         });
       } else {
         setScanResult({
           serial,
           status: 'SUCCESS',
-          message: `Card ${serial} scanned and added successfully!`,
+          message: `Card ${serial} aapke stock se verify ho gaya aur Sub-Franchise allocation list me add kar diya gaya hai!`,
         });
       }
 
@@ -743,10 +743,10 @@ const BarcodeCardScanner = ({
               }}
             >
               {scanResult.status === 'SUCCESS'
-                ? 'BARCODE SCANNED & ADDED'
+                ? '✅ VERIFIED IN YOUR STOCK & ADDED'
                 : scanResult.status === 'DUPLICATE'
-                ? 'ALREADY SCANNED'
-                : 'CARD NOT IN STOCK'}
+                ? 'ℹ️ ALREADY IN ALLOCATION LIST'
+                : '❌ NOT ALLOTTED TO YOU / NOT IN STOCK'}
             </div>
 
             {/* Serial Number Display */}
@@ -807,7 +807,9 @@ const BarcodeCardScanner = ({
               <span>
                 {scanResult.status === 'SUCCESS'
                   ? 'Scan Next Card (अगला कार्ड स्कैन करें)'
-                  : 'Retry Scan (दोबारा स्कैन करें)'}
+                  : scanResult.status === 'DUPLICATE'
+                  ? 'Scan Next Card (अगला कार्ड स्कैन करें)'
+                  : 'Retry / Scan Another (दोबारा स्कैन करें)'}
               </span>
             </button>
           </div>
