@@ -103,40 +103,100 @@ const CardAllotmentCelebrationModal = ({
 
   // Confetti particles data
   const particles = [
-    { id: 1, left: '8%', delay: '0s', duration: '2.5s', color: '#F59E0B', size: '10px', shape: 'rect' },
-    { id: 2, left: '16%', delay: '0.4s', duration: '3.1s', color: '#10B981', size: '8px', shape: 'circle' },
-    { id: 3, left: '25%', delay: '0.2s', duration: '2.8s', color: '#38BDF8', size: '12px', shape: 'rect' },
-    { id: 4, left: '38%', delay: '0.7s', duration: '3.4s', color: '#EC4899', size: '9px', shape: 'circle' },
-    { id: 5, left: '50%', delay: '0.1s', duration: '2.6s', color: '#FBBF24', size: '11px', shape: 'rect' },
-    { id: 6, left: '62%', delay: '0.5s', duration: '3.2s', color: '#6366F1', size: '8px', shape: 'circle' },
-    { id: 7, left: '75%', delay: '0.3s', duration: '2.9s', color: '#10B981', size: '10px', shape: 'rect' },
-    { id: 8, left: '85%', delay: '0.6s', duration: '3.5s', color: '#F43F5E', size: '12px', shape: 'circle' },
-    { id: 9, left: '92%', delay: '0.2s', duration: '2.7s', color: '#38BDF8', size: '9px', shape: 'rect' },
-    { id: 10, left: '4%', delay: '0.8s', duration: '3.3s', color: '#8B5CF6', size: '11px', shape: 'circle' },
+    { id: 1, left: '8%', delay: '0s', duration: '2.5s', color: '#F59E0B', size: '9px', shape: 'rect' },
+    { id: 2, left: '18%', delay: '0.4s', duration: '3.1s', color: '#10B981', size: '7px', shape: 'circle' },
+    { id: 3, left: '30%', delay: '0.2s', duration: '2.8s', color: '#38BDF8', size: '10px', shape: 'rect' },
+    { id: 4, left: '44%', delay: '0.7s', duration: '3.4s', color: '#EC4899', size: '8px', shape: 'circle' },
+    { id: 5, left: '56%', delay: '0.1s', duration: '2.6s', color: '#FBBF24', size: '10px', shape: 'rect' },
+    { id: 6, left: '70%', delay: '0.5s', duration: '3.2s', color: '#6366F1', size: '7px', shape: 'circle' },
+    { id: 7, left: '82%', delay: '0.3s', duration: '2.9s', color: '#10B981', size: '9px', shape: 'rect' },
+    { id: 8, left: '92%', delay: '0.6s', duration: '3.5s', color: '#F43F5E', size: '10px', shape: 'circle' },
   ];
 
   return (
     <div
+      className="card-allotment-celebration-overlay"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(11, 15, 25, 0.82)',
+        backgroundColor: 'rgba(11, 15, 25, 0.86)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        padding: '16px',
+        padding: '12px 10px',
         opacity: animateIn ? 1 : 0,
         transition: 'opacity 0.25s ease-out',
         overflowY: 'auto',
+        overscrollBehavior: 'contain',
+        WebkitOverflowScrolling: 'touch',
       }}
       onClick={handleAcknowledgeAndClose}
     >
+      <style>{`
+        .card-allotment-celebration-modal {
+          width: 100%;
+          max-width: 520px;
+          max-height: 92dvh;
+          max-height: 92vh;
+          overflow-y: auto;
+          background: linear-gradient(145deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+          border-radius: 16px;
+          border: 1.5px solid rgba(245, 158, 11, 0.35);
+          box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 35px rgba(245, 158, 11, 0.2);
+          color: #F8FAFC;
+          position: relative;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .celebration-modal-inner {
+          padding: 18px 14px 14px;
+        }
+
+        .celebration-manifest-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+
+        .celebration-action-buttons-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .celebration-actions-row {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        @media (max-width: 520px) {
+          .celebration-modal-inner {
+            padding: 16px 12px 12px;
+          }
+          .celebration-manifest-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+          }
+          .celebration-actions-row {
+            flex-direction: column;
+            gap: 8px;
+          }
+          .celebration-action-primary-btn,
+          .celebration-action-secondary-btn {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+          }
+        }
+      `}</style>
+
       {/* Falling Confetti Particles Animation */}
       <div
         style={{
@@ -172,19 +232,10 @@ const CardAllotmentCelebrationModal = ({
 
       {/* Main Celebratory Modal Dialog */}
       <div
+        className="card-allotment-celebration-modal"
         style={{
-          position: 'relative',
-          width: '100%',
-          maxWidth: '540px',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-          background: 'linear-gradient(145deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-          borderRadius: '18px',
-          border: '1.5px solid rgba(245, 158, 11, 0.35)',
-          boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.8), 0 0 45px rgba(245, 158, 11, 0.25)',
-          color: '#F8FAFC',
           zIndex: 2,
-          transform: animateIn ? 'scale(1) translateY(0)' : 'scale(0.92) translateY(20px)',
+          transform: animateIn ? 'scale(1) translateY(0)' : 'scale(0.92) translateY(16px)',
           transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -192,79 +243,79 @@ const CardAllotmentCelebrationModal = ({
         {/* Top Glow Accent Strip */}
         <div
           style={{
-            height: '6px',
+            height: '5px',
             background: 'linear-gradient(90deg, #F59E0B, #10B981, #38BDF8, #F59E0B)',
             backgroundSize: '200% 100%',
             animation: 'gradientShift 3s linear infinite',
           }}
         />
 
-        {/* Close Button */}
+        {/* Close Button with Mobile-Friendly Touch Target */}
         <button
           onClick={handleAcknowledgeAndClose}
           aria-label="Close"
           style={{
             position: 'absolute',
-            top: '12px',
-            right: '12px',
-            width: '32px',
-            height: '32px',
+            top: '10px',
+            right: '10px',
+            width: '34px',
+            height: '34px',
             borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.12)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            color: '#CBD5E1',
+            background: 'rgba(255, 255, 255, 0.14)',
+            border: '1px solid rgba(255, 255, 255, 0.22)',
+            color: '#E2E8F0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.15s ease',
             zIndex: 10,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
             e.currentTarget.style.color = '#FFFFFF';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
-            e.currentTarget.style.color = '#CBD5E1';
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.14)';
+            e.currentTarget.style.color = '#E2E8F0';
           }}
         >
           <X size={18} />
         </button>
 
-        <div style={{ padding: '20px 16px 16px' }}>
+        <div className="celebration-modal-inner">
           {/* Festive Trophy & Sparkle Header */}
-          <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '12px' }}>
             {/* Top Pill Badge */}
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '4px 12px',
+                padding: '3px 10px',
                 background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(16, 185, 129, 0.2))',
                 border: '1px solid rgba(245, 158, 11, 0.4)',
                 borderRadius: '999px',
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontWeight: '800',
-                letterSpacing: '0.8px',
+                letterSpacing: '0.6px',
                 color: '#FBBF24',
                 textTransform: 'uppercase',
-                marginBottom: '10px',
-                boxShadow: '0 0 16px rgba(245, 158, 11, 0.2)',
+                marginBottom: '8px',
+                boxShadow: '0 0 14px rgba(245, 158, 11, 0.2)',
               }}
             >
-              <Sparkles size={12} color="#FBBF24" />
+              <Sparkles size={11} color="#FBBF24" />
               <span>STOCK ALLOTMENT CELEBRATION</span>
-              <Zap size={12} color="#FBBF24" />
+              <Zap size={11} color="#FBBF24" />
             </div>
 
             {/* Glowing Icon Container */}
-            <div style={{ position: 'relative', display: 'inline-block', marginBottom: '8px' }}>
+            <div style={{ position: 'relative', display: 'inline-block', marginBottom: '6px' }}>
               <div
                 style={{
                   position: 'absolute',
-                  inset: '-8px',
+                  inset: '-6px',
                   background: 'radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0) 70%)',
                   borderRadius: '50%',
                   animation: 'pulseGlow 2s infinite',
@@ -273,39 +324,42 @@ const CardAllotmentCelebrationModal = ({
               <div
                 style={{
                   position: 'relative',
-                  width: '56px',
-                  height: '56px',
+                  width: '50px',
+                  height: '50px',
                   margin: '0 auto',
-                  borderRadius: '16px',
+                  borderRadius: '14px',
                   background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 8px 20px rgba(245, 158, 11, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
+                  boxShadow: '0 6px 16px rgba(245, 158, 11, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.4)',
                 }}
               >
-                <Award size={30} color="#FFFFFF" />
+                <Award size={26} color="#FFFFFF" />
               </div>
             </div>
 
             {/* Title & Subtitle */}
             <h2
               style={{
-                fontSize: 'clamp(18px, 4.5vw, 21px)',
+                fontSize: 'clamp(16.5px, 4.4vw, 20px)',
                 fontWeight: '800',
                 color: '#FFFFFF',
-                marginBottom: '4px',
+                marginBottom: '3px',
                 letterSpacing: '-0.3px',
+                lineHeight: 1.25,
+                paddingRight: '24px',
+                paddingLeft: '24px',
               }}
             >
               🎉 Congratulations, {partner?.fullName || 'Partner'}!
             </h2>
             <p
               style={{
-                fontSize: '12.5px',
+                fontSize: '11.5px',
                 color: '#CBD5E1',
-                lineHeight: '1.4',
-                maxWidth: '440px',
+                lineHeight: '1.35',
+                maxWidth: '400px',
                 margin: '0 auto',
               }}
             >
@@ -318,17 +372,17 @@ const CardAllotmentCelebrationModal = ({
             style={{
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 95, 70, 0.25) 100%)',
               border: '1.5px solid rgba(16, 185, 129, 0.4)',
-              borderRadius: '14px',
-              padding: '12px 14px',
+              borderRadius: '12px',
+              padding: '10px 12px',
               textAlign: 'center',
-              marginBottom: '14px',
+              marginBottom: '12px',
               position: 'relative',
               overflow: 'hidden',
             }}
           >
             <div
               style={{
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontWeight: '700',
                 letterSpacing: '0.8px',
                 color: '#34D399',
@@ -340,38 +394,39 @@ const CardAllotmentCelebrationModal = ({
             </div>
             <div
               style={{
-                fontSize: 'clamp(24px, 6.5vw, 32px)',
+                fontSize: 'clamp(22px, 6vw, 28px)',
                 fontWeight: '900',
                 letterSpacing: '-0.5px',
                 color: '#FFFFFF',
-                textShadow: '0 0 25px rgba(52, 211, 153, 0.6)',
+                textShadow: '0 0 20px rgba(52, 211, 153, 0.6)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
+                gap: '6px',
+                lineHeight: 1.2,
               }}
             >
-              <CreditCard size={24} color="#34D399" />
+              <CreditCard size={22} color="#34D399" />
               <span>+{cardCount} Smart Cards</span>
             </div>
-            <div style={{ fontSize: '11.5px', color: '#A7F3D0', fontWeight: '500', marginTop: '2px' }}>
-              Active and ready for immediate territory distribution
+            <div style={{ fontSize: '11px', color: '#A7F3D0', fontWeight: '600', marginTop: '2px' }}>
+              Active &amp; ready for immediate territory distribution
             </div>
           </div>
 
-          {/* Consignment Voucher Info Card */}
+          {/* Consignment Voucher Info Card (2x2 Grid on Mobile) */}
           <div
             style={{
               background: 'rgba(15, 23, 42, 0.75)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '12px',
-              padding: '12px 14px',
-              marginBottom: '16px',
+              padding: '10px 12px',
+              marginBottom: '14px',
             }}
           >
             <div
               style={{
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontWeight: '700',
                 letterSpacing: '0.6px',
                 color: '#94A3B8',
@@ -386,27 +441,30 @@ const CardAllotmentCelebrationModal = ({
               <span>ALLOTMENT DETAILS &amp; SERIAL MANIFEST</span>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                gap: '8px',
-                fontSize: '12px',
-              }}
-            >
+            <div className="celebration-manifest-grid">
               {/* Serial Range */}
               <div
                 style={{
                   background: 'rgba(30, 41, 59, 0.8)',
-                  padding: '9px 12px',
+                  padding: '8px 10px',
                   borderRadius: '8px',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
+                  minWidth: 0,
                 }}
               >
-                <div style={{ fontSize: '10.5px', color: '#94A3B8', marginBottom: '2px' }}>
-                  Allocated Serial Range
+                <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}>
+                  Serial Range
                 </div>
-                <div style={{ fontWeight: '700', color: '#38BDF8', fontFamily: 'monospace', fontSize: '13px' }}>
+                <div
+                  style={{
+                    fontWeight: '700',
+                    color: '#38BDF8',
+                    fontFamily: 'monospace',
+                    fontSize: '11.5px',
+                    wordBreak: 'break-all',
+                    lineHeight: 1.2,
+                  }}
+                >
                   {firstSerial && lastSerial ? `${firstSerial} ➔ ${lastSerial}` : `${cardCount} Cards`}
                 </div>
               </div>
@@ -415,18 +473,31 @@ const CardAllotmentCelebrationModal = ({
               <div
                 style={{
                   background: 'rgba(30, 41, 59, 0.8)',
-                  padding: '9px 12px',
+                  padding: '8px 10px',
                   borderRadius: '8px',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
+                  minWidth: 0,
                 }}
               >
-                <div style={{ fontSize: '10.5px', color: '#94A3B8', marginBottom: '2px' }}>
-                  Franchise Territory
+                <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}>
+                  Territory
                 </div>
-                <div style={{ fontWeight: '700', color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <MapPin size={13} color="#F59E0B" />
-                  <span>
-                    {partner?.district || 'District'}, {partner?.state || 'State'}
+                <div
+                  style={{
+                    fontWeight: '700',
+                    color: '#F1F5F9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '11.5px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <MapPin size={12} color="#F59E0B" style={{ flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {partner?.district || partner?.state || 'Territory'}
                   </span>
                 </div>
               </div>
@@ -435,15 +506,25 @@ const CardAllotmentCelebrationModal = ({
               <div
                 style={{
                   background: 'rgba(30, 41, 59, 0.8)',
-                  padding: '9px 12px',
+                  padding: '8px 10px',
                   borderRadius: '8px',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
+                  minWidth: 0,
                 }}
               >
-                <div style={{ fontSize: '10.5px', color: '#94A3B8', marginBottom: '2px' }}>
+                <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}>
                   Consigned By
                 </div>
-                <div style={{ fontWeight: '600', color: '#F8FAFC' }}>
+                <div
+                  style={{
+                    fontWeight: '600',
+                    color: '#F8FAFC',
+                    fontSize: '11.5px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {assignedBy}
                 </div>
               </div>
@@ -452,17 +533,29 @@ const CardAllotmentCelebrationModal = ({
               <div
                 style={{
                   background: 'rgba(30, 41, 59, 0.8)',
-                  padding: '9px 12px',
+                  padding: '8px 10px',
                   borderRadius: '8px',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
+                  minWidth: 0,
                 }}
               >
-                <div style={{ fontSize: '10.5px', color: '#94A3B8', marginBottom: '2px' }}>
+                <div style={{ fontSize: '10px', color: '#94A3B8', marginBottom: '2px' }}>
                   Allocation Date
                 </div>
-                <div style={{ fontWeight: '600', color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Calendar size={13} color="#94A3B8" />
-                  <span>{formattedDate}</span>
+                <div
+                  style={{
+                    fontWeight: '600',
+                    color: '#F8FAFC',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '11.5px',
+                  }}
+                >
+                  <Calendar size={12} color="#94A3B8" style={{ flexShrink: 0 }} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {formattedDate}
+                  </span>
                 </div>
               </div>
             </div>
@@ -470,11 +563,11 @@ const CardAllotmentCelebrationModal = ({
             {notes && (
               <div
                 style={{
-                  marginTop: '10px',
-                  fontSize: '11.5px',
+                  marginTop: '8px',
+                  fontSize: '11px',
                   color: '#94A3B8',
                   background: 'rgba(30, 41, 59, 0.5)',
-                  padding: '6px 10px',
+                  padding: '5px 8px',
                   borderRadius: '6px',
                   fontStyle: 'italic',
                 }}
@@ -484,72 +577,60 @@ const CardAllotmentCelebrationModal = ({
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Action Buttons (Full-Width Responsive on Mobile) */}
+          <div className="celebration-action-buttons-wrap">
+            <div className="celebration-actions-row">
               <button
+                className="celebration-action-primary-btn"
                 onClick={handleGoToDistribute}
                 style={{
-                  flex: '1 1 180px',
-                  height: '44px',
+                  flex: '1 1 170px',
+                  height: '42px',
                   borderRadius: '10px',
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                   color: '#FFFFFF',
                   border: 'none',
-                  fontSize: '13.5px',
+                  fontSize: '13px',
                   fontWeight: '700',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   cursor: 'pointer',
                   boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-                  transition: 'all 0.18s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.35)';
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <Zap size={16} />
+                <Zap size={15} />
                 <span>
                   {partner?.franchiseType === 'SUB_FRANCHISE'
-                    ? 'Start Customer Installation'
-                    : 'Start Distributing Stock'}
+                    ? 'Start Installation'
+                    : 'Start Distributing'}
                 </span>
-                <ArrowRight size={15} />
+                <ArrowRight size={14} />
               </button>
 
               <button
+                className="celebration-action-secondary-btn"
                 onClick={handleGoToInventory}
                 style={{
-                  flex: '1 1 140px',
-                  height: '44px',
+                  flex: '1 1 130px',
+                  height: '42px',
                   borderRadius: '10px',
                   background: 'rgba(255, 255, 255, 0.08)',
                   color: '#F8FAFC',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
-                  fontSize: '13.5px',
+                  fontSize: '13px',
                   fontWeight: '600',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '8px',
+                  gap: '6px',
                   cursor: 'pointer',
-                  transition: 'all 0.18s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <Package size={16} color="#38BDF8" />
+                <Package size={15} color="#38BDF8" />
                 <span>View Card Stock</span>
               </button>
             </div>
@@ -560,7 +641,7 @@ const CardAllotmentCelebrationModal = ({
                 background: 'transparent',
                 border: 'none',
                 color: '#94A3B8',
-                fontSize: '12px',
+                fontSize: '11.5px',
                 fontWeight: '500',
                 padding: '6px',
                 cursor: 'pointer',
