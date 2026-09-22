@@ -263,88 +263,92 @@ const AddCardsPage = () => {
           display: 'flex',
           backgroundColor: '#F1F5F9',
           padding: '4px',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: '10px',
           marginBottom: '20px',
           gap: '4px',
-          flexWrap: 'wrap',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         <button
           type="button"
           onClick={() => setActiveTab('BATCH')}
           style={{
-            flex: 1,
-            minWidth: '180px',
-            padding: '10px 14px',
+            flex: '1 1 auto',
+            minWidth: '140px',
+            padding: '10px 12px',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '8px',
             backgroundColor: activeTab === 'BATCH' ? '#FFFFFF' : 'transparent',
             color: activeTab === 'BATCH' ? '#0284C7' : '#64748B',
-            fontWeight: activeTab === 'BATCH' ? '700' : '500',
-            fontSize: '13.5px',
+            fontWeight: activeTab === 'BATCH' ? '700' : '600',
+            fontSize: '13px',
             cursor: 'pointer',
             boxShadow: activeTab === 'BATCH' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
+            gap: '6px',
             transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
-          <Layers size={16} />
-          <span>Batch Serial Range (Continuous)</span>
+          <Layers size={15} />
+          <span>Batch Series</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('MANUAL')}
           style={{
-            flex: 1,
-            minWidth: '180px',
-            padding: '10px 14px',
+            flex: '1 1 auto',
+            minWidth: '140px',
+            padding: '10px 12px',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '8px',
             backgroundColor: activeTab === 'MANUAL' ? '#FFFFFF' : 'transparent',
             color: activeTab === 'MANUAL' ? '#0284C7' : '#64748B',
-            fontWeight: activeTab === 'MANUAL' ? '700' : '500',
-            fontSize: '13.5px',
+            fontWeight: activeTab === 'MANUAL' ? '700' : '600',
+            fontSize: '13px',
             cursor: 'pointer',
             boxShadow: activeTab === 'MANUAL' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
+            gap: '6px',
             transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
-          <ListPlus size={16} />
-          <span>Manual Serial List</span>
+          <ListPlus size={15} />
+          <span>Manual List</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('BARCODE')}
           style={{
-            flex: 1,
-            minWidth: '180px',
-            padding: '10px 14px',
+            flex: '1 1 auto',
+            minWidth: '150px',
+            padding: '10px 12px',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '8px',
             backgroundColor: activeTab === 'BARCODE' ? '#FFFFFF' : 'transparent',
             color: activeTab === 'BARCODE' ? '#059669' : '#64748B',
-            fontWeight: activeTab === 'BARCODE' ? '700' : '500',
-            fontSize: '13.5px',
+            fontWeight: activeTab === 'BARCODE' ? '700' : '600',
+            fontSize: '13px',
             cursor: 'pointer',
             boxShadow: activeTab === 'BARCODE' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
+            gap: '6px',
             transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
-          <ScanLine size={16} color={activeTab === 'BARCODE' ? '#059669' : undefined} />
-          <span>Barcode & Box Scanner</span>
+          <ScanLine size={15} color={activeTab === 'BARCODE' ? '#059669' : undefined} />
+          <span>Barcode & Box Scan</span>
         </button>
       </div>
 
@@ -360,46 +364,46 @@ const AddCardsPage = () => {
                 type="button"
                 onClick={() => fetchNextAvailableRange(prefix, 100, false)}
                 className="btn btn-outline btn-sm"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600 }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#0284c7', borderColor: '#bae6fd', background: '#f0f9ff', fontWeight: 600, fontSize: '12px' }}
               >
-                <Sparkles size={14} color="#0284c7" />
-                <span>Auto-Suggest Next Range (100 Cards)</span>
+                <Sparkles size={13} color="#0284c7" />
+                <span>Auto-Suggest (100 Cards)</span>
               </button>
             </div>
             <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '14px' }}>
-              Define the serial prefix and starting/ending serial indices to create a continuous block of cards (up to 20,000 cards per batch).
+              Define the serial prefix and starting/ending serial indices to create a continuous block of cards.
             </p>
 
             {/* Quick Batch Size Presets */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }}>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                QUICK BATCH SIZES:
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                QUICK SIZES:
               </span>
-              {[100, 500, 1000, 2500, 5000, 10000].map((qty) => (
+              {[100, 500, 1000, 2500, 5000].map((qty) => (
                 <button
                   key={qty}
                   type="button"
                   onClick={() => handleSetQuickCount(qty)}
                   style={{
-                    padding: '4px 10px',
+                    padding: '4px 8px',
                     borderRadius: '6px',
                     border: '1px solid #BAE6FD',
                     backgroundColor: calculatedTotal === qty ? '#0284C7' : '#F0F9FF',
                     color: calculatedTotal === qty ? '#FFFFFF' : '#0284C7',
-                    fontSize: '12px',
+                    fontSize: '11.5px',
                     fontWeight: '700',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  +{qty.toLocaleString()} Cards
+                  +{qty.toLocaleString()}
                 </button>
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '12px', marginBottom: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '4px' }}>
                   Serial Prefix <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -410,26 +414,28 @@ const AddCardsPage = () => {
                   placeholder="e.g. VS"
                   maxLength={6}
                   required
+                  style={{ fontSize: '13px' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '4px' }}>
                   Zero-Padding Digits
                 </label>
                 <select
                   className="select"
                   value={paddingLength}
                   onChange={(e) => setPaddingLength(parseInt(e.target.value, 10))}
+                  style={{ fontSize: '13px' }}
                 >
-                  <option value={4}>4 Digits (e.g. VS0001)</option>
-                  <option value={6}>6 Digits (e.g. VS000001 - Standard)</option>
-                  <option value={8}>8 Digits (e.g. VS00000001)</option>
+                  <option value={4}>4 Digits (VS0001)</option>
+                  <option value={6}>6 Digits (VS000001 - Standard)</option>
+                  <option value={8}>8 Digits (VS00000001)</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '4px' }}>
                   Starting Number <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -439,11 +445,12 @@ const AddCardsPage = () => {
                   onChange={(e) => setStartNumber(e.target.value)}
                   min={1}
                   required
+                  style={{ fontSize: '13px' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '4px' }}>
                   Ending Number <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -453,6 +460,7 @@ const AddCardsPage = () => {
                   onChange={(e) => setEndNumber(e.target.value)}
                   min={startNumber || 1}
                   required
+                  style={{ fontSize: '13px' }}
                 />
               </div>
             </div>
@@ -530,18 +538,18 @@ const AddCardsPage = () => {
               </div>
             ) : previewData ? (
               <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px', fontSize: '13px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', marginBottom: '12px', fontSize: '12.5px' }}>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>First Serial: </span>
-                    <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{previewData.firstSerial}</strong>
+                    <strong style={{ fontFamily: 'monospace', color: '#0F172A', display: 'block', fontSize: '13px' }}>{previewData.firstSerial}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Last Serial: </span>
-                    <strong style={{ fontFamily: 'monospace', color: '#0F172A' }}>{previewData.lastSerial}</strong>
+                    <strong style={{ fontFamily: 'monospace', color: '#0F172A', display: 'block', fontSize: '13px' }}>{previewData.lastSerial}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Initial Ownership: </span>
-                    <strong>Vidhyut Saathi HQ</strong>
+                    <strong style={{ display: 'block', fontSize: '13px' }}>Vidhyut Saathi HQ</strong>
                   </div>
                 </div>
 
@@ -554,7 +562,7 @@ const AddCardsPage = () => {
                     <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#DC2626', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <AlertTriangle size={16} /> Conflict: {previewData.duplicateCount} cards in this range ALREADY EXIST in MongoDB!
                     </div>
-                    <div style={{ fontSize: '12px', color: '#991B1B', fontFamily: 'monospace', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '12px', color: '#991B1B', fontFamily: 'monospace', marginBottom: '12px', wordBreak: 'break-all' }}>
                       Duplicates: {previewData.duplicates.slice(0, 10).join(', ')}
                       {previewData.duplicates.length > 10 && ` (+${previewData.duplicates.length - 10} more)`}
                     </div>
@@ -588,14 +596,15 @@ const AddCardsPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <Link to="/cards" className="btn btn-outline">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
+            <Link to="/cards" className="btn btn-outline" style={{ flex: '1 1 auto', minWidth: '100px', textAlign: 'center', justifyContent: 'center' }}>
               Cancel
             </Link>
             <button
               type="submit"
               className="btn btn-primary"
               disabled={loading || !previewData?.isValid || calculatedTotal <= 0}
+              style={{ flex: '2 1 auto', minWidth: '180px', justifyContent: 'center' }}
             >
               {loading ? (
                 <span>Generating {calculatedTotal} Cards...</span>

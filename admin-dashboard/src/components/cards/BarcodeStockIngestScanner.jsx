@@ -482,7 +482,7 @@ const BarcodeStockIngestScanner = ({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(320px, 1.1fr)', gap: '20px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px', width: '100%' }}>
         {/* Left Side: Camera Scanner & Manual Gun Input */}
         <div className="card" style={{ padding: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -648,13 +648,13 @@ const BarcodeStockIngestScanner = ({
         </div>
 
         {/* Right Side: Scanned Cards Queue & Submission */}
-        <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700' }}>
+        <div className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>
                 Scanned Barcode Stock Queue
               </h4>
-              <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
                 Cards ready to be registered in Warehouse stock
               </p>
             </div>
@@ -662,11 +662,16 @@ const BarcodeStockIngestScanner = ({
             <div
               style={{
                 backgroundColor: scannedSerials.length > 0 ? '#10B981' : '#E2E8F0',
-                color: scannedSerials.length > 0 ? '#FFFFFF' : '#64748B',
+                color: scannedSerials.length > 0 ? '#FFFFFF' : '#475569',
                 padding: '4px 12px',
                 borderRadius: '999px',
-                fontSize: '13px',
-                fontWeight: '800',
+                fontSize: '12px',
+                fontWeight: '700',
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               {scannedSerials.length} Cards
@@ -684,7 +689,7 @@ const BarcodeStockIngestScanner = ({
               placeholder="e.g. Barcode Box #1 - 100 Pcs (Lot OCT26)"
               value={boxNotes}
               onChange={(e) => setBoxNotes(e.target.value)}
-              style={{ fontSize: '12.5px' }}
+              style={{ fontSize: '12.5px', width: '100%', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -692,24 +697,25 @@ const BarcodeStockIngestScanner = ({
           <div
             style={{
               flex: 1,
-              minHeight: '220px',
-              maxHeight: '340px',
+              minHeight: '160px',
+              maxHeight: '300px',
               overflowY: 'auto',
               border: '1px solid var(--border-color)',
               borderRadius: '8px',
               backgroundColor: '#F8FAFC',
-              padding: '8px',
-              marginBottom: '12px',
+              padding: '10px',
+              marginBottom: '14px',
+              boxSizing: 'border-box',
             }}
           >
             {scannedSerials.length === 0 ? (
-              <div style={{ height: '100%', minHeight: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', textAlign: 'center' }}>
-                <Box size={32} style={{ opacity: 0.4, marginBottom: '6px' }} />
-                <p style={{ margin: 0, fontSize: '13px', fontWeight: '600' }}>No Barcodes Scanned Yet</p>
-                <p style={{ margin: '4px 0 0', fontSize: '11.5px' }}>Scan card barcodes with camera or enter serials above.</p>
+              <div style={{ height: '100%', minHeight: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', textAlign: 'center', padding: '12px' }}>
+                <Box size={30} style={{ opacity: 0.4, marginBottom: '6px' }} />
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#64748B' }}>No Barcodes Scanned Yet</p>
+                <p style={{ margin: '4px 0 0', fontSize: '11.5px', color: '#94A3B8' }}>Scan card barcodes with camera or enter serials above.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(115px, 1fr))', gap: '6px' }}>
                 {scannedSerials.map((serial, idx) => (
                   <div
                     key={`${serial}-${idx}`}
@@ -718,17 +724,17 @@ const BarcodeStockIngestScanner = ({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       backgroundColor: '#FFFFFF',
-                      padding: '6px 10px',
+                      padding: '6px 8px',
                       borderRadius: '6px',
                       border: '1px solid #E2E8F0',
-                      fontSize: '12px',
+                      fontSize: '11.5px',
                       fontFamily: 'monospace',
                       fontWeight: '700',
                       color: '#0F172A',
                       boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                     }}
                   >
-                    <span>{serial}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{serial}</span>
                     <button
                       type="button"
                       onClick={() => handleRemove(serial)}
@@ -740,6 +746,8 @@ const BarcodeStockIngestScanner = ({
                         padding: '2px',
                         display: 'flex',
                         alignItems: 'center',
+                        marginLeft: '4px',
+                        flexShrink: 0,
                       }}
                       title="Remove from batch"
                     >
@@ -752,13 +760,13 @@ const BarcodeStockIngestScanner = ({
           </div>
 
           {/* Action Row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginTop: 'auto', flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
             {scannedSerials.length > 0 && (
               <button
                 type="button"
                 onClick={handleClearAll}
                 className="btn btn-outline btn-sm"
-                style={{ color: '#EF4444', borderColor: '#FECACA' }}
+                style={{ color: '#EF4444', borderColor: '#FECACA', flex: '1 1 100px', minWidth: '90px', justifyContent: 'center' }}
               >
                 <Trash2 size={13} />
                 <span>Clear All</span>
@@ -771,19 +779,23 @@ const BarcodeStockIngestScanner = ({
               disabled={submitting || scannedSerials.length === 0}
               className="btn btn-success"
               style={{
-                marginLeft: 'auto',
-                display: 'flex',
+                flex: scannedSerials.length > 0 ? '2 1 180px' : '1 1 100%',
+                width: '100%',
+                minWidth: '160px',
+                display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
                 background: 'linear-gradient(135deg, #10B981, #059669)',
                 color: '#FFFFFF',
                 border: 'none',
                 fontWeight: '700',
-                padding: '10px 18px',
+                padding: '11px 16px',
                 borderRadius: '8px',
                 boxShadow: scannedSerials.length > 0 ? '0 3px 8px rgba(16, 185, 129, 0.3)' : 'none',
                 cursor: scannedSerials.length > 0 ? 'pointer' : 'not-allowed',
                 opacity: scannedSerials.length > 0 ? 1 : 0.6,
+                boxSizing: 'border-box',
               }}
             >
               {submitting ? (

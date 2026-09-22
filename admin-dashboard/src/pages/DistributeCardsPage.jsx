@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   CreditCard,
@@ -25,6 +25,7 @@ import {
   Layers,
   ArrowRight,
   Camera,
+  Plus,
 } from 'lucide-react';
 import api from '../services/api';
 import { FranchiseTypeBadge } from '../components/common/Badge';
@@ -52,6 +53,7 @@ const DistributeCardsPage = () => {
 
   // Selected cards
   const [selectedCardIds, setSelectedCardIds] = useState(new Set());
+  const [barcodeSelectedCardIds, setBarcodeSelectedCardIds] = useState(new Set());
   const [selectionMode, setSelectionMode] = useState('RANGE'); // Default to RANGE as requested
   const [quickCount, setQuickCount] = useState('');
   const [rangeStartSerial, setRangeStartSerial] = useState('');
@@ -365,14 +367,57 @@ const DistributeCardsPage = () => {
     setQuickCount('');
   };
 
-  // Barcode Scanner Handlers
+  // Helper: Identify if a card belongs to Barcode Stock
+  const isBarcodeCard = useCallback((c) => {
+    if (!c) return false;
+    const notes = (c.notes || '').toUpperCase();
+    const batchId = (c.batchId || '').toUpperCase();
+    const serial = (c.serialNumber || '').toUpperCase();
+
+    // 1. Explicit Barcode tags in notes or batchId
+    if (notes.includes('BARCODE') || batchId.includes('BARCODE')) return true;
+
+    // 2. Barcode specific prefixes
+    if (serial.startsWith('BC') || serial.startsWith('VSB') || serial.startsWith('BOX')) return true;
+
+    // 3. Manual batches without standard VS prefix
+    if (batchId.startsWith('MANUAL') && !serial.startsWith('VS')) return true;
+
+    return false;
+  }, []);
+
+  // Filter available cards for Barcode mode vs Regular batch mode
+  const availableBarcodeCards = useMemo(() => {
+    return availableCards.filter(isBarcodeCard);
+  }, [availableCards, isBarcodeCard]);
+
+  const availableRegularCards = useMemo(() => {
+    return availableCards.filter((c) => !isBarcodeCard(c));
+  }, [availableCards, isBarcodeCard]);
+
+  // Active Selected IDs dynamically based on selection mode tab
+  const activeSelectedCardIds = useMemo(() => {
+    return selectionMode === 'SCANNER' ? barcodeSelectedCardIds : selectedCardIds;
+  }, [selectionMode, barcodeSelectedCardIds, selectedCardIds]);
+
+  // Barcode Scanner Handlers (Operating strictly on Barcode Stock)
   const handleAddScannedCard = (serial) => {
     const card = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial.toUpperCase());
     if (!card) {
       showToast(`Card ${serial} is not in your available stock`, 'error');
       return false;
     }
-    setSelectedCardIds((prev) => {
+
+    // Only allow Barcode Cards in this tab if barcode cards exist in stock
+    if (availableBarcodeCards.length > 0 && !isBarcodeCard(card)) {
+      showToast(
+        `Card ${serial} is a continuous batch series card. The Barcode Scanner tab only accepts Barcode Stock Cards.`,
+        'error'
+      );
+      return false;
+    }
+
+    setBarcodeSelectedCardIds((prev) => {
       const next = new Set(prev);
       next.add(card._id);
       return next;
@@ -383,7 +428,7 @@ const DistributeCardsPage = () => {
   const handleRemoveScannedCard = (serial) => {
     const card = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial.toUpperCase());
     if (card) {
-      setSelectedCardIds((prev) => {
+      setBarcodeSelectedCardIds((prev) => {
         const next = new Set(prev);
         next.delete(card._id);
         return next;
@@ -392,20 +437,92 @@ const DistributeCardsPage = () => {
   };
 
   const handleClearAllScanned = () => {
-    setSelectedCardIds(new Set());
+    setBarcodeSelectedCardIds(new Set());
   };
 
-  const scannedSerialsList = useMemo(() => {
-    return Array.from(selectedCardIds)
+  // Barcode Card Selection & Gun Scanner State
+  const [barcodeSearch, setBarcodeSearch] = useState('');
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [barcodeGunInput, setBarcodeGunInput] = useState('');
+
+  // Filter available barcode cards by search
+  const filteredBarcodeCards = useMemo(() => {
+    if (!barcodeSearch.trim()) return availableBarcodeCards;
+    const term = barcodeSearch.trim().toLowerCase();
+    return availableBarcodeCards.filter(
+      (c) =>
+        c.serialNumber?.toLowerCase().includes(term) ||
+        c.notes?.toLowerCase().includes(term) ||
+        c.batchId?.toLowerCase().includes(term)
+    );
+  }, [availableBarcodeCards, barcodeSearch]);
+
+  const toggleBarcodeCard = (id) => {
+    setBarcodeSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleSelectAllBarcode = () => {
+    setBarcodeSelectedCardIds(new Set(availableBarcodeCards.map((c) => c._id)));
+  };
+
+  const handleClearBarcode = () => {
+    setBarcodeSelectedCardIds(new Set());
+  };
+
+  const handleSelectBarcodeCount = (count) => {
+    const num = Math.min(count, availableBarcodeCards.length);
+    const slice = availableBarcodeCards.slice(0, num);
+    setBarcodeSelectedCardIds(new Set(slice.map((c) => c._id)));
+    showToast(`Selected ${num} barcode cards`, 'success');
+  };
+
+  const handleGunBarcodeAdd = (e) => {
+    e.preventDefault();
+    if (!barcodeGunInput.trim()) return;
+    const serial = barcodeGunInput.trim().toUpperCase();
+    const card = availableBarcodeCards.find((c) => c.serialNumber?.toUpperCase() === serial);
+    if (!card) {
+      // Check if it exists in all available cards
+      const anyCard = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial);
+      if (anyCard) {
+        setBarcodeSelectedCardIds((prev) => {
+          const next = new Set(prev);
+          next.add(anyCard._id);
+          return next;
+        });
+        setBarcodeGunInput('');
+        showToast(`Card ${serial} added!`, 'success');
+        return;
+      }
+      showToast(`Card "${serial}" not found in available stock`, 'error');
+      return;
+    }
+    setBarcodeSelectedCardIds((prev) => {
+      const next = new Set(prev);
+      next.add(card._id);
+      return next;
+    });
+    setBarcodeGunInput('');
+    showToast(`Barcode card ${serial} selected!`, 'success');
+  };
+
+  // Scanned serial numbers strictly for the Barcode Scanner mode
+  const barcodeScannedSerialsList = useMemo(() => {
+    return Array.from(barcodeSelectedCardIds)
       .map((id) => {
         const card = availableCards.find((c) => c._id === id);
         return card?.serialNumber || '';
       })
       .filter(Boolean);
-  }, [selectedCardIds, availableCards]);
+  }, [barcodeSelectedCardIds, availableCards]);
 
   // Pricing & Free Cards calculations
-  const totalCardsCount = selectedCardIds.size;
+  const totalCardsCount = activeSelectedCardIds.size;
   const parsedFreeCount = Math.max(0, parseInt(freeCount, 10) || 0);
   const effectiveFreeCount = Math.min(parsedFreeCount, totalCardsCount);
   const effectivePaidCount = Math.max(0, totalCardsCount - effectiveFreeCount);
@@ -425,8 +542,8 @@ const DistributeCardsPage = () => {
       showToast('Please select a recipient Franchise Partner', 'error');
       return;
     }
-    if (selectedCardIds.size === 0) {
-      showToast('Please select at least 1 card to distribute', 'error');
+    if (activeSelectedCardIds.size === 0) {
+      showToast('Please select or scan at least 1 card to distribute', 'error');
       return;
     }
 
@@ -435,7 +552,7 @@ const DistributeCardsPage = () => {
       const payload = {
         buyerPartnerId: selectedPartnerId,
         toPartnerId: selectedPartnerId,
-        cardIds: Array.from(selectedCardIds),
+        cardIds: Array.from(activeSelectedCardIds),
         transactionType: determinedTxnType,
         pricePerCard: effectivePrice,
         freeQuantity: effectiveFreeCount,
@@ -447,7 +564,7 @@ const DistributeCardsPage = () => {
       const createdTxn = res.data?.data?.transaction || res.data?.data;
 
       showToast(
-        `Successfully allocated ${selectedCardIds.size} cards (${effectivePaidCount} paid + ${effectiveFreeCount} free) to ${selectedPartner?.fullName || 'partner'}!`,
+        `Successfully allocated ${activeSelectedCardIds.size} cards (${effectivePaidCount} paid + ${effectiveFreeCount} free) to ${selectedPartner?.fullName || 'partner'}!`,
         'success'
       );
       navigate(`/transactions/${createdTxn?._id || ''}`);
@@ -862,16 +979,16 @@ const DistributeCardsPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', alignSelf: 'center' }}>
                 <span
                   style={{
-                    backgroundColor: selectedCardIds.size > 0 ? '#E0F2FE' : '#F1F5F9',
-                    color: selectedCardIds.size > 0 ? '#0284C7' : 'var(--text-muted)',
+                    backgroundColor: activeSelectedCardIds.size > 0 ? '#E0F2FE' : '#F1F5F9',
+                    color: activeSelectedCardIds.size > 0 ? '#0284C7' : 'var(--text-muted)',
                     fontSize: '13px',
                     fontWeight: '800',
                     padding: '5px 14px',
                     borderRadius: '20px',
-                    border: selectedCardIds.size > 0 ? '1px solid #BAE6FD' : '1px solid #E2E8F0',
+                    border: activeSelectedCardIds.size > 0 ? '1px solid #BAE6FD' : '1px solid #E2E8F0',
                   }}
                 >
-                  {selectedCardIds.size} Cards Selected
+                  {activeSelectedCardIds.size} Cards Selected
                 </span>
               </div>
             </div>
@@ -881,7 +998,7 @@ const DistributeCardsPage = () => {
               {[
                 { id: 'QUANTITY', label: '1. By Quantity' },
                 { id: 'RANGE', label: '2. Serial Range' },
-                { id: 'SCANNER', label: '3. Barcode Scanner 📸' },
+                { id: 'SCANNER', label: `3. Barcode Cards 📦 (${availableBarcodeCards.length})` },
                 { id: 'GRID', label: '4. Card Picker' },
               ].map((tab) => (
                 <button
@@ -1363,16 +1480,334 @@ const DistributeCardsPage = () => {
               </div>
             )}
 
-            {/* TAB: Barcode / QR Camera Scanner */}
+            {/* TAB 3: BARCODE CARDS STOCK PICKER & SCANNER */}
             {selectionMode === 'SCANNER' && (
-              <BarcodeCardScanner
-                scannedCards={scannedSerialsList}
-                onAddCard={handleAddScannedCard}
-                onRemoveCard={handleRemoveScannedCard}
-                onClearAll={handleClearAllScanned}
-                availableCards={availableCards}
-                warehouseAvailable={availableCards.length}
-              />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* 1. Barcode Stock In Custody Banner */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: '#FFFFFF',
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    border: '1.5px solid #BBF7D0',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.06)',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
+                        backgroundColor: '#DCFCE7',
+                        color: '#16A34A',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Package size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '10.5px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                        BARCODE STOCK IN CUSTODY (ONLY BARCODE CARDS)
+                      </div>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', marginTop: '1px' }}>
+                        {availableBarcodeCards.length > 0 ? (
+                          <>
+                            {availableBarcodeCards.length} Barcode Cards Available{' '}
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', fontFamily: 'monospace' }}>
+                              ({availableBarcodeCards[0]?.serialNumber} → {availableBarcodeCards[availableBarcodeCards.length - 1]?.serialNumber})
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ color: '#DC2626' }}>0 Barcode Cards in Stock</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      style={{
+                        backgroundColor: barcodeSelectedCardIds.size > 0 ? '#DCFCE7' : '#F1F5F9',
+                        color: barcodeSelectedCardIds.size > 0 ? '#15803D' : '#64748B',
+                        padding: '4px 12px',
+                        borderRadius: '16px',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        border: barcodeSelectedCardIds.size > 0 ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
+                      }}
+                    >
+                      {barcodeSelectedCardIds.size} Cards Locked
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. Action Controls & Quick Presets */}
+                <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1.5px solid #E2E8F0' }}>
+                  {/* Preset Pills */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+                    <label style={{ fontSize: '11.5px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Sparkles size={13} color="#16A34A" />
+                      <span>QUICK SELECT BARCODE CARDS</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowCameraScanner((prev) => !prev)}
+                      className="btn btn-outline btn-sm"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '12px',
+                        padding: '4px 10px',
+                        color: showCameraScanner ? '#DC2626' : '#0284C7',
+                        borderColor: showCameraScanner ? '#FECACA' : '#BAE6FD',
+                        backgroundColor: showCameraScanner ? '#FEF2F2' : '#F0F9FF',
+                      }}
+                    >
+                      <Camera size={13} />
+                      <span>{showCameraScanner ? 'Close Camera View' : '📷 Open Camera Scanner'}</span>
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                    {[10, 25, 50, 100].map((qty) => {
+                      const isAvailable = availableBarcodeCards.length >= qty;
+                      const isSelected = barcodeSelectedCardIds.size === qty;
+                      return (
+                        <button
+                          key={qty}
+                          type="button"
+                          onClick={() => handleSelectBarcodeCount(qty)}
+                          disabled={!isAvailable}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: isSelected ? '2px solid #16A34A' : '1.5px solid #CBD5E1',
+                            backgroundColor: isSelected ? '#16A34A' : isAvailable ? '#FFFFFF' : '#F1F5F9',
+                            color: isSelected ? '#FFFFFF' : isAvailable ? '#0F172A' : '#94A3B8',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            cursor: isAvailable ? 'pointer' : 'not-allowed',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          +{qty} Cards
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={handleSelectAllBarcode}
+                      disabled={availableBarcodeCards.length === 0}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        border: '1.5px solid #16A34A',
+                        backgroundColor: barcodeSelectedCardIds.size === availableBarcodeCards.length && availableBarcodeCards.length > 0 ? '#16A34A' : '#F0FDF4',
+                        color: barcodeSelectedCardIds.size === availableBarcodeCards.length && availableBarcodeCards.length > 0 ? '#FFFFFF' : '#16A34A',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        cursor: availableBarcodeCards.length > 0 ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      Select All ({availableBarcodeCards.length})
+                    </button>
+
+                    {barcodeSelectedCardIds.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearBarcode}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: '1.5px solid #FECACA',
+                          backgroundColor: '#FEF2F2',
+                          color: '#DC2626',
+                          fontSize: '12px',
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search & Gun Scanner Bar */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px', alignItems: 'center' }}>
+                    <div style={{ position: 'relative' }}>
+                      <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search barcode cards (serial, lot)..."
+                        value={barcodeSearch}
+                        onChange={(e) => setBarcodeSearch(e.target.value)}
+                        style={{ paddingLeft: '36px', fontSize: '12.5px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', backgroundColor: '#FFFFFF' }}
+                      />
+                    </div>
+
+                    <form onSubmit={handleGunBarcodeAdd} style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Scan barcode with Gun (e.g. BC0001)..."
+                        value={barcodeGunInput}
+                        onChange={(e) => setBarcodeGunInput(e.target.value)}
+                        style={{ fontSize: '12.5px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', fontFamily: 'monospace', backgroundColor: '#FFFFFF' }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!barcodeGunInput.trim()}
+                        className="btn btn-primary btn-sm"
+                        style={{ height: '38px', padding: '0 14px', fontWeight: '700', whiteSpace: 'nowrap' }}
+                      >
+                        Add
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                {/* 3. Optional Camera Scanner Dropdown (if toggled) */}
+                {showCameraScanner && (
+                  <BarcodeCardScanner
+                    scannedCards={barcodeScannedSerialsList}
+                    onAddCard={handleAddScannedCard}
+                    onRemoveCard={handleRemoveScannedCard}
+                    onClearAll={handleClearAllScanned}
+                    availableCards={availableBarcodeCards.length > 0 ? availableBarcodeCards : availableCards}
+                    warehouseAvailable={availableBarcodeCards.length > 0 ? availableBarcodeCards.length : availableCards.length}
+                  />
+                )}
+
+                {/* 4. Interactive Barcode Cards Visual Grid */}
+                <div
+                  style={{
+                    border: '1.5px solid #E2E8F0',
+                    borderRadius: '10px',
+                    padding: '12px',
+                    backgroundColor: '#FFFFFF',
+                    minHeight: '180px',
+                    maxHeight: '320px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  {filteredBarcodeCards.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                      <Package size={34} style={{ color: '#94A3B8', margin: '0 auto 8px' }} />
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '4px' }}>
+                        {availableBarcodeCards.length === 0 ? 'No Barcode Stock Cards in Warehouse' : 'No Barcode Cards Match Search'}
+                      </div>
+                      <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '420px', margin: '0 auto 12px' }}>
+                        {availableBarcodeCards.length === 0
+                          ? 'You haven\'t ingested any cards via Barcode Scanner yet. Use "Add Stock" -> "Barcode & Box Scanner" to add physical barcode cards.'
+                          : 'Try clearing your search query to view all available barcode stock cards.'}
+                      </p>
+                      {availableBarcodeCards.length === 0 && (
+                        <Link
+                          to="/cards/add"
+                          className="btn btn-success btn-sm"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'linear-gradient(135deg, #10B981, #059669)',
+                            color: '#FFFFFF',
+                            fontWeight: '700',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Plus size={14} />
+                          <span>+ Add Barcode Stock to Warehouse</span>
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
+                      {filteredBarcodeCards.map((c) => {
+                        const isPicked = barcodeSelectedCardIds.has(c._id);
+                        return (
+                          <div
+                            key={c._id}
+                            onClick={() => toggleBarcodeCard(c._id)}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: '8px',
+                              border: isPicked ? '2px solid #16A34A' : '1.5px solid #E2E8F0',
+                              backgroundColor: isPicked ? '#F0FDF4' : '#FFFFFF',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                              boxShadow: isPicked ? '0 2px 6px rgba(22, 163, 74, 0.15)' : 'none',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span
+                                style={{
+                                  fontSize: '9.5px',
+                                  fontWeight: '800',
+                                  backgroundColor: '#DCFCE7',
+                                  color: '#15803D',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  letterSpacing: '0.3px',
+                                }}
+                              >
+                                BARCODE
+                              </span>
+                              <div
+                                style={{
+                                  width: '15px',
+                                  height: '15px',
+                                  borderRadius: '4px',
+                                  border: isPicked ? '1.5px solid #16A34A' : '1.5px solid #CBD5E1',
+                                  backgroundColor: isPicked ? '#16A34A' : '#FFFFFF',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#FFFFFF',
+                                }}
+                              >
+                                {isPicked && <Check size={11} strokeWidth={3} />}
+                              </div>
+                            </div>
+
+                            <span
+                              style={{
+                                fontFamily: 'monospace',
+                                fontSize: '13px',
+                                fontWeight: '800',
+                                color: isPicked ? '#166534' : '#0F172A',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {c.serialNumber}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* TAB C: Interactive Grid */}
