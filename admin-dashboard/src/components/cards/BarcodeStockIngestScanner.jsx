@@ -24,7 +24,7 @@ import {
   ExternalLink,
   ArrowRight,
   ShieldCheck,
-  ListOrdered,
+  FlipHorizontal,
 } from 'lucide-react';
 import api from '../../services/api';
 
@@ -165,6 +165,7 @@ const BarcodeStockIngestScanner = ({
 
   // Scanner & Camera state
   const [isScanning, setIsScanning] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [manualInput, setManualInput] = useState('');
@@ -174,10 +175,9 @@ const BarcodeStockIngestScanner = ({
   // Stock Ingestion Processing States
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastScannedResult, setLastScannedResult] = useState(null); 
-  // lastScannedResult structure:
-  // { status: 'SUCCESS' | 'ERROR', count: 100, serials: [...], boxRange: {...}, message: '', error: '' }
+  // lastScannedResult: { status: 'SUCCESS' | 'ERROR', count: 100, serials: [...], ... }
 
-  // History of recently added batches during current session
+  // Session history of batches added
   const [sessionBatches, setSessionBatches] = useState([]);
 
   const scannerRef = useRef(null);
@@ -198,6 +198,7 @@ const BarcodeStockIngestScanner = ({
       scannerRef.current = null;
     }
     setIsScanning(false);
+    setCameraStarting(false);
   }, []);
 
   // Ingest Serials directly into Stock
@@ -309,18 +310,28 @@ const BarcodeStockIngestScanner = ({
     setCameraError('');
     setLastScannedResult(null);
     isScanLockedRef.current = false;
-    await stopCamera();
+    setCameraStarting(true);
+    setIsScanning(true);
+
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        await scannerRef.current.clear();
+      } catch {}
+      scannerRef.current = null;
+    }
 
     try {
       const html5QrCode = new Html5Qrcode(scannerId, {
         formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
           Html5QrcodeSupportedFormats.CODE_128,
           Html5QrcodeSupportedFormats.CODE_39,
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
           Html5QrcodeSupportedFormats.UPC_A,
           Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.ITF,
           Html5QrcodeSupportedFormats.DATA_MATRIX,
         ],
         verbose: false,
@@ -328,22 +339,40 @@ const BarcodeStockIngestScanner = ({
 
       scannerRef.current = html5QrCode;
 
-      const cameraConfig = selectedCameraId
-        ? { deviceId: { exact: selectedCameraId } }
+      // Find available cameras if not loaded
+      let deviceIdToUse = selectedCameraId;
+      if (!deviceIdToUse) {
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            setAvailableCameras(devices);
+            const backCam = devices.find(
+              (c) =>
+                c.label.toLowerCase().includes('back') ||
+                c.label.toLowerCase().includes('rear') ||
+                c.label.toLowerCase().includes('environment')
+            );
+            deviceIdToUse = backCam ? backCam.id : devices[0].id;
+            setSelectedCameraId(deviceIdToUse);
+          }
+        } catch {}
+      }
+
+      const cameraConfig = deviceIdToUse
+        ? { deviceId: { exact: deviceIdToUse } }
         : { facingMode: 'environment' };
+
+      const wideQrboxFunction = (viewfinderWidth, viewfinderHeight) => {
+        const width = Math.max(Math.floor(viewfinderWidth * 0.94), 260);
+        const height = Math.max(Math.floor(viewfinderHeight * 0.88), 220);
+        return { width, height };
+      };
 
       await html5QrCode.start(
         cameraConfig,
         {
           fps: 15,
-          qrbox: (viewfinderWidth, viewfinderHeight) => {
-            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            return {
-              width: Math.floor(minEdge * 0.9),
-              height: Math.floor(minEdge * 0.65),
-            };
-          },
-          aspectRatio: 1.4,
+          qrbox: wideQrboxFunction,
         },
         (decodedText) => {
           handleScanSuccess(decodedText);
@@ -351,15 +380,31 @@ const BarcodeStockIngestScanner = ({
         () => {}
       );
 
+      setCameraStarting(false);
       setIsScanning(true);
     } catch (err) {
       console.error('Camera start error:', err);
       setCameraError(
-        'Unable to access camera. Please check camera permissions in your browser or type serials below.'
+        err?.name === 'NotAllowedError' || err?.message?.includes('Permission')
+          ? 'Camera permission denied. Please allow camera permissions in browser settings.'
+          : 'Unable to start camera video stream. Please check camera connection or type serials below.'
       );
       setIsScanning(false);
+      setCameraStarting(false);
     }
   }, [selectedCameraId, handleScanSuccess, stopCamera]);
+
+  // Flip camera between front/back
+  const handleFlipCamera = async () => {
+    if (availableCameras.length < 2) return;
+    const currentIndex = availableCameras.findIndex((c) => c.id === selectedCameraId);
+    const nextIndex = (currentIndex + 1) % availableCameras.length;
+    const nextCam = availableCameras[nextIndex];
+    setSelectedCameraId(nextCam.id);
+    if (isScanning) {
+      setTimeout(() => startCamera(), 100);
+    }
+  };
 
   // Handle Manual or Barcode Gun Input
   const handleManualSubmit = async (e) => {
@@ -421,6 +466,34 @@ const BarcodeStockIngestScanner = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <style>{`
+        #${scannerId} {
+          width: 100% !important;
+          min-height: 360px !important;
+          border: none !important;
+        }
+        #${scannerId} video {
+          width: 100% !important;
+          height: 100% !important;
+          min-height: 360px !important;
+          max-height: 520px !important;
+          object-fit: cover !important;
+          border-radius: 12px !important;
+          display: block !important;
+        }
+        #${scannerId} img {
+          display: none !important;
+        }
+        #${scannerId}__scan_region {
+          min-height: 320px !important;
+        }
+        @keyframes laserSweep {
+          0% { top: 12%; opacity: 0.85; }
+          50% { top: 82%; opacity: 1; }
+          100% { top: 12%; opacity: 0.85; }
+        }
+      `}</style>
+
       {/* Top Banner Header */}
       <div
         style={{
@@ -436,8 +509,8 @@ const BarcodeStockIngestScanner = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '42px',
-                height: '42px',
+                width: '44px',
+                height: '44px',
                 borderRadius: '10px',
                 backgroundColor: 'rgba(56, 189, 248, 0.15)',
                 border: '1px solid rgba(56, 189, 248, 0.3)',
@@ -447,12 +520,12 @@ const BarcodeStockIngestScanner = ({
                 color: '#38BDF8',
               }}
             >
-              <ScanLine size={24} />
+              <ScanLine size={26} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#FFFFFF' }}>
-                  Barcode & Card Box Instant Stock Ingestion
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#FFFFFF' }}>
+                  Barcode & Card Box Instant Ingestion
                 </h3>
                 <span
                   style={{
@@ -465,10 +538,10 @@ const BarcodeStockIngestScanner = ({
                     letterSpacing: '0.4px',
                   }}
                 >
-                  LIVE INGESTION
+                  LIVE AUTO-ADD
                 </span>
               </div>
-              <p style={{ margin: '3px 0 0', fontSize: '12.5px', color: '#94A3B8' }}>
+              <p style={{ margin: '3px 0 0', fontSize: '13px', color: '#94A3B8' }}>
                 Scan single card or box range barcode (e.g. <code>VSB000101-VSB000200</code>) — system registers stock instantly in 1 step!
               </p>
             </div>
@@ -482,18 +555,18 @@ const BarcodeStockIngestScanner = ({
                 background: soundEnabled ? 'rgba(56, 189, 248, 0.15)' : 'rgba(148, 163, 184, 0.15)',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 color: soundEnabled ? '#38BDF8' : '#94A3B8',
-                padding: '6px 12px',
+                padding: '7px 14px',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                fontSize: '12px',
+                fontSize: '12.5px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontWeight: '600',
               }}
             >
-              {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
-              <span>{soundEnabled ? 'Audio On' : 'Muted'}</span>
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              <span>{soundEnabled ? 'Sound On' : 'Muted'}</span>
             </button>
           </div>
         </div>
@@ -502,8 +575,8 @@ const BarcodeStockIngestScanner = ({
       {/* Lot Notes Input */}
       <div className="card" style={{ padding: '14px 18px', marginBottom: '0px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
-          <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Box size={15} color="#0284C7" />
+          <label style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Box size={16} color="#0284C7" />
             <span>Packaging / Box Lot Reference (Optional):</span>
           </label>
         </div>
@@ -513,7 +586,7 @@ const BarcodeStockIngestScanner = ({
           placeholder="e.g. Barcode Box #1 - 100 Pcs (Lot OCT26)"
           value={boxNotes}
           onChange={(e) => setBoxNotes && setBoxNotes(e.target.value)}
-          style={{ fontSize: '13px', width: '100%', boxSizing: 'border-box' }}
+          style={{ fontSize: '13.5px', width: '100%', boxSizing: 'border-box' }}
         />
       </div>
 
@@ -523,7 +596,6 @@ const BarcodeStockIngestScanner = ({
         style={{
           padding: '20px',
           position: 'relative',
-          overflow: 'hidden',
           backgroundColor: '#FFFFFF',
           border: '1px solid #E2E8F0',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
@@ -531,13 +603,13 @@ const BarcodeStockIngestScanner = ({
         }}
       >
         {/* Header inside scanner container */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Camera size={18} color="#0284c7" />
-              <span>Camera Barcode Scanner</span>
+              <span>Full Box Camera Scanner</span>
             </h4>
-            {isScanning && (
+            {isScanning && !cameraStarting && (
               <span
                 style={{
                   fontSize: '11.5px',
@@ -547,30 +619,63 @@ const BarcodeStockIngestScanner = ({
                   alignItems: 'center',
                   gap: '4px',
                   backgroundColor: '#DCFCE7',
-                  padding: '2px 8px',
+                  padding: '3px 9px',
                   borderRadius: '999px',
                 }}
               >
                 <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#16A34A', display: 'inline-block' }} />
-                Scanning Live (Single Scan)
+                Camera Live (1-Shot Scan)
               </span>
             )}
           </div>
 
-          {availableCameras.length > 1 && !isScanning && (
-            <select
-              className="select"
-              value={selectedCameraId}
-              onChange={(e) => setSelectedCameraId(e.target.value)}
-              style={{ fontSize: '12px', padding: '4px 8px', width: 'auto', maxWidth: '200px' }}
-            >
-              {availableCameras.map((cam) => (
-                <option key={cam.id} value={cam.id}>
-                  {cam.label || `Camera ${cam.id.slice(0, 5)}`}
-                </option>
-              ))}
-            </select>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {availableCameras.length > 1 && (
+              <button
+                type="button"
+                onClick={handleFlipCamera}
+                style={{
+                  backgroundColor: '#F1F5F9',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '6px',
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#334155',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                }}
+              >
+                <FlipHorizontal size={14} />
+                <span>Switch Cam</span>
+              </button>
+            )}
+
+            {isScanning && (
+              <button
+                type="button"
+                onClick={stopCamera}
+                style={{
+                  backgroundColor: '#FEE2E2',
+                  border: '1px solid #FECACA',
+                  borderRadius: '6px',
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: '#DC2626',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <CameraOff size={14} />
+                <span>Stop</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* FULL BOX SCANNER VIEWPORT / STATES */}
@@ -580,50 +685,60 @@ const BarcodeStockIngestScanner = ({
             borderRadius: '12px',
             overflow: 'hidden',
             backgroundColor: '#0F172A',
-            minHeight: '320px',
+            minHeight: '360px',
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             border: isScanning ? '2px solid #38BDF8' : '2px dashed #334155',
-            boxShadow: isScanning ? '0 0 20px rgba(56, 189, 248, 0.25)' : 'none',
-            transition: 'all 0.2s ease',
+            boxShadow: isScanning ? '0 0 24px rgba(56, 189, 248, 0.25)' : 'none',
           }}
         >
-          {/* Viewfinder Target for html5-qrcode */}
+          {/* HTML5 QRCODE CONTAINER — ALWAYS MOUNTED AND FULL SIZED */}
           <div
             id={scannerId}
             style={{
               width: '100%',
-              minHeight: isScanning ? '320px' : '0px',
+              minHeight: '360px',
               display: isScanning ? 'block' : 'none',
             }}
           />
 
-          {/* STATE 1: CAMERA ACTIVE OVERLAY */}
-          {isScanning && (
-            <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
-              <button
-                type="button"
-                onClick={stopCamera}
-                style={{
-                  backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                  color: '#FFFFFF',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                }}
-              >
-                <CameraOff size={14} color="#EF4444" />
-                <span>Stop Scanner</span>
-              </button>
+          {/* LASER SCANNING ANIMATION LINE OVERLAY WHEN SCANNING */}
+          {isScanning && !cameraStarting && (
+            <div
+              style={{
+                position: 'absolute',
+                left: '8%',
+                right: '8%',
+                height: '3px',
+                background: 'linear-gradient(90deg, transparent, #22C55E, #38BDF8, #22C55E, transparent)',
+                boxShadow: '0 0 12px #22C55E',
+                animation: 'laserSweep 2.2s infinite ease-in-out',
+                pointerEvents: 'none',
+                zIndex: 8,
+              }}
+            />
+          )}
+
+          {/* CAMERA STARTING / LOADING OVERLAY */}
+          {cameraStarting && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#FFFFFF',
+                zIndex: 12,
+              }}
+            >
+              <RefreshCw size={40} color="#38BDF8" className="animate-spin" style={{ marginBottom: '12px' }} />
+              <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Opening Camera Scanner...</p>
             </div>
           )}
 
@@ -633,7 +748,7 @@ const BarcodeStockIngestScanner = ({
               style={{
                 position: 'absolute',
                 inset: 0,
-                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -644,10 +759,10 @@ const BarcodeStockIngestScanner = ({
                 zIndex: 20,
               }}
             >
-              <RefreshCw size={44} color="#38BDF8" className="animate-spin" style={{ marginBottom: '14px' }} />
-              <h3 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: '700' }}>Adding Stock to Warehouse...</h3>
-              <p style={{ margin: 0, fontSize: '13px', color: '#94A3B8' }}>
-                Validating barcode uniqueness and registering cards into system inventory
+              <RefreshCw size={48} color="#38BDF8" className="animate-spin" style={{ marginBottom: '14px' }} />
+              <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: '700' }}>Adding Stock to Warehouse...</h3>
+              <p style={{ margin: 0, fontSize: '13.5px', color: '#94A3B8' }}>
+                Validating barcode uniqueness and saving cards into system inventory
               </p>
             </div>
           )}
@@ -657,7 +772,8 @@ const BarcodeStockIngestScanner = ({
             <div
               style={{
                 width: '100%',
-                padding: '28px 20px',
+                minHeight: '360px',
+                padding: '32px 20px',
                 textAlign: 'center',
                 backgroundColor: '#F0FDF4',
                 color: '#166534',
@@ -670,20 +786,20 @@ const BarcodeStockIngestScanner = ({
             >
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
+                  width: '68px',
+                  height: '68px',
                   borderRadius: '50%',
                   backgroundColor: '#DCFCE7',
-                  border: '2px solid #86EFAC',
+                  border: '3px solid #86EFAC',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#16A34A',
                   marginBottom: '14px',
-                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.15)',
+                  boxShadow: '0 6px 16px rgba(22, 163, 74, 0.2)',
                 }}
               >
-                <CheckCircle2 size={36} />
+                <CheckCircle2 size={40} />
               </div>
 
               <div
@@ -691,25 +807,28 @@ const BarcodeStockIngestScanner = ({
                   display: 'inline-block',
                   backgroundColor: '#16A34A',
                   color: '#FFFFFF',
-                  padding: '3px 12px',
+                  padding: '4px 14px',
                   borderRadius: '999px',
                   fontSize: '12px',
                   fontWeight: '800',
-                  letterSpacing: '0.5px',
-                  marginBottom: '8px',
+                  letterSpacing: '0.6px',
+                  marginBottom: '10px',
                 }}
               >
                 STOCK ADDED SUCCESSFULLY!
               </div>
 
-              <h3 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: '800', color: '#14532D' }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: '800', color: '#14532D' }}>
                 +{lastScannedResult.count} Cards Added to Inventory
               </h3>
 
-              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#15803D' }}>
+              <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#15803D', maxWidth: '460px' }}>
                 {lastScannedResult.detectedInfo?.isRange ? (
                   <>
-                    Box Range: <strong>{lastScannedResult.detectedInfo.rawCode}</strong> ({lastScannedResult.firstSerial} → {lastScannedResult.lastSerial})
+                    Box Range Barcode: <strong>{lastScannedResult.detectedInfo.rawCode}</strong> <br />
+                    <span style={{ fontSize: '13px', color: '#166534' }}>
+                      ({lastScannedResult.firstSerial} → {lastScannedResult.lastSerial})
+                    </span>
                   </>
                 ) : (
                   <>
@@ -719,23 +838,24 @@ const BarcodeStockIngestScanner = ({
               </p>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap', width: '100%', maxWidth: '420px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', width: '100%', maxWidth: '440px' }}>
                 <button
                   type="button"
                   onClick={startCamera}
                   className="btn btn-primary"
                   style={{
-                    flex: '1 1 180px',
+                    flex: '1 1 200px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px',
-                    padding: '12px 18px',
+                    gap: '8px',
+                    padding: '13px 20px',
                     fontWeight: '700',
-                    fontSize: '13.5px',
+                    fontSize: '14px',
+                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
                   }}
                 >
-                  <Camera size={17} />
+                  <Camera size={18} />
                   <span>Scan Next Card / Box</span>
                 </button>
 
@@ -744,16 +864,17 @@ const BarcodeStockIngestScanner = ({
                   onClick={() => navigate('/cards')}
                   className="btn btn-outline"
                   style={{
-                    flex: '1 1 140px',
+                    flex: '1 1 160px',
                     backgroundColor: '#FFFFFF',
                     borderColor: '#86EFAC',
                     color: '#15803D',
                     fontWeight: '700',
-                    fontSize: '13px',
+                    fontSize: '13.5px',
+                    padding: '13px 18px',
                   }}
                 >
                   <span>View Stock Inventory</span>
-                  <ArrowRight size={15} style={{ marginLeft: '4px' }} />
+                  <ArrowRight size={16} style={{ marginLeft: '4px' }} />
                 </button>
               </div>
             </div>
@@ -764,7 +885,8 @@ const BarcodeStockIngestScanner = ({
             <div
               style={{
                 width: '100%',
-                padding: '28px 20px',
+                minHeight: '360px',
+                padding: '32px 20px',
                 textAlign: 'center',
                 backgroundColor: '#FEF2F2',
                 color: '#991B1B',
@@ -777,26 +899,26 @@ const BarcodeStockIngestScanner = ({
             >
               <div
                 style={{
-                  width: '58px',
-                  height: '58px',
+                  width: '64px',
+                  height: '64px',
                   borderRadius: '50%',
                   backgroundColor: '#FEE2E2',
-                  border: '2px solid #FCA5A5',
+                  border: '3px solid #FCA5A5',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#DC2626',
-                  marginBottom: '12px',
+                  marginBottom: '14px',
                 }}
               >
-                <AlertTriangle size={32} />
+                <AlertTriangle size={36} />
               </div>
 
-              <h4 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: '800', color: '#991B1B' }}>
-                Scan Failed / Duplicate Found
+              <h4 style={{ margin: '0 0 8px', fontSize: '19px', fontWeight: '800', color: '#991B1B' }}>
+                Scan Issue / Duplicate Found
               </h4>
 
-              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#B91C1C', maxWidth: '440px', lineHeight: 1.4 }}>
+              <p style={{ margin: '0 0 20px', fontSize: '13.5px', color: '#B91C1C', maxWidth: '440px', lineHeight: 1.4 }}>
                 {lastScannedResult.error}
               </p>
 
@@ -808,15 +930,15 @@ const BarcodeStockIngestScanner = ({
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
+                    gap: '8px',
                     backgroundColor: '#DC2626',
                     borderColor: '#DC2626',
-                    padding: '11px 20px',
+                    padding: '12px 24px',
                     fontWeight: '700',
-                    fontSize: '13.5px',
+                    fontSize: '14px',
                   }}
                 >
-                  <RotateCcw size={16} />
+                  <RotateCcw size={17} />
                   <span>Retry Scan / Rescan</span>
                 </button>
               </div>
@@ -825,29 +947,29 @@ const BarcodeStockIngestScanner = ({
 
           {/* STATE 5: IDLE READY STATE */}
           {!isScanning && !isProcessing && !lastScannedResult && (
-            <div style={{ padding: '36px 20px', textAlign: 'center', color: '#94A3B8' }}>
+            <div style={{ padding: '44px 20px', textAlign: 'center', color: '#94A3B8' }}>
               <div
                 style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '16px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                  width: '72px',
+                  height: '72px',
+                  borderRadius: '18px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 16px',
+                  margin: '0 auto 18px',
                   color: '#38BDF8',
                 }}
               >
-                <Camera size={34} />
+                <Camera size={38} />
               </div>
 
-              <h4 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: '700', color: '#F8FAFC' }}>
+              <h4 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '700', color: '#F8FAFC' }}>
                 Full-Box Camera Scanner Ready
               </h4>
-              <p style={{ margin: '0 0 18px', fontSize: '13px', color: '#94A3B8', maxWidth: '380px' }}>
-                Tap below to open high-resolution scanner. Scans once and immediately registers stock in real-time.
+              <p style={{ margin: '0 0 22px', fontSize: '13.5px', color: '#94A3B8', maxWidth: '420px', lineHeight: 1.5 }}>
+                Tap below to open full-box camera scanner. Scans once and directly registers stock into Warehouse inventory.
               </p>
 
               <button
@@ -858,13 +980,13 @@ const BarcodeStockIngestScanner = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
+                  padding: '14px 28px',
+                  fontSize: '15px',
                   fontWeight: '700',
-                  boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
+                  boxShadow: '0 4px 16px rgba(2, 132, 199, 0.45)',
                 }}
               >
-                <Camera size={18} />
+                <Camera size={20} />
                 <span>Start Camera Scanner</span>
               </button>
             </div>
@@ -875,28 +997,28 @@ const BarcodeStockIngestScanner = ({
         {cameraError && (
           <div
             style={{
-              marginTop: '12px',
-              padding: '12px 14px',
+              marginTop: '14px',
+              padding: '12px 16px',
               backgroundColor: '#FEF2F2',
               borderRadius: '8px',
               border: '1px solid #FECACA',
               color: '#991B1B',
-              fontSize: '12.5px',
+              fontSize: '13px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '8px',
+              gap: '10px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
               <span>{cameraError}</span>
             </div>
             <button
               type="button"
               onClick={startCamera}
               className="btn btn-sm"
-              style={{ backgroundColor: '#EF4444', color: '#FFFFFF', border: 'none', padding: '4px 10px', fontSize: '11.5px' }}
+              style={{ backgroundColor: '#EF4444', color: '#FFFFFF', border: 'none', padding: '5px 12px', fontSize: '12px', fontWeight: '700' }}
             >
               Retry
             </button>
@@ -904,12 +1026,12 @@ const BarcodeStockIngestScanner = ({
         )}
 
         {/* Alternative: Gun Scanner or Manual Input */}
-        <div style={{ marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+        <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid #E2E8F0' }}>
           <form onSubmit={handleManualSubmit}>
-            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', marginBottom: '6px', color: '#0F172A' }}>
+            <label style={{ display: 'block', fontSize: '13.5px', fontWeight: '700', marginBottom: '8px', color: '#0F172A' }}>
               Or Scan with Handheld Gun / Enter Serial & Box Code:
             </label>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <input
                 type="text"
                 className="input"
@@ -917,19 +1039,19 @@ const BarcodeStockIngestScanner = ({
                 value={manualInput}
                 onChange={(e) => setManualInput(e.target.value.toUpperCase())}
                 disabled={isProcessing}
-                style={{ flex: '1 1 240px', fontFamily: 'monospace', fontSize: '13px', fontWeight: '600' }}
+                style={{ flex: '1 1 260px', fontFamily: 'monospace', fontSize: '14px', fontWeight: '600', padding: '12px 14px' }}
               />
               <button
                 type="submit"
                 className="btn btn-primary"
                 disabled={!manualInput.trim() || isProcessing}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0 18px', flex: '1 1 120px', justifyContent: 'center' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '12px 22px', flex: '1 1 140px', justifyContent: 'center', fontSize: '14px', fontWeight: '700' }}
               >
-                {isProcessing ? <RefreshCw size={15} className="animate-spin" /> : <Plus size={16} />}
+                {isProcessing ? <RefreshCw size={16} className="animate-spin" /> : <Plus size={18} />}
                 <span>Add to Stock</span>
               </button>
             </div>
-            <p style={{ margin: '6px 0 0', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
               Supports box ranges: <code>VSB000101-VSB000200</code> (100 pcs) or individual barcodes.
             </p>
           </form>
@@ -940,13 +1062,13 @@ const BarcodeStockIngestScanner = ({
       {sessionBatches.length > 0 && (
         <div className="card" style={{ padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ShieldCheck size={16} color="#16A34A" />
+            <h4 style={{ margin: 0, fontSize: '14.5px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <ShieldCheck size={17} color="#16A34A" />
               <span>Stock Added in this Session ({sessionBatches.reduce((a, b) => a + b.count, 0)} Total Cards)</span>
             </h4>
-            <Link to="/cards" style={{ fontSize: '12.5px', color: '#0284C7', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Link to="/cards" style={{ fontSize: '13px', color: '#0284C7', fontWeight: '700', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span>View Inventory</span>
-              <ExternalLink size={13} />
+              <ExternalLink size={14} />
             </Link>
           </div>
 
@@ -958,26 +1080,26 @@ const BarcodeStockIngestScanner = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  padding: '8px 12px',
+                  padding: '10px 14px',
                   backgroundColor: '#F8FAFC',
                   borderRadius: '8px',
                   border: '1px solid #E2E8F0',
-                  fontSize: '12.5px',
+                  fontSize: '13px',
                   flexWrap: 'wrap',
                   gap: '8px',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CheckCircle2 size={15} color="#16A34A" />
+                  <CheckCircle2 size={16} color="#16A34A" />
                   <span style={{ fontWeight: '700', color: '#0F172A' }}>
                     +{b.count} Cards
                   </span>
-                  <span style={{ fontFamily: 'monospace', color: '#475569', fontSize: '12px' }}>
+                  <span style={{ fontFamily: 'monospace', color: '#475569', fontSize: '12.5px' }}>
                     ({b.firstSerial}{b.count > 1 ? ` → ${b.lastSerial}` : ''})
                   </span>
                 </div>
 
-                <span style={{ fontSize: '11.5px', color: '#94A3B8' }}>
+                <span style={{ fontSize: '12px', color: '#94A3B8' }}>
                   {new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
               </div>
