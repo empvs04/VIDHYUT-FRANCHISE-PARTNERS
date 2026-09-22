@@ -13,15 +13,19 @@ import {
   Info,
   Check,
   Building2,
+  ScanLine,
+  Box,
+  QrCode,
 } from 'lucide-react';
 import api from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import BarcodeStockIngestScanner from '../components/cards/BarcodeStockIngestScanner';
 
 const AddCardsPage = () => {
   const navigate = useNavigate();
   const { showToast } = useNotification();
 
-  const [activeTab, setActiveTab] = useState('BATCH'); // 'BATCH' or 'MANUAL'
+  const [activeTab, setActiveTab] = useState('BATCH'); // 'BATCH', 'MANUAL', or 'BARCODE'
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
 
@@ -39,6 +43,11 @@ const AddCardsPage = () => {
   // Manual List Form States
   const [manualText, setManualText] = useState('');
   const [manualNotes, setManualNotes] = useState('');
+
+  // Barcode & Box Scanner Form States
+  const [scannedSerials, setScannedSerials] = useState([]);
+  const [barcodeBoxNotes, setBarcodeBoxNotes] = useState('Barcode Physical Stock Ingestion');
+  const [barcodeSubmitting, setBarcodeSubmitting] = useState(false);
 
   // Auto-fetch next available serial range
   const fetchNextAvailableRange = async (currentPrefix = prefix, count = 100, silent = false) => {
@@ -197,6 +206,33 @@ const AddCardsPage = () => {
     }
   };
 
+  // 4. Handle Barcode & Card Box Stock Ingestion Submission
+  const handleBarcodeStockSubmit = async () => {
+    if (scannedSerials.length === 0) {
+      showToast('Please scan or enter at least one card barcode or box range.', 'error');
+      return;
+    }
+
+    try {
+      setBarcodeSubmitting(true);
+      const notesPayload = `[BARCODE STOCK] ${barcodeBoxNotes.trim() || 'Physical Barcode Stock Entry'}`;
+      const res = await api.post('/cards/manual', {
+        serialNumbers: scannedSerials,
+        notes: notesPayload,
+      });
+
+      showToast(
+        `Success! Registered ${res.data?.data?.totalCreated} barcode cards into Warehouse inventory.`,
+        'success'
+      );
+      navigate('/cards');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to ingest barcode cards.', 'error');
+    } finally {
+      setBarcodeSubmitting(false);
+    }
+  };
+
   const calculatedTotal =
     !isNaN(parseInt(startNumber, 10)) && !isNaN(parseInt(endNumber, 10)) && parseInt(endNumber, 10) >= parseInt(startNumber, 10)
       ? parseInt(endNumber, 10) - parseInt(startNumber, 10) + 1
@@ -230,6 +266,7 @@ const AddCardsPage = () => {
           borderRadius: 'var(--radius-md)',
           marginBottom: '20px',
           gap: '4px',
+          flexWrap: 'wrap',
         }}
       >
         <button
@@ -237,6 +274,7 @@ const AddCardsPage = () => {
           onClick={() => setActiveTab('BATCH')}
           style={{
             flex: 1,
+            minWidth: '180px',
             padding: '10px 14px',
             border: 'none',
             borderRadius: '6px',
@@ -254,7 +292,7 @@ const AddCardsPage = () => {
           }}
         >
           <Layers size={16} />
-          <span>Batch Serial Range (Continuous Series)</span>
+          <span>Batch Serial Range (Continuous)</span>
         </button>
 
         <button
@@ -262,6 +300,7 @@ const AddCardsPage = () => {
           onClick={() => setActiveTab('MANUAL')}
           style={{
             flex: 1,
+            minWidth: '180px',
             padding: '10px 14px',
             border: 'none',
             borderRadius: '6px',
@@ -279,7 +318,33 @@ const AddCardsPage = () => {
           }}
         >
           <ListPlus size={16} />
-          <span>Manual Serial List (Individual Entries)</span>
+          <span>Manual Serial List</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('BARCODE')}
+          style={{
+            flex: 1,
+            minWidth: '180px',
+            padding: '10px 14px',
+            border: 'none',
+            borderRadius: '6px',
+            backgroundColor: activeTab === 'BARCODE' ? '#FFFFFF' : 'transparent',
+            color: activeTab === 'BARCODE' ? '#059669' : '#64748B',
+            fontWeight: activeTab === 'BARCODE' ? '700' : '500',
+            fontSize: '13.5px',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'BARCODE' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <ScanLine size={16} color={activeTab === 'BARCODE' ? '#059669' : undefined} />
+          <span>Barcode & Box Scanner</span>
         </button>
       </div>
 
@@ -596,6 +661,18 @@ const AddCardsPage = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {/* TAB 3: BARCODE & CARD BOX SCANNER */}
+      {activeTab === 'BARCODE' && (
+        <BarcodeStockIngestScanner
+          scannedSerials={scannedSerials}
+          setScannedSerials={setScannedSerials}
+          boxNotes={barcodeBoxNotes}
+          setBoxNotes={setBarcodeBoxNotes}
+          onSubmitStock={handleBarcodeStockSubmit}
+          submitting={barcodeSubmitting}
+        />
       )}
     </div>
   );

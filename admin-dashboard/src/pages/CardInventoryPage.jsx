@@ -669,6 +669,30 @@ const CardInventoryPage = () => {
 
           {isSuperAdmin && (
             <Link
+              to="/cards/add"
+              className="btn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                color: '#ffffff',
+                border: 'none',
+                fontWeight: '600',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                textDecoration: 'none',
+              }}
+              title="Add new physical cards stock into warehouse"
+            >
+              <Plus size={16} />
+              <span>Add Stock</span>
+            </Link>
+          )}
+
+          {isSuperAdmin && (
+            <Link
               to="/cards/assign"
               className="btn btn-primary"
               style={{

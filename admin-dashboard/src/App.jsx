@@ -118,6 +118,7 @@ function App() {
                 <Route path="territories" element={<TerritoriesPage />} />
                 <Route path="cards" element={<CardInventoryPage />} />
                 <Route path="cards/new" element={<AddCardsPage />} />
+                <Route path="cards/add" element={<AddCardsPage />} />
                 <Route path="cards/assign" element={<AssignCardsPage />} />
                 <Route path="cards/distribute" element={<DistributeCardsPage />} />
                 <Route path="cards/:id" element={<CardDetailPage />} />
