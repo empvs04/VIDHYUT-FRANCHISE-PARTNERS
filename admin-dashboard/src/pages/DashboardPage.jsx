@@ -927,81 +927,172 @@ const DashboardPage = () => {
         {/* Celebratory Card Allotment Banner */}
         {partnerSummary?.latestAllotment && !dismissedBannerIds.includes(partnerSummary.latestAllotment.allotmentId) && (
           <div
+            className="celebratory-allotment-banner"
             style={{
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: '10px',
-              padding: '12px 16px',
-              marginBottom: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              flexWrap: 'wrap',
+              position: 'relative',
+              backgroundColor: '#F0FDF4',
+              border: '1.5px solid #BBF7D0',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              marginBottom: '18px',
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1 1 260px' }}>
-              <div
-                style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '8px',
-                  backgroundColor: '#dcfce7',
-                  color: '#15803d',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Sparkles size={16} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: '700', color: '#166534', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards Ready</span>
-                </div>
-                <div style={{ fontSize: '11.5px', color: '#475569', marginTop: '1px' }}>
-                  Serial Range: <strong style={{ color: '#0369a1', fontFamily: 'monospace' }}>{partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}</strong>
-                </div>
-              </div>
-            </div>
+            <style>{`
+              .celebratory-banner-layout {
+                display: flex;
+                align-items: center;
+                justifyContent: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+              }
+              .celebratory-banner-info {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex: 1 1 280px;
+                min-width: 0;
+                padding-right: 32px;
+              }
+              .celebratory-banner-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-shrink: 0;
+              }
+              @media (max-width: 640px) {
+                .celebratory-allotment-banner {
+                  padding: 12px 14px !important;
+                }
+                .celebratory-banner-layout {
+                  flex-direction: column;
+                  align-items: stretch;
+                  gap: 12px;
+                }
+                .celebratory-banner-info {
+                  padding-right: 28px;
+                }
+                .celebratory-banner-actions {
+                  width: 100%;
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 8px;
+                }
+                .celebratory-banner-actions .btn {
+                  width: 100%;
+                  height: 36px !important;
+                  font-size: 12px !important;
+                  justify-content: center;
+                }
+              }
+            `}</style>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => setShowCelebrationModal(true)}
-                className="btn btn-outline"
-                style={{ fontSize: '11.5px', height: '30px', padding: '0 10px' }}
-              >
-                <Award size={13} color="#0284c7" />
-                <span>Certificate</span>
-              </button>
-              <Link
-                to={isSub ? '/customers/new' : '/cards/distribute'}
-                className="btn btn-primary"
-                style={{ fontSize: '11.5px', height: '30px', padding: '0 10px' }}
-              >
-                <span>{isSub ? 'Install' : 'Distribute'}</span>
-              </Link>
-              <button
-                type="button"
-                onClick={() => handleDismissBanner(partnerSummary.latestAllotment.allotmentId)}
-                title="Dismiss"
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: '#ffffff',
-                  color: '#64748b',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <X size={14} />
-              </button>
+            {/* Top Right Dismiss 'X' Button */}
+            <button
+              type="button"
+              onClick={() => handleDismissBanner(partnerSummary.latestAllotment.allotmentId)}
+              title="Dismiss Banner"
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                width: '26px',
+                height: '26px',
+                borderRadius: '6px',
+                border: '1px solid #CBD5E1',
+                background: '#FFFFFF',
+                color: '#64748B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 5,
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#FEE2E2';
+                e.currentTarget.style.color = '#EF4444';
+                e.currentTarget.style.borderColor = '#FCA5A5';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.color = '#64748B';
+                e.currentTarget.style.borderColor = '#CBD5E1';
+              }}
+            >
+              <X size={14} />
+            </button>
+
+            <div className="celebratory-banner-layout">
+              <div className="celebratory-banner-info">
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    backgroundColor: '#DCFCE7',
+                    color: '#15803D',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    border: '1px solid #BBF7D0',
+                  }}
+                >
+                  <Sparkles size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: '800', color: '#15803D', fontSize: '13.5px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span>Stock Allotted: +{partnerSummary.latestAllotment.cardCount} Cards Ready</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px', wordBreak: 'break-all' }}>
+                    Serial Range:{' '}
+                    <strong style={{ color: '#0284C7', fontFamily: 'monospace' }}>
+                      {partnerSummary.latestAllotment.firstSerial} ➔ {partnerSummary.latestAllotment.lastSerial}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="celebratory-banner-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowCelebrationModal(true)}
+                  className="btn btn-outline"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    height: '34px',
+                    padding: '0 12px',
+                    backgroundColor: '#FFFFFF',
+                    borderColor: '#BAE6FD',
+                    color: '#0284C7',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
+                  <Award size={14} color="#0284C7" />
+                  <span>Certificate</span>
+                </button>
+
+                <Link
+                  to={isSub ? '/customers/new' : '/cards/distribute'}
+                  className="btn btn-primary"
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    height: '34px',
+                    padding: '0 14px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
+                  <Zap size={14} />
+                  <span>{isSub ? 'Install' : 'Distribute'}</span>
+                </Link>
+              </div>
             </div>
           </div>
         )}
