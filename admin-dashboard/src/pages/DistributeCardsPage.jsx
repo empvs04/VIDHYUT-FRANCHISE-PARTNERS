@@ -400,29 +400,130 @@ const DistributeCardsPage = () => {
     return selectionMode === 'SCANNER' ? barcodeSelectedCardIds : selectedCardIds;
   }, [selectionMode, barcodeSelectedCardIds, selectedCardIds]);
 
+  // Barcode Box Scanner & In-Stock Verification State
+  const [barcodeSearch, setBarcodeSearch] = useState('');
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [barcodeGunInput, setBarcodeGunInput] = useState('');
+  const [scannedBoxVerification, setScannedBoxVerification] = useState(null);
+  // scannedBoxVerification: { status: 'SUCCESS' | 'NOT_FOUND', boxCode: '', totalInBox: 100, matchedInCustody: 100, firstSerial: '', lastSerial: '', cardIds: [] }
+
+  // Helper: Parse potential Box Barcode Range (e.g. "VSB000101-VSB000200" or "BC100-BC200")
+  const parseBarcodeBoxRange = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const clean = text.trim();
+
+    const rangeMatch = clean.match(/^([A-Za-z_-]+)(\d+)\s*(?:-|to|\.\.|:)\s*([A-Za-z_-]+)?(\d+)$/i);
+    if (rangeMatch) {
+      const prefix1 = rangeMatch[1].toUpperCase();
+      const startNumStr = rangeMatch[2];
+      const prefix2 = (rangeMatch[3] || prefix1).toUpperCase();
+      const endNumStr = rangeMatch[4];
+
+      if (prefix1 === prefix2) {
+        const startNum = parseInt(startNumStr, 10);
+        const endNum = parseInt(endNumStr, 10);
+        const padding = startNumStr.length;
+
+        if (!isNaN(startNum) && !isNaN(endNum) && startNum <= endNum && endNum - startNum <= 2500) {
+          const serials = [];
+          for (let i = startNum; i <= endNum; i++) {
+            serials.push(`${prefix1}${String(i).padStart(padding, '0')}`);
+          }
+          return {
+            isRange: true,
+            prefix: prefix1,
+            startNum,
+            endNum,
+            count: serials.length,
+            serials,
+            rawCode: clean,
+          };
+        }
+      }
+    }
+    return null;
+  };
+
+  // Main Barcode & Box Verification Handler
+  const handleProcessBarcodeScan = (rawText) => {
+    if (!rawText || typeof rawText !== 'string') return false;
+    const raw = rawText.trim().toUpperCase();
+
+    // 1. Check if scanned text is a Box Range Barcode (e.g. VSB000101-VSB000200)
+    const boxRange = parseBarcodeBoxRange(raw);
+    if (boxRange && boxRange.count > 0) {
+      const boxSerialsSet = new Set(boxRange.serials);
+      const matchedCards = availableCards.filter((c) => boxSerialsSet.has(c.serialNumber?.toUpperCase()));
+
+      if (matchedCards.length > 0) {
+        // Auto-select all matching cards in partner's stock
+        setBarcodeSelectedCardIds((prev) => {
+          const next = new Set(prev);
+          matchedCards.forEach((c) => next.add(c._id));
+          return next;
+        });
+
+        setScannedBoxVerification({
+          status: 'SUCCESS',
+          boxCode: raw,
+          totalInBox: boxRange.count,
+          matchedInCustody: matchedCards.length,
+          firstSerial: matchedCards[0].serialNumber,
+          lastSerial: matchedCards[matchedCards.length - 1].serialNumber,
+          matchedCards,
+        });
+
+        showToast(
+          `📦 Box ${raw} verified! ${matchedCards.length} of ${boxRange.count} cards are available in your custody and locked for allocation.`,
+          'success'
+        );
+        return true;
+      } else {
+        setScannedBoxVerification({
+          status: 'NOT_FOUND',
+          boxCode: raw,
+          message: `Box range "${raw}" is not present in your available inventory or has already been distributed.`,
+        });
+        showToast(`Box "${raw}" not found in your available inventory`, 'error');
+        return false;
+      }
+    }
+
+    // 2. Individual card barcode
+    const card = availableCards.find((c) => c.serialNumber?.toUpperCase() === raw);
+    if (card) {
+      setBarcodeSelectedCardIds((prev) => {
+        const next = new Set(prev);
+        next.add(card._id);
+        return next;
+      });
+
+      setScannedBoxVerification({
+        status: 'SUCCESS',
+        boxCode: raw,
+        totalInBox: 1,
+        matchedInCustody: 1,
+        firstSerial: card.serialNumber,
+        lastSerial: card.serialNumber,
+        matchedCards: [card],
+      });
+
+      showToast(`✅ Card ${card.serialNumber} verified in your stock and selected!`, 'success');
+      return true;
+    } else {
+      setScannedBoxVerification({
+        status: 'NOT_FOUND',
+        boxCode: raw,
+        message: `Card "${raw}" is not present in your available stock inventory.`,
+      });
+      showToast(`Card "${raw}" not found in your available stock`, 'error');
+      return false;
+    }
+  };
+
   // Barcode Scanner Handlers (Operating strictly on Barcode Stock)
   const handleAddScannedCard = (serial) => {
-    const card = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial.toUpperCase());
-    if (!card) {
-      showToast(`Card ${serial} is not in your available stock`, 'error');
-      return false;
-    }
-
-    // Only allow Barcode Cards in this tab if barcode cards exist in stock
-    if (availableBarcodeCards.length > 0 && !isBarcodeCard(card)) {
-      showToast(
-        `Card ${serial} is a continuous batch series card. The Barcode Scanner tab only accepts Barcode Stock Cards.`,
-        'error'
-      );
-      return false;
-    }
-
-    setBarcodeSelectedCardIds((prev) => {
-      const next = new Set(prev);
-      next.add(card._id);
-      return next;
-    });
-    return true;
+    return handleProcessBarcodeScan(serial);
   };
 
   const handleRemoveScannedCard = (serial) => {
@@ -438,12 +539,8 @@ const DistributeCardsPage = () => {
 
   const handleClearAllScanned = () => {
     setBarcodeSelectedCardIds(new Set());
+    setScannedBoxVerification(null);
   };
-
-  // Barcode Card Selection & Gun Scanner State
-  const [barcodeSearch, setBarcodeSearch] = useState('');
-  const [showCameraScanner, setShowCameraScanner] = useState(false);
-  const [barcodeGunInput, setBarcodeGunInput] = useState('');
 
   // Filter available barcode cards by search
   const filteredBarcodeCards = useMemo(() => {
@@ -472,6 +569,7 @@ const DistributeCardsPage = () => {
 
   const handleClearBarcode = () => {
     setBarcodeSelectedCardIds(new Set());
+    setScannedBoxVerification(null);
   };
 
   const handleSelectBarcodeCount = (count) => {
@@ -481,34 +579,21 @@ const DistributeCardsPage = () => {
     showToast(`Selected ${num} barcode cards`, 'success');
   };
 
+  const handleApplyBoxQuantity = (qtyToSelect) => {
+    if (!scannedBoxVerification?.matchedCards) return;
+    const cards = scannedBoxVerification.matchedCards;
+    const num = Math.min(qtyToSelect, cards.length);
+    const slice = cards.slice(0, num);
+    setBarcodeSelectedCardIds(new Set(slice.map((c) => c._id)));
+    showToast(`Allocated ${num} cards from Box ${scannedBoxVerification.boxCode}`, 'success');
+  };
+
   const handleGunBarcodeAdd = (e) => {
     e.preventDefault();
     if (!barcodeGunInput.trim()) return;
-    const serial = barcodeGunInput.trim().toUpperCase();
-    const card = availableBarcodeCards.find((c) => c.serialNumber?.toUpperCase() === serial);
-    if (!card) {
-      // Check if it exists in all available cards
-      const anyCard = availableCards.find((c) => c.serialNumber?.toUpperCase() === serial);
-      if (anyCard) {
-        setBarcodeSelectedCardIds((prev) => {
-          const next = new Set(prev);
-          next.add(anyCard._id);
-          return next;
-        });
-        setBarcodeGunInput('');
-        showToast(`Card ${serial} added!`, 'success');
-        return;
-      }
-      showToast(`Card "${serial}" not found in available stock`, 'error');
-      return;
-    }
-    setBarcodeSelectedCardIds((prev) => {
-      const next = new Set(prev);
-      next.add(card._id);
-      return next;
-    });
+    const raw = barcodeGunInput.trim();
     setBarcodeGunInput('');
-    showToast(`Barcode card ${serial} selected!`, 'success');
+    handleProcessBarcodeScan(raw);
   };
 
   // Scanned serial numbers strictly for the Barcode Scanner mode
@@ -1550,6 +1635,155 @@ const DistributeCardsPage = () => {
                   </div>
                 </div>
 
+                {/* 1.5 VERIFIED SCANNED BOX / IN-STOCK BANNER */}
+                {scannedBoxVerification && scannedBoxVerification.status === 'SUCCESS' && (
+                  <div
+                    style={{
+                      padding: '16px 18px',
+                      backgroundColor: '#F0FDF4',
+                      borderRadius: '12px',
+                      border: '2px solid #86EFAC',
+                      boxShadow: '0 4px 12px rgba(22, 163, 74, 0.12)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        <div
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '10px',
+                            backgroundColor: '#DCFCE7',
+                            border: '1.5px solid #86EFAC',
+                            color: '#16A34A',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <CheckCircle2 size={22} />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#16A34A', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', letterSpacing: '0.4px' }}>
+                              BOX VERIFIED IN YOUR STOCK
+                            </span>
+                            <span style={{ fontFamily: 'monospace', fontWeight: '800', color: '#0F172A', fontSize: '14px' }}>
+                              {scannedBoxVerification.boxCode}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '800', color: '#14532D', marginTop: '4px' }}>
+                            {scannedBoxVerification.matchedInCustody} Cards available in your custody ({scannedBoxVerification.firstSerial} → {scannedBoxVerification.lastSerial})
+                          </div>
+                          <div style={{ fontSize: '12.5px', color: '#166534', marginTop: '2px' }}>
+                            Ready to allocate to: <strong>{selectedPartner?.fullName || 'Selected Sub-Franchise'}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setScannedBoxVerification(null)}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: 'none',
+                          color: '#64748B',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        title="Dismiss box verification"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+
+                    {/* Box Quantity Presets */}
+                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#14532D', textTransform: 'uppercase' }}>
+                        ALLOCATE FROM THIS BOX:
+                      </span>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {[25, 50, 100].filter((q) => q <= scannedBoxVerification.matchedInCustody).map((qty) => (
+                          <button
+                            key={qty}
+                            type="button"
+                            onClick={() => handleApplyBoxQuantity(qty)}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '6px',
+                              border: '1.5px solid #86EFAC',
+                              backgroundColor: barcodeSelectedCardIds.size === qty ? '#16A34A' : '#FFFFFF',
+                              color: barcodeSelectedCardIds.size === qty ? '#FFFFFF' : '#15803D',
+                              fontSize: '12px',
+                              fontWeight: '800',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Allocate {qty} Cards
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => handleApplyBoxQuantity(scannedBoxVerification.matchedInCustody)}
+                          style={{
+                            padding: '5px 12px',
+                            borderRadius: '6px',
+                            border: '1.5px solid #16A34A',
+                            backgroundColor: barcodeSelectedCardIds.size === scannedBoxVerification.matchedInCustody ? '#16A34A' : '#DCFCE7',
+                            color: barcodeSelectedCardIds.size === scannedBoxVerification.matchedInCustody ? '#FFFFFF' : '#15803D',
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Full Box ({scannedBoxVerification.matchedInCustody} Cards)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 1.6 BOX NOT FOUND ERROR BANNER */}
+                {scannedBoxVerification && scannedBoxVerification.status === 'NOT_FOUND' && (
+                  <div
+                    style={{
+                      padding: '14px 16px',
+                      backgroundColor: '#FEF2F2',
+                      borderRadius: '10px',
+                      border: '1.5px solid #FECACA',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <AlertTriangle size={20} color="#DC2626" style={{ flexShrink: 0 }} />
+                      <div>
+                        <strong style={{ display: 'block', fontSize: '13px', color: '#991B1B' }}>
+                          Box / Card Not Found in Your Custody
+                        </strong>
+                        <span style={{ fontSize: '12.5px', color: '#B91C1C' }}>
+                          {scannedBoxVerification.message}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setScannedBoxVerification(null)}
+                      className="btn btn-sm"
+                      style={{ backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', padding: '5px 12px', fontSize: '12px', fontWeight: '700' }}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
                 {/* 2. Action Controls & Quick Presets */}
                 <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1.5px solid #E2E8F0' }}>
                   {/* Preset Pills */}
@@ -1568,14 +1802,15 @@ const DistributeCardsPage = () => {
                         alignItems: 'center',
                         gap: '6px',
                         fontSize: '12px',
-                        padding: '4px 10px',
+                        padding: '5px 12px',
+                        fontWeight: '700',
                         color: showCameraScanner ? '#DC2626' : '#0284C7',
                         borderColor: showCameraScanner ? '#FECACA' : '#BAE6FD',
                         backgroundColor: showCameraScanner ? '#FEF2F2' : '#F0F9FF',
                       }}
                     >
-                      <Camera size={13} />
-                      <span>{showCameraScanner ? 'Close Camera View' : '📷 Open Camera Scanner'}</span>
+                      <Camera size={14} />
+                      <span>{showCameraScanner ? 'Close Camera View' : '📷 Open Box / Barcode Camera Scanner'}</span>
                     </button>
                   </div>
 
@@ -1663,7 +1898,7 @@ const DistributeCardsPage = () => {
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Scan barcode with Gun (e.g. BC0001)..."
+                        placeholder="Scan Box Range (VSB000101-VSB000200) or Gun..."
                         value={barcodeGunInput}
                         onChange={(e) => setBarcodeGunInput(e.target.value)}
                         style={{ fontSize: '12.5px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', fontFamily: 'monospace', backgroundColor: '#FFFFFF' }}
@@ -1674,7 +1909,7 @@ const DistributeCardsPage = () => {
                         className="btn btn-primary btn-sm"
                         style={{ height: '38px', padding: '0 14px', fontWeight: '700', whiteSpace: 'nowrap' }}
                       >
-                        Add
+                        Verify & Add
                       </button>
                     </form>
                   </div>

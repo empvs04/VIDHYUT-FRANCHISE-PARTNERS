@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "admin-dashboard",
+    "backend"
+  ],
   "scripts": {
-    "build": "cd admin-dashboard && npm install && npm run build"
+    "build": "npm --prefix admin-dashboard run build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

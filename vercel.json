@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd admin-dashboard && npm install && npm run build",
+  "buildCommand": "npm --prefix admin-dashboard run build",
   "outputDirectory": "admin-dashboard/dist",
   "rewrites": [
     {
