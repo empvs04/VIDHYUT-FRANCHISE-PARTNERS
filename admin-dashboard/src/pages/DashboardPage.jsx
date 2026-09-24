@@ -6628,7 +6628,7 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Overall Total Profit Badge (Centered) */}
+          {/* Overall Total Profit Badge (Aligned to Right on Desktop) */}
           <div
             className="company-profit-total-box"
             style={{
@@ -6642,7 +6642,8 @@ const DashboardPage = () => {
               borderRadius: '10px',
               border: '1.5px solid #BBF7D0',
               boxShadow: '0 2px 6px rgba(22, 163, 74, 0.08)',
-              margin: '0 auto',
+              margin: 0,
+              flexShrink: 0,
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
