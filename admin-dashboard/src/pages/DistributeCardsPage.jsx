@@ -1080,7 +1080,7 @@ const DistributeCardsPage = () => {
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', paddingBottom: '4px' }}>
+            <div className="distribute-tabs-bar" style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', paddingBottom: '6px', scrollbarWidth: 'none' }}>
               {[
                 { id: 'QUANTITY', label: '1. By Quantity' },
                 { id: 'RANGE', label: '2. Serial Range' },
@@ -1092,9 +1092,9 @@ const DistributeCardsPage = () => {
                   type="button"
                   onClick={() => setSelectionMode(tab.id)}
                   style={{
-                    padding: '10px 18px',
+                    padding: '8px 14px',
                     borderRadius: '8px',
-                    fontSize: '13.5px',
+                    fontSize: '12.5px',
                     fontWeight: '800',
                     border: 'none',
                     cursor: 'pointer',
@@ -1576,7 +1576,7 @@ const DistributeCardsPage = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     backgroundColor: '#FFFFFF',
-                    padding: '14px 16px',
+                    padding: '12px 14px',
                     borderRadius: '10px',
                     border: '1.5px solid #BBF7D0',
                     boxShadow: '0 2px 8px rgba(16, 185, 129, 0.06)',
@@ -1584,7 +1584,7 @@ const DistributeCardsPage = () => {
                     gap: '10px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: '1 1 200px' }}>
                     <div
                       style={{
                         width: '36px',
@@ -1596,21 +1596,22 @@ const DistributeCardsPage = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
+                        marginTop: '2px',
                       }}
                     >
                       <Package size={18} />
                     </div>
-                    <div>
-                      <div style={{ fontSize: '10.5px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '10px', fontWeight: '800', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                         BARCODE STOCK IN CUSTODY (ONLY BARCODE CARDS)
                       </div>
-                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', marginTop: '1px' }}>
+                      <div style={{ fontSize: '14.5px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>
                         {availableBarcodeCards.length > 0 ? (
                           <>
-                            {availableBarcodeCards.length} Barcode Cards Available{' '}
-                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B', fontFamily: 'monospace' }}>
+                            <div>{availableBarcodeCards.length} Barcode Cards Available</div>
+                            <div style={{ fontSize: '11.5px', fontWeight: '600', color: '#64748B', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
                               ({availableBarcodeCards[0]?.serialNumber} → {availableBarcodeCards[availableBarcodeCards.length - 1]?.serialNumber})
-                            </span>
+                            </div>
                           </>
                         ) : (
                           <span style={{ color: '#DC2626' }}>0 Barcode Cards in Stock</span>
@@ -1626,9 +1627,10 @@ const DistributeCardsPage = () => {
                         color: barcodeSelectedCardIds.size > 0 ? '#15803D' : '#64748B',
                         padding: '4px 12px',
                         borderRadius: '16px',
-                        fontSize: '12px',
+                        fontSize: '11.5px',
                         fontWeight: '800',
                         border: barcodeSelectedCardIds.size > 0 ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {barcodeSelectedCardIds.size} Cards Locked
@@ -1640,7 +1642,7 @@ const DistributeCardsPage = () => {
                 {scannedBoxVerification && scannedBoxVerification.status === 'SUCCESS' && (
                   <div
                     style={{
-                      padding: '16px 18px',
+                      padding: '14px 16px',
                       backgroundColor: '#F0FDF4',
                       borderRadius: '12px',
                       border: '2px solid #86EFAC',
@@ -1651,8 +1653,8 @@ const DistributeCardsPage = () => {
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                         <div
                           style={{
-                            width: '40px',
-                            height: '40px',
+                            width: '38px',
+                            height: '38px',
                             borderRadius: '10px',
                             backgroundColor: '#DCFCE7',
                             border: '1.5px solid #86EFAC',
@@ -1663,21 +1665,21 @@ const DistributeCardsPage = () => {
                             flexShrink: 0,
                           }}
                         >
-                          <CheckCircle2 size={22} />
+                          <CheckCircle2 size={20} />
                         </div>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#16A34A', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', letterSpacing: '0.4px' }}>
+                            <span style={{ fontSize: '10.5px', fontWeight: '800', backgroundColor: '#16A34A', color: '#FFFFFF', padding: '2px 8px', borderRadius: '4px', letterSpacing: '0.4px' }}>
                               BOX VERIFIED IN YOUR STOCK
                             </span>
-                            <span style={{ fontFamily: 'monospace', fontWeight: '800', color: '#0F172A', fontSize: '14px' }}>
+                            <span style={{ fontFamily: 'monospace', fontWeight: '800', color: '#0F172A', fontSize: '13.5px' }}>
                               {scannedBoxVerification.boxCode}
                             </span>
                           </div>
-                          <div style={{ fontSize: '14px', fontWeight: '800', color: '#14532D', marginTop: '4px' }}>
-                            {scannedBoxVerification.matchedInCustody} Cards available in your custody ({scannedBoxVerification.firstSerial} → {scannedBoxVerification.lastSerial})
+                          <div style={{ fontSize: '13px', fontWeight: '800', color: '#14532D', marginTop: '4px', wordBreak: 'break-all' }}>
+                            {scannedBoxVerification.matchedInCustody} Cards available ({scannedBoxVerification.firstSerial} → {scannedBoxVerification.lastSerial})
                           </div>
-                          <div style={{ fontSize: '12.5px', color: '#166534', marginTop: '2px' }}>
+                          <div style={{ fontSize: '12px', color: '#166534', marginTop: '2px' }}>
                             Ready to allocate to: <strong>{selectedPartner?.fullName || 'Selected Sub-Franchise'}</strong>
                           </div>
                         </div>
@@ -1702,45 +1704,49 @@ const DistributeCardsPage = () => {
                     </div>
 
                     {/* Box Quantity Presets */}
-                    <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                      <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#14532D', textTransform: 'uppercase' }}>
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#14532D', textTransform: 'uppercase' }}>
                         ALLOCATE FROM THIS BOX:
                       </span>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', width: '100%' }}>
                         {[25, 50, 100].filter((q) => q <= scannedBoxVerification.matchedInCustody).map((qty) => (
                           <button
                             key={qty}
                             type="button"
                             onClick={() => handleApplyBoxQuantity(qty)}
                             style={{
-                              padding: '5px 12px',
+                              flex: '1 1 80px',
+                              padding: '6px 10px',
                               borderRadius: '6px',
                               border: '1.5px solid #86EFAC',
                               backgroundColor: barcodeSelectedCardIds.size === qty ? '#16A34A' : '#FFFFFF',
                               color: barcodeSelectedCardIds.size === qty ? '#FFFFFF' : '#15803D',
-                              fontSize: '12px',
+                              fontSize: '11.5px',
                               fontWeight: '800',
                               cursor: 'pointer',
+                              textAlign: 'center',
                             }}
                           >
-                            Allocate {qty} Cards
+                            {qty} Cards
                           </button>
                         ))}
                         <button
                           type="button"
                           onClick={() => handleApplyBoxQuantity(scannedBoxVerification.matchedInCustody)}
                           style={{
-                            padding: '5px 12px',
+                            flex: '1 1 110px',
+                            padding: '6px 10px',
                             borderRadius: '6px',
                             border: '1.5px solid #16A34A',
                             backgroundColor: barcodeSelectedCardIds.size === scannedBoxVerification.matchedInCustody ? '#16A34A' : '#DCFCE7',
                             color: barcodeSelectedCardIds.size === scannedBoxVerification.matchedInCustody ? '#FFFFFF' : '#15803D',
-                            fontSize: '12px',
+                            fontSize: '11.5px',
                             fontWeight: '800',
                             cursor: 'pointer',
+                            textAlign: 'center',
                           }}
                         >
-                          Full Box ({scannedBoxVerification.matchedInCustody} Cards)
+                          Full Box ({scannedBoxVerification.matchedInCustody})
                         </button>
                       </div>
                     </div>
@@ -1751,7 +1757,7 @@ const DistributeCardsPage = () => {
                 {scannedBoxVerification && scannedBoxVerification.status === 'NOT_FOUND' && (
                   <div
                     style={{
-                      padding: '14px 16px',
+                      padding: '12px 14px',
                       backgroundColor: '#FEF2F2',
                       borderRadius: '10px',
                       border: '1.5px solid #FECACA',
@@ -1763,12 +1769,12 @@ const DistributeCardsPage = () => {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <AlertTriangle size={20} color="#DC2626" style={{ flexShrink: 0 }} />
+                      <AlertTriangle size={18} color="#DC2626" style={{ flexShrink: 0 }} />
                       <div>
-                        <strong style={{ display: 'block', fontSize: '13px', color: '#991B1B' }}>
+                        <strong style={{ display: 'block', fontSize: '12.5px', color: '#991B1B' }}>
                           Box / Card Not Found in Your Custody
                         </strong>
-                        <span style={{ fontSize: '12.5px', color: '#B91C1C' }}>
+                        <span style={{ fontSize: '11.5px', color: '#B91C1C' }}>
                           {scannedBoxVerification.message}
                         </span>
                       </div>
@@ -1778,7 +1784,7 @@ const DistributeCardsPage = () => {
                       type="button"
                       onClick={() => setScannedBoxVerification(null)}
                       className="btn btn-sm"
-                      style={{ backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', padding: '5px 12px', fontSize: '12px', fontWeight: '700' }}
+                      style={{ backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', padding: '4px 10px', fontSize: '11.5px', fontWeight: '700' }}
                     >
                       Dismiss
                     </button>
@@ -1786,10 +1792,10 @@ const DistributeCardsPage = () => {
                 )}
 
                 {/* 2. Action Controls & Quick Presets */}
-                <div style={{ padding: '16px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1.5px solid #E2E8F0' }}>
-                  {/* Preset Pills */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
-                    <label style={{ fontSize: '11.5px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ padding: '14px', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1.5px solid #E2E8F0' }}>
+                  {/* Preset Pills Header & Camera Button */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                       <Sparkles size={13} color="#16A34A" />
                       <span>QUICK SELECT BARCODE CARDS</span>
                     </label>
@@ -1801,21 +1807,25 @@ const DistributeCardsPage = () => {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '6px',
                         fontSize: '12px',
-                        padding: '5px 12px',
+                        padding: '6px 12px',
                         fontWeight: '700',
                         color: showCameraScanner ? '#DC2626' : '#0284C7',
                         borderColor: showCameraScanner ? '#FECACA' : '#BAE6FD',
                         backgroundColor: showCameraScanner ? '#FEF2F2' : '#F0F9FF',
+                        width: '100%',
+                        maxWidth: '100%',
                       }}
                     >
                       <Camera size={14} />
-                      <span>{showCameraScanner ? 'Close Camera View' : '📷 Open Box / Barcode Camera Scanner'}</span>
+                      <span>{showCameraScanner ? 'Close Camera Scanner' : '📷 Open Box / Barcode Camera Scanner'}</span>
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  {/* Preset Buttons Responsive Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '6px', marginBottom: '12px' }}>
                     {[10, 25, 50, 100].map((qty) => {
                       const isAvailable = availableBarcodeCards.length >= qty;
                       const isSelected = barcodeSelectedCardIds.size === qty;
@@ -1826,15 +1836,16 @@ const DistributeCardsPage = () => {
                           onClick={() => handleSelectBarcodeCount(qty)}
                           disabled={!isAvailable}
                           style={{
-                            padding: '6px 12px',
+                            padding: '7px 8px',
                             borderRadius: '6px',
                             border: isSelected ? '2px solid #16A34A' : '1.5px solid #CBD5E1',
                             backgroundColor: isSelected ? '#16A34A' : isAvailable ? '#FFFFFF' : '#F1F5F9',
                             color: isSelected ? '#FFFFFF' : isAvailable ? '#0F172A' : '#94A3B8',
-                            fontSize: '12px',
+                            fontSize: '11.5px',
                             fontWeight: '800',
                             cursor: isAvailable ? 'pointer' : 'not-allowed',
                             transition: 'all 0.15s ease',
+                            textAlign: 'center',
                           }}
                         >
                           +{qty} Cards
@@ -1847,15 +1858,16 @@ const DistributeCardsPage = () => {
                       onClick={handleSelectAllBarcode}
                       disabled={availableBarcodeCards.length === 0}
                       style={{
-                        padding: '6px 12px',
+                        padding: '7px 8px',
                         borderRadius: '6px',
                         border: '1.5px solid #16A34A',
                         backgroundColor: barcodeSelectedCardIds.size === availableBarcodeCards.length && availableBarcodeCards.length > 0 ? '#16A34A' : '#F0FDF4',
                         color: barcodeSelectedCardIds.size === availableBarcodeCards.length && availableBarcodeCards.length > 0 ? '#FFFFFF' : '#16A34A',
-                        fontSize: '12px',
+                        fontSize: '11.5px',
                         fontWeight: '800',
                         cursor: availableBarcodeCards.length > 0 ? 'pointer' : 'not-allowed',
                         transition: 'all 0.15s ease',
+                        textAlign: 'center',
                       }}
                     >
                       Select All ({availableBarcodeCards.length})
@@ -1866,24 +1878,25 @@ const DistributeCardsPage = () => {
                         type="button"
                         onClick={handleClearBarcode}
                         style={{
-                          padding: '6px 12px',
+                          padding: '7px 8px',
                           borderRadius: '6px',
                           border: '1.5px solid #FECACA',
                           backgroundColor: '#FEF2F2',
                           color: '#DC2626',
-                          fontSize: '12px',
+                          fontSize: '11.5px',
                           fontWeight: '800',
                           cursor: 'pointer',
+                          textAlign: 'center',
                         }}
                       >
-                        Clear Selection
+                        Clear
                       </button>
                     )}
                   </div>
 
                   {/* Search & Gun Scanner Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px', alignItems: 'center' }}>
-                    <div style={{ position: 'relative' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ position: 'relative', width: '100%' }}>
                       <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748B' }} />
                       <input
                         type="text"
@@ -1891,24 +1904,24 @@ const DistributeCardsPage = () => {
                         placeholder="Search barcode cards (serial, lot)..."
                         value={barcodeSearch}
                         onChange={(e) => setBarcodeSearch(e.target.value)}
-                        style={{ paddingLeft: '36px', fontSize: '12.5px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', backgroundColor: '#FFFFFF' }}
+                        style={{ paddingLeft: '36px', fontSize: '12px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', backgroundColor: '#FFFFFF', width: '100%', boxSizing: 'border-box' }}
                       />
                     </div>
 
-                    <form onSubmit={handleGunBarcodeAdd} style={{ display: 'flex', gap: '6px' }}>
+                    <form onSubmit={handleGunBarcodeAdd} style={{ display: 'flex', gap: '6px', width: '100%' }}>
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Scan Box Range (VSB000101-VSB000200) or Gun..."
+                        placeholder="Scan Box Range or Serial..."
                         value={barcodeGunInput}
                         onChange={(e) => setBarcodeGunInput(e.target.value)}
-                        style={{ fontSize: '12.5px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', fontFamily: 'monospace', backgroundColor: '#FFFFFF' }}
+                        style={{ fontSize: '12px', height: '38px', borderRadius: '6px', border: '1.5px solid #CBD5E1', fontFamily: 'monospace', backgroundColor: '#FFFFFF', flex: 1, minWidth: 0 }}
                       />
                       <button
                         type="submit"
                         disabled={!barcodeGunInput.trim()}
                         className="btn btn-primary btn-sm"
-                        style={{ height: '38px', padding: '0 14px', fontWeight: '700', whiteSpace: 'nowrap' }}
+                        style={{ height: '38px', padding: '0 14px', fontWeight: '700', whiteSpace: 'nowrap', flexShrink: 0 }}
                       >
                         Verify & Add
                       </button>
@@ -1928,25 +1941,25 @@ const DistributeCardsPage = () => {
                   />
                 )}
 
-                {/* 4. Interactive Barcode Cards Visual Grid */}
+                {/* 4. Interactive Barcode Cards Visual Grid (Clean 2-Col on Mobile without Truncation) */}
                 <div
                   style={{
                     border: '1.5px solid #E2E8F0',
                     borderRadius: '10px',
-                    padding: '12px',
+                    padding: '10px',
                     backgroundColor: '#FFFFFF',
-                    minHeight: '180px',
-                    maxHeight: '320px',
+                    minHeight: '160px',
+                    maxHeight: '340px',
                     overflowY: 'auto',
                   }}
                 >
                   {filteredBarcodeCards.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
-                      <Package size={34} style={{ color: '#94A3B8', margin: '0 auto 8px' }} />
-                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F172A', marginBottom: '4px' }}>
+                    <div style={{ textAlign: 'center', padding: '28px 14px', color: '#64748B' }}>
+                      <Package size={30} style={{ color: '#94A3B8', margin: '0 auto 6px' }} />
+                      <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0F172A', marginBottom: '4px' }}>
                         {availableBarcodeCards.length === 0 ? 'No Barcode Stock Cards in Warehouse' : 'No Barcode Cards Match Search'}
                       </div>
-                      <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '420px', margin: '0 auto 12px' }}>
+                      <p style={{ fontSize: '12px', color: '#64748B', maxWidth: '400px', margin: '0 auto 10px' }}>
                         {availableBarcodeCards.length === 0
                           ? 'You haven\'t ingested any cards via Barcode Scanner yet. Use "Add Stock" -> "Barcode & Box Scanner" to add physical barcode cards.'
                           : 'Try clearing your search query to view all available barcode stock cards.'}
@@ -1962,18 +1975,19 @@ const DistributeCardsPage = () => {
                             background: 'linear-gradient(135deg, #10B981, #059669)',
                             color: '#FFFFFF',
                             fontWeight: '700',
-                            padding: '8px 16px',
+                            padding: '7px 14px',
                             borderRadius: '8px',
                             textDecoration: 'none',
+                            fontSize: '12px',
                           }}
                         >
                           <Plus size={14} />
-                          <span>+ Add Barcode Stock to Warehouse</span>
+                          <span>+ Add Barcode Stock</span>
                         </Link>
                       )}
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '6px' }}>
                       {filteredBarcodeCards.map((c) => {
                         const isPicked = barcodeSelectedCardIds.has(c._id);
                         return (
@@ -1981,22 +1995,23 @@ const DistributeCardsPage = () => {
                             key={c._id}
                             onClick={() => toggleBarcodeCard(c._id)}
                             style={{
-                              padding: '8px 10px',
+                              padding: '7px 9px',
                               borderRadius: '8px',
                               border: isPicked ? '2px solid #16A34A' : '1.5px solid #E2E8F0',
                               backgroundColor: isPicked ? '#F0FDF4' : '#FFFFFF',
                               cursor: 'pointer',
-                              transition: 'all 0.15s ease',
+                              transition: 'all 0.12s ease',
                               display: 'flex',
                               flexDirection: 'column',
-                              gap: '4px',
+                              gap: '3px',
                               boxShadow: isPicked ? '0 2px 6px rgba(22, 163, 74, 0.15)' : 'none',
+                              minWidth: 0,
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
                               <span
                                 style={{
-                                  fontSize: '9.5px',
+                                  fontSize: '9px',
                                   fontWeight: '800',
                                   backgroundColor: '#DCFCE7',
                                   color: '#15803D',
@@ -2018,6 +2033,7 @@ const DistributeCardsPage = () => {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   color: '#FFFFFF',
+                                  flexShrink: 0,
                                 }}
                               >
                                 {isPicked && <Check size={11} strokeWidth={3} />}
@@ -2027,12 +2043,12 @@ const DistributeCardsPage = () => {
                             <span
                               style={{
                                 fontFamily: 'monospace',
-                                fontSize: '13px',
+                                fontSize: '11px',
                                 fontWeight: '800',
                                 color: isPicked ? '#166534' : '#0F172A',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
+                                wordBreak: 'break-all',
+                                lineHeight: '1.2',
+                                letterSpacing: '-0.2px',
                               }}
                             >
                               {c.serialNumber}
