@@ -22,10 +22,10 @@ import {
   FileText,
   Tag,
   Info,
-  Layers,
   ArrowRight,
   Camera,
   Plus,
+  X,
 } from 'lucide-react';
 import api from '../services/api';
 import { FranchiseTypeBadge } from '../components/common/Badge';
