@@ -26,6 +26,7 @@ import {
   Camera,
   Plus,
   X,
+  Layers,
 } from 'lucide-react';
 import api from '../services/api';
 import { FranchiseTypeBadge } from '../components/common/Badge';
